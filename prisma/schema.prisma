@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  type        String   // "express" | "complex"
+  clientName  String
+  clientEmail String
+  description String
+  tools       String?  // JSON string of tools involved
+  volume      String?  // Monthly data volume
+  objective   String?
+  attachments String?  // JSON string of file paths
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | QUOTED | COMPLETED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WebProject {
+  id           String   @id @default(cuid())
+  businessName String
+  niche        String?
+  sections     String?  // JSON: ["hero", "services", "testimonials", "contact"]
+  colorPalette String?  // JSON: { primary, secondary, accent }
+  tone         String?  // "professional" | "casual" | "bold" | "elegant"
+  wireframeJson String? // Full wireframe JSON for preview renderer
+  chatHistory  String?  // JSON array of chat messages
+  status       String   @default("IN_PROGRESS") // IN_PROGRESS | STAND_BY | QUOTED | COMPLETED
+  clientName   String?
+  clientEmail  String?
+  clientPhone  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GeneratedScript {
+  id           String   @id @default(cuid())
+  prompt       String
+  templateType String   // "calendar-shifts" | "invoice-email" | "webhook-sheets" | "custom"
+  codeOutput   String   // The generated Apps Script code
+  htmlOutput   String?  // Optional HTML for web apps in Apps Script
+  guideSteps   String?  // JSON array of step-by-step guide
+  createdAt    DateTime @default(now())
+}
