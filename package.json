@@ -1,0 +1,20 @@
+{
+  "name": "autoflow-cocina",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/ssr": ">=0.5.2 <1.0.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.5.9",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
