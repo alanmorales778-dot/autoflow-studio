@@ -23,7 +23,7 @@ export default function Home() {
           <h1 style={{ marginTop: 16 }}>Dejá de responder pedidos a las 11 de la noche y de vender a pérdida.</h1>
           <p>
             AutoFlow Cocina ordena tus pedidos por día, bloquea los cupos cuando el horno no da más, cobra la seña con
-            Mercado Pago y recalcula el costo de tus recetas cada vez que cambiás un precio en tu planilla de Google Drive.
+            Mercado Pago y recalcula el costo de tus recetas cada vez que actualizás un precio, subiendo un Excel o desde Google Drive.
           </p>
           <div className="row" style={{ marginTop: 24 }}>
             <Link href="/registro" className="btn">Empezar 14 días gratis</Link>
@@ -40,9 +40,9 @@ export default function Home() {
               <p>Definís cuántas unidades podés hacer por día. Cuando se llena, la fecha se cierra sola. Tus clientes piden desde tu link y pagan el 50% de seña; si no pagan en 30 minutos, el cupo se libera.</p>
             </div>
             <div className="card feature">
-              <span className="badge">2 · Costos y stock desde Drive</span>
+              <span className="badge">2 · Costos y stock desde Excel o Drive</span>
               <h3>Subió la manteca: tus precios se recalculan</h3>
-              <p>Actualizás tus insumos en una planilla de Google Drive. AutoFlow recalcula el costo de cada receta, te dice el precio mínimo para ganar tu margen y te avisa qué productos estás vendiendo a pérdida.</p>
+              <p>Subís tu Excel de insumos o los actualizás en Google Drive. AutoFlow recalcula el costo de cada receta, te dice el precio mínimo para ganar tu margen y te avisa qué productos estás vendiendo a pérdida.</p>
             </div>
             <div className="card feature">
               <span className="badge">3 · Bot de WhatsApp</span>
@@ -64,7 +64,7 @@ export default function Home() {
                 <li>Catálogo online con tu link</li>
                 <li>Cupos por día y franja horaria</li>
                 <li>Seña con Mercado Pago que vence sola</li>
-                <li>Productos y stock desde Google Drive</li>
+                <li>Productos y stock desde Excel o Google Drive</li>
               </ul>
             </div>
             <div className="card">

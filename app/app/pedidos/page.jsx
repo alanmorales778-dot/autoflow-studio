@@ -81,7 +81,7 @@ export default async function Pedidos({ searchParams }) {
         <h2>Cargar pedido a mano</h2>
         <p className="muted">Para pedidos que te llegan por teléfono, Instagram o en persona. Ocupa cupo y stock igual que los pedidos online.</p>
         {!products || products.length === 0 ? (
-          <p>Primero cargá productos en tu planilla de Google Drive (Configuración → Google Drive).</p>
+          <p>Primero cargá tus productos en <a href="/app/productos">Productos</a> (subiendo un archivo o con Google Drive).</p>
         ) : (
           <form action={createManualOrder}>
             <div className="grid grid-3">

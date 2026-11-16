@@ -109,6 +109,7 @@ export default async function Configuracion({ searchParams }) {
       {/* Google Drive */}
       <div className="card" id="drive">
         <h2>Google Drive (productos, stock e insumos)</h2>
+        <p className="muted">Opcional. Si preferís, podés cargar todo subiendo un Excel o CSV desde <a href="/app/productos">Productos</a> e <a href="/app/insumos">Insumos</a>. Con Drive conectado, los cambios en tus planillas se toman solos cada 10 minutos.</p>
         {!has.google() ? (
           <div className="alert warn">La conexión con Google todavía no está habilitada en este servidor.</div>
         ) : bakery.google_refresh_token_enc ? (

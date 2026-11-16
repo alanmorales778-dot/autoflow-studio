@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
-import { applySuggestedPrice, syncNow } from '../actions';
-import { Flash, Locked } from '../ui';
+import { applySuggestedPrice, syncNow, importFile } from '../actions';
+import { Flash, Locked, UploadCard } from '../ui';
 import { money } from '@/lib/format';
 import { currentMargin, suggestedPrice } from '@/lib/costs';
 import { reservedByProduct } from '@/lib/orders';
@@ -21,15 +21,15 @@ export default async function Productos({ searchParams }) {
         <h1 style={{ margin: 0 }}>Productos</h1>
         <div className="row">
           {bakery.sheet_productos_id && <a className="btn secondary small" href={sheetUrl(bakery.sheet_productos_id)} target="_blank" rel="noreferrer">Abrir planilla de productos ↗</a>}
-          <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar ahora</button></form>
+          {bakery.sheet_productos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
       </div>
-      <p className="muted">Los productos, precios y stock se editan en tu planilla de Google Drive. Margen objetivo: {Number(bakery.margin_percent)}% · indirectos {Number(bakery.overhead_percent)}% (se cambian en Configuración).</p>
+      <p className="muted">Los productos, precios y stock se cargan con un archivo Excel/CSV o desde tu planilla de Google Drive. Margen objetivo: {Number(bakery.margin_percent)}% · indirectos {Number(bakery.overhead_percent)}% (se cambian en Configuración).</p>
       {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada producto y si estás ganando tu margen.</Locked>}
 
       <div className="card table-wrap">
         {!products || products.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Todavía no hay productos. Conectá Google Drive en Configuración y cargalos en la planilla «Productos y stock».</p>
+          <p className="muted" style={{ margin: 0 }}>Todavía no hay productos. Descargá la plantilla, completala y subila abajo, o conectá Google Drive en Configuración.</p>
         ) : (
           <table>
             <thead>
@@ -72,6 +72,7 @@ export default async function Productos({ searchParams }) {
           </table>
         )}
       </div>
+      <UploadCard kind="productos" action={importFile} driveConnected={!!bakery.sheet_productos_id} />
     </>
   );
 }

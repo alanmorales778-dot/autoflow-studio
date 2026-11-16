@@ -77,8 +77,8 @@ export default async function Agenda({ searchParams }) {
         <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
       </div>
 
-      {!bakery.sheet_productos_id && (
-        <div className="alert warn">Todavía no conectaste Google Drive. <Link href="/app/configuracion">Conectalo</Link> y creamos tus planillas de productos e insumos.</div>
+      {!bakery.sheet_productos_id && !(products || []).length && (
+        <div className="alert warn">Cargá tus productos: <Link href="/app/productos">subí un Excel o CSV</Link> o <Link href="/app/configuracion#drive">conectá Google Drive</Link> para que se actualicen solos.</div>
       )}
       {!bakery.mp_access_token_enc && (
         <div className="alert warn">Conectá Mercado Pago para cobrar señas automáticas. Mientras tanto, los pedidos quedan pendientes y coordinás el pago a mano. <Link href="/app/configuracion#mercadopago">Conectar</Link></div>

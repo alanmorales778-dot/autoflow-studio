@@ -13,6 +13,8 @@ import { testToken, createPreapproval } from '@/lib/mp';
 import { suggestedPrice, RECIPE_UNITS } from '@/lib/costs';
 import { PRICES } from '@/lib/modules';
 import { appUrl } from '@/lib/env';
+import { parseUpload } from '@/lib/xlsx';
+import { importRows } from '@/lib/imports';
 
 function back(path, { error, ok } = {}) {
   const p = new URLSearchParams();
@@ -158,6 +160,23 @@ export async function syncNow(fd) {
   if (r.error) back(to, { error: `No se pudo sincronizar: ${r.error}` });
   if (r.skipped) back(to, { error: 'Primero conectá Google Drive en Configuración.' });
   back(to, { ok: 'Planillas sincronizadas.' });
+}
+
+export async function importFile(fd) {
+  const { bakery } = await requireBakery();
+  const kind = str(fd, 'kind') === 'insumos' ? 'insumos' : 'productos';
+  const to = kind === 'insumos' ? '/app/insumos' : '/app/productos';
+  let msg = null;
+  let err = null;
+  try {
+    const rows = await parseUpload(fd.get('file'));
+    const r = await importRows(createAdmin(), bakery, kind, rows);
+    msg = `Listo: ${r.count} ${kind === 'insumos' ? 'insumos' : 'productos'} actualizados${r.drive ? ' (también en tu planilla de Google Drive)' : ''}.${r.errors ? ` Hay ${r.errors} con datos para revisar.` : ''}`;
+  } catch (e) {
+    err = e.message;
+  }
+  revalidatePath('/app', 'layout');
+  back(to, err ? { error: err } : { ok: msg });
 }
 
 // ---------- Pedidos ----------
