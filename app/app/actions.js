@@ -329,6 +329,38 @@ export async function applySuggestedPrice(fd) {
   back(backTo, err ? { error: err } : { ok: `Nuevo precio de ${p.name}: $${price.toLocaleString('es-AR')}` });
 }
 
+// Simulador de inflación: aplica los precios sugeridos que el usuario eligió.
+export async function applySimulatedPrices(fd) {
+  const { supabase, bakery } = await requireBakery();
+  let wanted = [];
+  try {
+    wanted = JSON.parse(str(fd, 'prices') || '[]');
+  } catch {
+    back('/app/costos', { error: 'No se pudieron leer los precios.' });
+  }
+  wanted = (Array.isArray(wanted) ? wanted : [])
+    .map((w) => ({ id: String(w.id || ''), price: Math.round(Number(w.price)) }))
+    .filter((w) => w.id && Number.isFinite(w.price) && w.price > 0 && w.price < 100000000)
+    .slice(0, 200);
+  if (!wanted.length) back('/app/costos', { error: 'No hay precios para aplicar.' });
+  const { data: own } = await supabase.from('products').select('id,name,sheet_row').eq('bakery_id', bakery.id).in('id', wanted.map((w) => w.id));
+  const byId = new Map((own || []).map((p) => [p.id, p]));
+  const valid = wanted.filter((w) => byId.has(w.id));
+  for (const w of valid) await supabase.from('products').update({ price: w.price }).eq('id', w.id).eq('bakery_id', bakery.id);
+  let err = null;
+  const cells = valid.filter((w) => byId.get(w.id).sheet_row).map((w) => ({ range: `Productos!D${byId.get(w.id).sheet_row}`, values: [[w.price]] }));
+  if (cells.length && bakery.google_refresh_token_enc) {
+    try {
+      await writeCells(bakery, cells);
+      await pushStockToSheet(createAdmin(), bakery, valid.map((w) => w.id));
+    } catch (e) {
+      err = `Se actualizó en AutoFlow pero no en la planilla: ${e.message}`;
+    }
+  }
+  revalidatePath('/app', 'layout');
+  back('/app/costos', err ? { error: err } : { ok: `Actualizamos ${valid.length} ${valid.length === 1 ? 'precio' : 'precios'}. Tu catálogo ya muestra los nuevos.` });
+}
+
 // ---------- Personalización y suscripción por producto ----------
 export async function saveProductSettings(fd) {
   const { supabase, bakery } = await requireBakery();

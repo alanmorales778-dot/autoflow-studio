@@ -8,6 +8,7 @@ import { isHolding } from '@/lib/orders';
 import { appUrl } from '@/lib/env';
 import { balanceDue, reminderLink } from '@/lib/balance';
 import { optionsSummary } from '@/lib/options';
+import { productionOrders, shoppingList } from '@/lib/production';
 
 export default async function Agenda({ searchParams }) {
   const sp = await searchParams;
@@ -61,6 +62,22 @@ export default async function Agenda({ searchParams }) {
     .lt('date', today)
     .limit(500);
   const owed = (unpaid || []).map(balanceDue).filter((n) => n > 0);
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const { data: paidWeek } = await supabase.from('orders').select('deposit_amount').eq('bakery_id', bakery.id).gte('paid_at', weekAgo).limit(1000);
+  const depositsWeek = (paidWeek || []).reduce((s, o) => s + Number(o.deposit_amount || 0), 0);
+  let shopping = null;
+  if (access.costs) {
+    const soon = await productionOrders(supabase, bakery.id, today, addDays(today, 2));
+    const ids = [...new Set(soon.map((o) => o.product_id).filter(Boolean))];
+    if (ids.length) {
+      const [{ data: items }, { data: ingredients }] = await Promise.all([
+        supabase.from('recipe_items').select('*').in('product_id', ids),
+        supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
+      ]);
+      const list = shoppingList(soon, items || [], ingredients || []);
+      if (list.rows.length) shopping = { rows: [...list.rows].sort((a, b) => (b.exactCost || 0) - (a.exactCost || 0)), orders: soon.length, total: list.rows.reduce((s, r) => s + (r.estCost || 0), 0) };
+    }
+  }
   const onboarding = bakery.onboarding_dismissed_at ? null : await onboardingSteps(supabase, bakery, access);
   const showOnboarding = onboarding && onboarding.done < onboarding.total;
   const now = new Date();
@@ -69,6 +86,9 @@ export default async function Agenda({ searchParams }) {
   const underMin = access.costs ? (products || []).filter((p) => p.min_price && Number(p.price) < Number(p.min_price)) : [];
   const catalogUrl = `${appUrl()}/c/${bakery.slug}`;
   const tomorrowOrders = active.filter((o) => o.date === addDays(today, 1) && o.status === 'confirmado');
+  const todayOrders = active.filter((o) => o.date === today);
+  const todayWaiting = todayOrders.filter((o) => o.status === 'pendiente_sena').length;
+  const upcomingBalance = active.filter((o) => o.status === 'confirmado').reduce((s, o) => s + balanceDue(o), 0);
 
   const days = [];
   for (let i = 0; i < 14; i++) {
@@ -83,14 +103,71 @@ export default async function Agenda({ searchParams }) {
     }));
     days.push({ d, dayOrders, usage });
   }
+  const todayCap = days[0].usage.find((u) => u.label === 'Total') || days[0].usage[0] || null;
 
   return (
     <>
       <Flash sp={sp} />
-      <div className="row between" style={{ marginBottom: 12 }}>
-        <h1 style={{ margin: 0 }}>Agenda · próximos 14 días</h1>
-        <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
+      <div className="page-head">
+        <div>
+          <h1>Agenda</h1>
+          <p>Próximos 14 días · {dateLabel(today)} es hoy</p>
+        </div>
+        <div className="row">
+          <Link href="/cocina" className="btn secondary small">Modo cocina</Link>
+          <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
+        </div>
       </div>
+
+      <div className="kpis">
+        <div className="card kpi">
+          <span className="l">Pedidos para hoy</span>
+          <span className="v">{todayOrders.length}</span>
+          <small>{todayWaiting ? `${todayWaiting} esperando seña` : todayOrders.length ? 'Todos confirmados' : 'Día libre'}</small>
+        </div>
+        <div className="card kpi">
+          <span className="l">Señas cobradas · últimos 7 días</span>
+          <span className="v">{money(depositsWeek)}</span>
+          <small>{bakery.mp_access_token_enc ? 'Por Mercado Pago' : 'Conectá Mercado Pago para cobrarlas solas'}</small>
+        </div>
+        <div className="card kpi">
+          <span className="l">Saldo por cobrar · 14 días</span>
+          <span className="v">{money(upcomingBalance)}</span>
+          <small>al entregar</small>
+        </div>
+        <div className="card kpi">
+          <span className="l">Cupo de hoy</span>
+          {todayCap ? (
+            <>
+              <span className="v">{todayCap.used} / {todayCap.max}</span>
+              <div className={`bar ${todayCap.used >= todayCap.max ? 'full' : ''}`}><span style={{ width: `${Math.min(100, Math.round((todayCap.used / Math.max(1, todayCap.max)) * 100))}%` }} /></div>
+            </>
+          ) : (
+            <>
+              <span className="v">Sin límite</span>
+              <small><Link href="/app/configuracion#cupos">Poner cupos</Link></small>
+            </>
+          )}
+        </div>
+      </div>
+
+      {shopping && (
+        <div className="card callout warn">
+          <span className="ico" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>
+          </span>
+          <div style={{ flex: '1 1 320px' }}>
+            <strong>Compras para los próximos 3 días</strong>
+            <div style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 2 }}>
+              Según las recetas de {shopping.orders} {shopping.orders === 1 ? 'pedido' : 'pedidos'} vas a usar{' '}
+              {shopping.rows.slice(0, 4).map((r) => `${r.needed} de ${r.name.toLowerCase()}`).join(', ')}
+              {shopping.rows.length > 4 ? ` y ${shopping.rows.length - 4} insumos más` : ''}
+              {shopping.total ? ` (unos ${money(shopping.total)})` : ''}. Revisá qué te falta.
+            </div>
+          </div>
+          <Link className="btn small" href={`/app/produccion?desde=${today}&hasta=${addDays(today, 2)}`}>Ver lista de compras</Link>
+        </div>
+      )}
 
       {showOnboarding ? (
         <div className="card onboarding">
@@ -174,7 +251,7 @@ export default async function Agenda({ searchParams }) {
 
       <div className="grid grid-2">
         {days.map(({ d, dayOrders, usage }) => (
-          <div key={d} className={`card day ${dayOrders.length ? '' : 'empty'}`} style={{ marginBottom: 0 }}>
+          <div key={d} className={`card day ${dayOrders.length ? '' : 'empty'} ${d === today ? 'today' : ''}`} style={{ marginBottom: 0 }}>
             <div className="row between">
               <h3 style={{ margin: 0 }}>{d === today ? 'Hoy · ' : ''}{dateLabel(d)}</h3>
               {blockedSet.has(d) ? <span className="badge bad">Bloqueado</span> : null}

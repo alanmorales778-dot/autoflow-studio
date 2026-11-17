@@ -1,0 +1,61 @@
+import Link from 'next/link';
+import { requireBakery } from '@/lib/session';
+import { Flash, Locked } from '../ui';
+import { normName } from '@/lib/format';
+import { costBreakdown } from '@/lib/costs';
+import Simulator from './simulator';
+
+export default async function Costos({ searchParams }) {
+  const sp = await searchParams;
+  const { supabase, bakery, access } = await requireBakery();
+
+  if (!access.costs) {
+    return (
+      <>
+        <div className="page-head"><div><h1>Costos e inflación</h1></div></div>
+        <Locked title="Simulador de inflación">Con el módulo de Costos simulás subas de insumos y ves qué productos dejan de ser negocio antes de que pase.</Locked>
+      </>
+    );
+  }
+
+  const [{ data: products }, { data: ingredients }] = await Promise.all([
+    supabase.from('products').select('id,name,price,cost,cost_error').eq('bakery_id', bakery.id).not('sheet_row', 'is', null).order('sheet_row'),
+    supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
+  ]);
+  const ids = (products || []).map((p) => p.id);
+  const { data: items } = ids.length ? await supabase.from('recipe_items').select('*').in('product_id', ids) : { data: [] };
+  const ingByName = new Map((ingredients || []).map((i) => [normName(i.name), i]));
+  const byProduct = new Map();
+  for (const it of items || []) {
+    if (!byProduct.has(it.product_id)) byProduct.set(it.product_id, []);
+    byProduct.get(it.product_id).push(it);
+  }
+
+  const rows = (products || [])
+    .map((p) => ({ id: p.id, name: p.name, price: Number(p.price) || 0, parts: costBreakdown(byProduct.get(p.id), ingByName) }))
+    .filter((r) => r.parts.length && r.price > 0);
+  const missing = (products || []).filter((p) => !rows.find((r) => r.id === p.id)).map((p) => p.name);
+
+  return (
+    <>
+      <Flash sp={sp} />
+      <div className="page-head">
+        <div>
+          <h1>Costos e inflación</h1>
+          <p>Simulá una suba de insumos y mirá qué productos dejan de ser negocio antes de que pase. Nada cambia hasta que aplicás.</p>
+        </div>
+        <Link href="/app/insumos" className="btn secondary small">Actualizar precios de insumos</Link>
+      </div>
+      {rows.length === 0 ? (
+        <div className="card">
+          <h2>Todavía no hay recetas con costo</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>Cargá tus insumos y la receta de cada producto para usar el simulador.</p>
+          <Link href="/app/productos" className="btn">Ir a Productos</Link>
+        </div>
+      ) : (
+        <Simulator rows={rows} overhead={Number(bakery.overhead_percent) || 0} margin={Number(bakery.margin_percent) || 0} drive={!!bakery.google_refresh_token_enc} />
+      )}
+      {missing.length > 0 && rows.length > 0 && <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>Sin receta o sin precio, no entran en la simulación: {missing.join(', ')}.</p>}
+    </>
+  );
+}
