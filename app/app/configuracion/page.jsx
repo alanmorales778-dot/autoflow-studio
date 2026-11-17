@@ -1,11 +1,13 @@
 import { requireBakery } from '@/lib/session';
 import {
-  saveSettings, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow,
+  saveSettings, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow, rotateCalendarToken, disableCalendar,
 } from '../actions';
 import { Flash, Locked } from '../ui';
 import { WEEKDAYS, dateLabel, todayAR, dateTimeLabel } from '@/lib/format';
 import { sheetUrl } from '@/lib/google';
 import { appUrl, has } from '@/lib/env';
+import { calendarUrl } from '@/lib/ics';
+import CopyField from './copy-field';
 
 export default async function Configuracion({ searchParams }) {
   const sp = await searchParams;
@@ -104,6 +106,33 @@ export default async function Configuracion({ searchParams }) {
           <input type="date" name="date" required style={{ maxWidth: 200 }} />
           <button className="btn secondary">Bloquear día</button>
         </form>
+      </div>
+
+      {/* Calendario */}
+      <div className="card" id="calendario">
+        <h2>Ver pedidos en tu calendario</h2>
+        <p className="muted">Sumá tus pedidos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en AutoFlow.</p>
+        {bakery.calendar_token ? (
+          <>
+            <CopyField value={calendarUrl(bakery.calendar_token)} />
+            <details style={{ margin: '12px 0' }}>
+              <summary>Cómo agregarlo</summary>
+              <ol>
+                <li><strong>Google Calendar</strong> (desde la compu): en <a href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl" target="_blank" rel="noreferrer">Otros calendarios → Desde URL</a>, pegá el enlace y tocá «Agregar calendario». Después aparece también en el celular.</li>
+                <li><strong>iPhone</strong>: Ajustes → Calendario → Cuentas → Agregar cuenta → Otra → Agregar calendario suscrito, y pegá el enlace.</li>
+                <li><strong>Outlook</strong>: Agregar calendario → Suscribirse desde la web.</li>
+              </ol>
+              <p className="muted">⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, dedicatoria, alergias y el saldo a cobrar.</p>
+            </details>
+            <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus pedidos. Si lo compartiste por error, regeneralo.</p>
+            <div className="row">
+              <form action={rotateCalendarToken}><button className="btn secondary small">Regenerar enlace</button></form>
+              <form action={disableCalendar}><button className="btn danger small">Desactivar</button></form>
+            </div>
+          </>
+        ) : (
+          <form action={rotateCalendarToken}><button className="btn">Crear enlace de calendario</button></form>
+        )}
       </div>
 
       {/* Google Drive */}

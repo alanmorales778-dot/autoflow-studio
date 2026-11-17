@@ -18,6 +18,7 @@ import { parseUpload } from '@/lib/xlsx';
 import { importRows } from '@/lib/imports';
 import { parseOptionsText } from '@/lib/options';
 import { markBalancePaid } from '@/lib/balance';
+import { newCalendarToken } from '@/lib/ics';
 import { createCustomerSubscription, changeSubscriptionStatus, generateRecurringOrders } from '@/lib/recurring';
 
 function back(path, { error, ok } = {}) {
@@ -110,6 +111,23 @@ export async function saveSettings(fd) {
   }
   revalidatePath('/app', 'layout');
   back('/app/configuracion', { ok: 'Configuración guardada.' });
+}
+
+// Enlace privado del calendario (.ics). Crearlo o regenerarlo invalida el anterior.
+export async function rotateCalendarToken() {
+  const { supabase, bakery } = await requireBakery();
+  const { error } = await supabase.from('bakeries').update({ calendar_token: newCalendarToken() }).eq('id', bakery.id);
+  if (error) back('/app/configuracion#calendario', { error: error.message });
+  revalidatePath('/app/configuracion');
+  back('/app/configuracion', { ok: bakery.calendar_token ? 'Enlace regenerado: el anterior dejó de funcionar.' : 'Enlace de calendario creado.' });
+}
+
+export async function disableCalendar() {
+  const { supabase, bakery } = await requireBakery();
+  const { error } = await supabase.from('bakeries').update({ calendar_token: null }).eq('id', bakery.id);
+  if (error) back('/app/configuracion', { error: error.message });
+  revalidatePath('/app/configuracion');
+  back('/app/configuracion', { ok: 'Calendario desactivado.' });
 }
 
 export async function addCapacity(fd) {
