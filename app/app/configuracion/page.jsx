@@ -46,6 +46,7 @@ export default async function Configuracion({ searchParams }) {
           </div>
           <button className="btn">Guardar</button>
         </form>
+        <p className="muted" style={{ marginTop: 12, fontSize: 13 }}><a href="/nueva-clave">Cambiar mi contraseña</a></p>
       </div>
 
       {/* Cupos */}

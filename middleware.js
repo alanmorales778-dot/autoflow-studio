@@ -29,5 +29,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/login', '/registro'],
+  matcher: ['/app/:path*', '/login', '/registro', '/nueva-clave'],
 };

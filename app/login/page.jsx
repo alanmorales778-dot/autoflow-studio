@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
@@ -9,6 +9,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'link') {
+      setError('El enlace venció o ya se usó. Pedí uno nuevo con «Olvidé mi contraseña».');
+    }
+  }, []);
 
   const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -28,9 +34,9 @@ export default function Login() {
   async function resetPassword() {
     setError('');
     if (!email) return setError('Escribí tu email arriba y volvé a tocar «Olvidé mi contraseña».');
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=/app/configuracion` });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=/nueva-clave` });
     if (error) setError(error.message);
-    else setInfo('Te mandamos un email para entrar y cambiar la contraseña.');
+    else setInfo('Te mandamos un email con un enlace para elegir una contraseña nueva. Si no lo ves, revisá Spam.');
   }
 
   return (
