@@ -4,6 +4,7 @@ import { verifyMetaSignature } from '@/lib/whatsapp';
 import { handleIncoming } from '@/lib/bot';
 import { moduleAccess } from '@/lib/modules';
 import { safeEqual } from '@/lib/crypto';
+import { reportError } from '@/lib/alerts';
 
 export const maxDuration = 30;
 
@@ -41,7 +42,7 @@ export async function POST(request) {
         try {
           await handleIncoming(admin, bakery, msg, contactName);
         } catch (e) {
-          console.error('bot error', bakery.id, e);
+          await reportError('bot-whatsapp', e, { bakeryId: bakery.id });
         }
       }
     }

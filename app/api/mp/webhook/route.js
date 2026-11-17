@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { reportError } from '@/lib/alerts';
 import { createAdmin } from '@/lib/supabase';
 import { decrypt } from '@/lib/crypto';
 import { getPayment } from '@/lib/mp';
@@ -30,6 +31,7 @@ export async function POST(request) {
       }
     }
   } catch (e) {
+    await reportError('webhook:mp-senas', e, { bakeryId: bakery.id, paymentId: String(paymentId) });
     return NextResponse.json({ ok: false, error: String(e.message || e) }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

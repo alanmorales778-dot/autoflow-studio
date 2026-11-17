@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { reportError } from '@/lib/alerts';
 import { createAdmin } from '@/lib/supabase';
 import { getPreapproval } from '@/lib/mp';
 import { applyPreapproval } from '@/lib/billing';
@@ -17,6 +18,7 @@ export async function POST(request) {
     const pre = await getPreapproval(token, id);
     await applyPreapproval(createAdmin(), pre);
   } catch (e) {
+    await reportError('webhook:mp-suscripciones', e, { preapprovalId: String(id) });
     return NextResponse.json({ ok: false, error: String(e.message || e) }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

@@ -4,6 +4,7 @@ import { expireDueOrders } from '@/lib/lifecycle';
 import { syncBakery } from '@/lib/sheets';
 import { safeEqual } from '@/lib/crypto';
 import { generateRecurringOrders, refreshPendingSubscriptions } from '@/lib/recurring';
+import { reportError, heartbeat } from '@/lib/alerts';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -16,13 +17,21 @@ async function run(request) {
   if (!secret || !safeEqual(auth, `Bearer ${secret}`)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const admin = createAdmin();
-  const expired = await expireDueOrders(admin);
+  const failures = [];
+  let expired = 0;
+  try {
+    expired = await expireDueOrders(admin);
+  } catch (e) {
+    failures.push('señas');
+    await reportError('cron:vencer-senas', e);
+  }
   let recurring = 0;
   try {
     await refreshPendingSubscriptions(admin);
     recurring = await generateRecurringOrders(admin);
   } catch (e) {
-    console.error('recurring', e);
+    failures.push('recurrentes');
+    await reportError('cron:recurrentes', e);
   }
 
   const staleBefore = new Date(Date.now() - 9 * 60000).toISOString();
@@ -36,10 +45,18 @@ async function run(request) {
     .limit(15);
   const results = [];
   for (const b of bakeries || []) {
-    const r = await syncBakery(admin, b);
-    results.push({ id: b.id, changed: !!r.changed, error: r.error || null });
+    try {
+      const r = await syncBakery(admin, b);
+      results.push({ id: b.id, changed: !!r.changed, error: r.error || null });
+    } catch (e) {
+      // r.error son problemas de la planilla del cliente (se le muestran a él); esto es una falla nuestra
+      failures.push('drive');
+      results.push({ id: b.id, changed: false, error: String(e.message || e) });
+      await reportError('cron:sync-drive', e, { bakeryId: b.id });
+    }
   }
-  return NextResponse.json({ ok: true, expired, recurring, synced: results.length, results });
+  await heartbeat('cron', { expired, recurring, synced: results.length, failures });
+  return NextResponse.json({ ok: failures.length === 0, expired, recurring, synced: results.length, failures, results });
 }
 
 export const GET = run;

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getContext } from '@/lib/session';
-import { createBakery, changeOrderStatus } from './actions';
+import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding } from './actions';
+import { onboardingSteps } from '@/lib/onboarding';
 import { Flash, StatusBadge } from './ui';
 import { todayAR, addDays, dateLabel, weekdayOf, money, slugify } from '@/lib/format';
 import { isHolding } from '@/lib/orders';
@@ -51,6 +52,17 @@ export default async function Agenda({ searchParams }) {
     supabase.from('products').select('id,name,price,min_price,cost_error').eq('bakery_id', bakery.id).not('sheet_row', 'is', null),
     supabase.from('blocked_dates').select('date').eq('bakery_id', bakery.id).gte('date', today).lte('date', until),
   ]);
+  const { data: unpaid } = await supabase
+    .from('orders')
+    .select('total,deposit_amount,paid_at,balance_paid_at')
+    .eq('bakery_id', bakery.id)
+    .in('status', ['confirmado', 'entregado'])
+    .is('balance_paid_at', null)
+    .lt('date', today)
+    .limit(500);
+  const owed = (unpaid || []).map(balanceDue).filter((n) => n > 0);
+  const onboarding = bakery.onboarding_dismissed_at ? null : await onboardingSteps(supabase, bakery, access);
+  const showOnboarding = onboarding && onboarding.done < onboarding.total;
   const now = new Date();
   const active = (orders || []).filter((o) => o.status !== 'pendiente_sena' || isHolding(o, now));
   const blockedSet = new Set((blocked || []).map((b) => b.date));
@@ -80,13 +92,53 @@ export default async function Agenda({ searchParams }) {
         <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
       </div>
 
-      {!bakery.sheet_productos_id && !(products || []).length && (
-        <div className="alert warn">Cargá tus productos: <Link href="/app/productos">subí un Excel o CSV</Link> o <Link href="/app/configuracion#drive">conectá Google Drive</Link> para que se actualicen solos.</div>
-      )}
-      {!bakery.mp_access_token_enc && (
-        <div className="alert warn">Conectá Mercado Pago para cobrar señas automáticas. Mientras tanto, los pedidos quedan pendientes y coordinás el pago a mano. <Link href="/app/configuracion#mercadopago">Conectar</Link></div>
+      {showOnboarding ? (
+        <div className="card onboarding">
+          <div className="row between">
+            <h2 style={{ margin: 0 }}>Primeros pasos · {onboarding.done} de {onboarding.total}</h2>
+            <form action={dismissOnboarding}><button className="btn secondary small">Ocultar</button></form>
+          </div>
+          <div className="progress"><span style={{ width: `${Math.round((onboarding.done / onboarding.total) * 100)}%` }} /></div>
+          <ol className="steps">
+            {onboarding.steps.map((st) => (
+              <li key={st.key} className={st.done ? 'done' : ''}>
+                <span className="check" aria-hidden="true">{st.done ? '✓' : ''}</span>
+                <div style={{ flex: 1 }}>
+                  <strong>{st.title}</strong>
+                  {!st.done && <div className="muted" style={{ fontSize: 13 }}>{st.hint}</div>}
+                </div>
+                {!st.done && (
+                  <div className="row" style={{ flexWrap: 'nowrap' }}>
+                    {st.example && !bakery.sheet_productos_id && (
+                      <form action={loadExampleData}><button className="btn secondary small">Usar ejemplo</button></form>
+                    )}
+                    {st.external ? (
+                      <a className="btn small" href={st.href} target="_blank" rel="noreferrer">Abrir ↗</a>
+                    ) : (
+                      <Link className="btn small" href={st.href}>Ir</Link>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : (
+        <>
+          {!bakery.sheet_productos_id && !(products || []).length && (
+            <div className="alert warn">Cargá tus productos: <Link href="/app/productos">subí un Excel o CSV</Link> o <Link href="/app/configuracion#drive">conectá Google Drive</Link> para que se actualicen solos.</div>
+          )}
+          {!bakery.mp_access_token_enc && (
+            <div className="alert warn">Conectá Mercado Pago para cobrar señas automáticas. Mientras tanto, los pedidos quedan pendientes y coordinás el pago a mano. <Link href="/app/configuracion#mercadopago">Conectar</Link></div>
+          )}
+        </>
       )}
       {bakery.last_sync_error && <div className="alert bad">Problema con tus planillas: {bakery.last_sync_error}</div>}
+      {owed.length > 0 && (
+        <div className="alert warn">
+          Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? 'pedido que ya pasó' : 'pedidos que ya pasaron'}. <Link href="/app/cobros">Ver y recordar</Link>
+        </div>
+      )}
       {underMin.length > 0 && (
         <div className="alert bad">
           <strong>{underMin.length} {underMin.length === 1 ? 'producto está' : 'productos están'} por debajo de tu margen:</strong>{' '}

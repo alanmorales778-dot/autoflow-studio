@@ -23,7 +23,7 @@ export default async function Configuracion({ searchParams }) {
       <Flash sp={sp} />
 
       {/* Negocio */}
-      <div className="card">
+      <div className="card" id="negocio">
         <h2>Tu negocio</h2>
         <form action={saveSettings}>
           <div className="grid grid-3">
@@ -47,7 +47,7 @@ export default async function Configuracion({ searchParams }) {
       </div>
 
       {/* Cupos */}
-      <div className="card">
+      <div className="card" id="cupos">
         <h2>Cupos de producción</h2>
         <p className="muted">Cuántas unidades podés hacer por día. Cuando se llena, esa fecha deja de ofrecerse. Usá «Todas» para un tope general, o una categoría de tu planilla (ej: Tortas grandes). Sin reglas, no hay límite.</p>
         {rules && rules.length > 0 && (

@@ -118,3 +118,18 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: v
   .card { break-inside: avoid; border-color: #ccc; }
   .page { padding-top: 0; }
 }
+
+/* Primeros pasos */
+.onboarding .progress { height: 6px; background: #f1ece6; border-radius: 999px; overflow: hidden; margin: 12px 0 4px; }
+.onboarding .progress span { display: block; height: 100%; background: var(--ok); }
+.steps { list-style: none; padding: 0; margin: 8px 0 0; }
+.steps li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.steps li:first-child { border-top: 0; }
+.steps .check { flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; }
+.steps li.done .check { background: var(--ok); border-color: var(--ok); }
+.steps li.done strong { color: var(--muted, #8a7f76); font-weight: 500; text-decoration: line-through; }
+@media (max-width: 560px) { .steps li { flex-wrap: wrap; } }
+
+/* Cobros */
+.kpi small { display: block; }
+.kpi .price { font-size: 24px; }

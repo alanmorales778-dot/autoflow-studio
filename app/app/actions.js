@@ -6,7 +6,8 @@ import { getContext, requireBakery } from '@/lib/session';
 import { createAdmin, createClient } from '@/lib/supabase';
 import { encrypt } from '@/lib/crypto';
 import { slugify, parseNum } from '@/lib/format';
-import { syncBakery, recomputeCosts, pushStockToSheet, writeCells } from '@/lib/sheets';
+import { syncBakery, recomputeCosts, pushStockToSheet, writeCells, EXAMPLE_INSUMOS, EXAMPLE_PRODUCTOS, EXAMPLE_RECIPES } from '@/lib/sheets';
+import { applyInsumos, applyProductos } from '@/lib/catalog';
 import { setOrderStatus } from '@/lib/lifecycle';
 import { createOrder } from '@/lib/orders';
 import { testToken, createPreapproval } from '@/lib/mp';
@@ -39,7 +40,41 @@ export async function createBakery(fd) {
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
   const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null });
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
-  back('/app', { ok: '¡Listo! Ahora conectá tu Google Drive en Configuración para cargar tus productos.' });
+  back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
+}
+
+// Carga dos productos con receta e insumos de ejemplo para ver la app funcionando antes de cargar los propios.
+export async function loadExampleData() {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const { count } = await admin.from('products').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id).not('sheet_row', 'is', null);
+  if (count) back('/app', { error: 'Ya tenés productos cargados.' });
+  if (bakery.sheet_productos_id) back('/app', { error: 'Tus productos vienen de Google Drive: editalos en tu planilla.' });
+  let err = null;
+  try {
+    const { count: ingCount } = await admin.from('ingredients').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id);
+    if (!ingCount) await applyInsumos(admin, bakery, EXAMPLE_INSUMOS);
+    await applyProductos(admin, bakery, EXAMPLE_PRODUCTOS);
+    const { data: prods } = await admin.from('products').select('id,sku').eq('bakery_id', bakery.id).in('sku', Object.keys(EXAMPLE_RECIPES));
+    const rows = [];
+    for (const p of prods || []) {
+      const { count: rc } = await admin.from('recipe_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id);
+      if (!rc) EXAMPLE_RECIPES[p.sku].forEach(([ingredient_name, qty, unit]) => rows.push({ product_id: p.id, ingredient_name, qty, unit }));
+    }
+    if (rows.length) await admin.from('recipe_items').insert(rows);
+    await recomputeCosts(admin, bakery);
+  } catch (e) {
+    err = e.message;
+  }
+  revalidatePath('/app', 'layout');
+  back('/app', err ? { error: err } : { ok: 'Cargamos 2 productos de ejemplo con receta. Cambiales nombre y precio, o reemplazalos subiendo tu planilla en Productos.' });
+}
+
+export async function dismissOnboarding() {
+  const { supabase, bakery } = await requireBakery();
+  await supabase.from('bakeries').update({ onboarding_dismissed_at: new Date().toISOString() }).eq('id', bakery.id);
+  revalidatePath('/app');
+  back('/app');
 }
 
 export async function signOut() {

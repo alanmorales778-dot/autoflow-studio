@@ -16,6 +16,7 @@ export default async function AppLayout({ children }) {
             <nav className="nav">
               <Link href="/app">Agenda</Link>
               <Link href="/app/pedidos">Pedidos</Link>
+              <Link href="/app/cobros">Cobros</Link>
               <Link href="/app/produccion">Producción</Link>
               <Link href="/app/clientes">Clientes</Link>
               <Link href="/app/suscripciones">Recurrentes</Link>
