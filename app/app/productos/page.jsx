@@ -57,7 +57,7 @@ export default async function Productos({ searchParams }) {
                       </>
                     )}
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      {access.costs && <Link className="btn secondary small" href={`/app/productos/${p.id}`}>Receta</Link>}{' '}
+                      <Link className="btn secondary small" href={`/app/productos/${p.id}`}>{access.costs ? 'Receta y opciones' : 'Opciones'}</Link>{' '}
                       {access.costs && below && (
                         <form action={applySuggestedPrice} style={{ display: 'inline' }}>
                           <input type="hidden" name="id" value={p.id} />

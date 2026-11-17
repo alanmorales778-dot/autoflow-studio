@@ -5,6 +5,8 @@ import { Flash, StatusBadge } from './ui';
 import { todayAR, addDays, dateLabel, weekdayOf, money, slugify } from '@/lib/format';
 import { isHolding } from '@/lib/orders';
 import { appUrl } from '@/lib/env';
+import { balanceDue, reminderLink } from '@/lib/balance';
+import { optionsSummary } from '@/lib/options';
 
 export default async function Agenda({ searchParams }) {
   const sp = await searchParams;
@@ -54,6 +56,7 @@ export default async function Agenda({ searchParams }) {
   const blockedSet = new Set((blocked || []).map((b) => b.date));
   const underMin = access.costs ? (products || []).filter((p) => p.min_price && Number(p.price) < Number(p.min_price)) : [];
   const catalogUrl = `${appUrl()}/c/${bakery.slug}`;
+  const tomorrowOrders = active.filter((o) => o.date === addDays(today, 1) && o.status === 'confirmado');
 
   const days = [];
   for (let i = 0; i < 14; i++) {
@@ -89,6 +92,22 @@ export default async function Agenda({ searchParams }) {
           <strong>{underMin.length} {underMin.length === 1 ? 'producto está' : 'productos están'} por debajo de tu margen:</strong>{' '}
           {underMin.slice(0, 4).map((p) => `${p.name} (${money(p.price)}, mínimo ${money(p.min_price)})`).join(' · ')}{' '}
           <Link href="/app/productos">Revisar precios</Link>
+        </div>
+      )}
+
+      {tomorrowOrders.length > 0 && (
+        <div className="card">
+          <h2>Mañana: {tomorrowOrders.length} {tomorrowOrders.length === 1 ? 'entrega' : 'entregas'}</h2>
+          <p className="muted">Mandales un recordatorio con el saldo y el link de pago. Se abre tu WhatsApp con el mensaje listo.</p>
+          {tomorrowOrders.map((o) => {
+            const link = o.customer_phone ? reminderLink(bakery, o) : null;
+            return (
+              <div key={o.id} className="order-line row between">
+                <span>{o.customer_name} · {o.quantity} × {o.product_name}{o.slot ? ` · ${o.slot}` : ''}{balanceDue(o) > 0 ? ` · saldo ${money(balanceDue(o))}` : ' · pagado'}</span>
+                {link ? <a className="btn small" href={link} target="_blank" rel="noreferrer">Recordar</a> : <small className="muted">sin teléfono</small>}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -128,7 +147,11 @@ export default async function Agenda({ searchParams }) {
                   </div>
                   <div className="muted" style={{ fontSize: 13 }}>
                     {o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}{o.slot ? ` · ${o.slot}` : ''} · {o.fulfillment === 'envio' ? `Envío: ${o.address}` : 'Retira'}
+                    {o.options?.length > 0 && <><br />{optionsSummary(o.options)}</>}
+                    {o.dedication && <><br />Dedicatoria: «{o.dedication}»</>}
+                    {balanceDue(o) > 0 && o.status !== 'pendiente_sena' && <><br />Saldo a cobrar: {money(balanceDue(o))}</>}
                   </div>
+                  {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
                   {o.status === 'confirmado' && (
                     <form action={changeOrderStatus} style={{ marginTop: 6 }}>
                       <input type="hidden" name="id" value={o.id} />

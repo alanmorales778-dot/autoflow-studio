@@ -31,7 +31,7 @@ export default async function Plan({ searchParams }) {
         {access.trial && <p>Estás en la <strong>prueba gratis</strong> con todos los módulos hasta el {dateTimeLabel(access.trialEnds)}.</p>}
         {access.active && (
           <p>
-            Suscripción <span className="badge ok">activa</span>: Base{sub.has_costs ? ' + Costos' : ''}{sub.has_whatsapp ? ' + Bot de WhatsApp' : ''} · {money(sub.amount)} por mes.
+            Suscripción <span className="badge ok">activa</span>: Base{sub.has_costs ? ' + Costos y producción' : ''}{sub.has_recurring ? ' + Pedidos recurrentes' : ''}{sub.has_whatsapp ? ' + Bot de WhatsApp' : ''} · {money(sub.amount)} por mes.
             Para cambiar o cancelar, gestionala desde tu cuenta de Mercado Pago (Suscripciones).
           </p>
         )}
@@ -43,8 +43,9 @@ export default async function Plan({ searchParams }) {
           <h2>Elegí tus módulos</h2>
           <form action={subscribe}>
             <div className="stack">
-              <label className="inline-label"><input type="checkbox" checked readOnly disabled /> Base: agenda, cupos, señas, catálogo y stock — {money(PRICES.base)}/mes</label>
-              <label className="inline-label"><input type="checkbox" name="costs" defaultChecked /> Costos: recetas, precio mínimo y alertas — +{money(PRICES.costs)}/mes</label>
+              <label className="inline-label"><input type="checkbox" checked readOnly disabled /> Base: agenda, cupos, señas, saldo, clientes, catálogo con personalización y stock — {money(PRICES.base)}/mes</label>
+              <label className="inline-label"><input type="checkbox" name="costs" defaultChecked /> Costos y producción: recetas, precio mínimo, hoja de producción, lista de compras y rentabilidad — +{money(PRICES.costs)}/mes</label>
+              <label className="inline-label"><input type="checkbox" name="recurring" /> Pedidos recurrentes: suscripciones semanales con débito automático — +{money(PRICES.recurring)}/mes</label>
               <label className="inline-label"><input type="checkbox" name="whatsapp" /> Bot de WhatsApp — +{money(PRICES.whatsapp)}/mes (+ costo de mensajes de Meta)</label>
             </div>
             <p className="muted" style={{ marginTop: 12 }}>Se cobra todos los meses con Mercado Pago. Cancelás cuando quieras.</p>

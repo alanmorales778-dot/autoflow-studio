@@ -55,7 +55,7 @@ export default function Home() {
         <section id="precios" className="container" style={{ marginTop: 48 }}>
           <h2>Precios</h2>
           <p className="muted">Arrancás con la base y sumás módulos cuando los necesitás. Precios finales en pesos, por mes.</p>
-          <div className="grid grid-3">
+          <div className="grid grid-2">
             <div className="card">
               <h3>Base: Agenda + Señas</h3>
               <div className="price">{money(PRICES.base)}</div>
@@ -65,17 +65,31 @@ export default function Home() {
                 <li>Cupos por día y franja horaria</li>
                 <li>Seña con Mercado Pago que vence sola</li>
                 <li>Productos y stock desde Excel o Google Drive</li>
+                <li>Tortas personalizadas con foto y alergias</li>
+                <li>Cobro del saldo y recordatorios</li>
+                <li>Clientes y fechas para volver a venderles</li>
               </ul>
             </div>
             <div className="card">
-              <h3>+ Costos</h3>
+              <h3>+ Costos y producción</h3>
               <div className="price">+{money(PRICES.costs)}</div>
               <p className="muted">por mes</p>
               <ul>
                 <li>Recetas con costo real</li>
-                <li>Precio mínimo según tu margen</li>
-                <li>Alertas de venta a pérdida</li>
-                <li>Recálculo al cambiar un insumo</li>
+                <li>Precio mínimo y alertas de venta a pérdida</li>
+                <li>Hoja de producción y lista de compras</li>
+                <li>Rentabilidad por producto y por mes</li>
+              </ul>
+            </div>
+            <div className="card">
+              <h3>+ Pedidos recurrentes</h3>
+              <div className="price">+{money(PRICES.recurring)}</div>
+              <p className="muted">por mes</p>
+              <ul>
+                <li>Viandas, cajas y budines por suscripción</li>
+                <li>Débito automático con Mercado Pago</li>
+                <li>Los pedidos se arman solos cada semana</li>
+                <li>Ingreso fijo que podés planificar</li>
               </ul>
             </div>
             <div className="card">

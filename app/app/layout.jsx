@@ -16,9 +16,13 @@ export default async function AppLayout({ children }) {
             <nav className="nav">
               <Link href="/app">Agenda</Link>
               <Link href="/app/pedidos">Pedidos</Link>
+              <Link href="/app/produccion">Producción</Link>
+              <Link href="/app/clientes">Clientes</Link>
+              <Link href="/app/suscripciones">Recurrentes</Link>
               <Link href="/app/productos">Productos</Link>
               <Link href="/app/insumos">Insumos</Link>
-              <Link href="/app/configuracion">Configuración</Link>
+              <Link href="/app/rentabilidad">Rentabilidad</Link>
+              <Link href="/app/configuracion">Ajustes</Link>
               <Link href="/app/plan">Plan</Link>
               <a href={`/c/${bakery.slug}`} target="_blank" rel="noreferrer">Mi catálogo ↗</a>
               <form action={signOut}><button className="btn secondary small" style={{ marginLeft: 6 }}>Salir</button></form>

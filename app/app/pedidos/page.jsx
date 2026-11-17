@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
-import { changeOrderStatus, createManualOrder } from '../actions';
+import { changeOrderStatus, createManualOrder, markBalance } from '../actions';
+import { balanceDue, reminderLink } from '@/lib/balance';
+import { optionsSummary } from '@/lib/options';
 import { Flash, StatusBadge } from '../ui';
 import { money, dateLabel, dateTimeLabel, todayAR, addDays, STATUS_LABEL } from '@/lib/format';
 
@@ -56,10 +58,21 @@ export default async function Pedidos({ searchParams }) {
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td>{dateLabel(o.date)}<br /><small>{o.slot || ''}</small></td>
-                  <td>{o.quantity} × {o.product_name}<br /><small>{o.channel === 'whatsapp' ? 'WhatsApp' : o.channel === 'manual' ? 'Cargado a mano' : 'Web'} · {dateTimeLabel(o.created_at)}</small>{o.notes ? <><br /><small>{o.notes}</small></> : null}</td>
+                  <td>
+                    {o.quantity} × {o.product_name}
+                    {o.options?.length > 0 && <><br /><small>{optionsSummary(o.options)}</small></>}
+                    {o.dedication && <><br /><small>Dedicatoria: «{o.dedication}»</small></>}
+                    {o.allergies && <><br /><span className="badge bad">⚠ {o.allergies}</span></>}
+                    {o.reference_photo_url && <><br /><a href={o.reference_photo_url} target="_blank" rel="noreferrer"><small>Ver foto de referencia</small></a></>}
+                    <br /><small>{{ whatsapp: 'WhatsApp', manual: 'Cargado a mano', suscripcion: 'Suscripción', web: 'Web' }[o.channel]} · {dateTimeLabel(o.created_at)}{o.occasion ? ` · ${o.occasion}` : ''}</small>
+                    {o.notes ? <><br /><small>{o.notes}</small></> : null}
+                  </td>
                   <td>{o.customer_name}<br /><small>{o.customer_phone || ''}</small></td>
                   <td>{o.fulfillment === 'envio' ? `Envío: ${o.address}` : 'Retira'}</td>
-                  <td>{money(o.total)}<br /><small>Seña {money(o.deposit_amount)}{o.paid_at ? ' ✓' : ''}</small></td>
+                  <td>
+                    {money(o.total)}<br /><small>Seña {money(o.deposit_amount)}{o.paid_at ? ' ✓' : ''}</small>
+                    <br />{balanceDue(o) > 0 ? <small style={{ color: 'var(--warn)' }}>Saldo {money(balanceDue(o))}</small> : <small style={{ color: 'var(--ok)' }}>Pagado ✓</small>}
+                  </td>
                   <td>
                     <StatusBadge status={o.status} />
                     {o.status === 'pendiente_sena' && o.expires_at && <><br /><small>vence {dateTimeLabel(o.expires_at)}</small></>}
@@ -69,6 +82,17 @@ export default async function Pedidos({ searchParams }) {
                     {o.status === 'confirmado' && <Action id={o.id} status="entregado" label="Entregado" />}{' '}
                     {['pendiente_sena', 'confirmado'].includes(o.status) && <Action id={o.id} status="cancelado" label="Cancelar" cls="danger" />}
                     {o.status === 'vencido' && <Action id={o.id} status="confirmado" label="Confirmar igual" />}
+                    {['confirmado', 'entregado'].includes(o.status) && (
+                      <div className="row" style={{ gap: 6, marginTop: 6 }}>
+                        {o.customer_phone && reminderLink(bakery, o) && <a className="btn secondary small" href={reminderLink(bakery, o)} target="_blank" rel="noreferrer">{balanceDue(o) > 0 ? 'Cobrar saldo por WhatsApp' : 'Recordar por WhatsApp'}</a>}
+                        {balanceDue(o) > 0 && (
+                          <form action={markBalance} style={{ display: 'inline' }}>
+                            <input type="hidden" name="id" value={o.id} />
+                            <button className="btn secondary small">Saldo cobrado</button>
+                          </form>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -104,7 +128,9 @@ export default async function Pedidos({ searchParams }) {
               <div className="field"><label>Dirección (si es envío)</label><input name="address" /></div>
               <div className="field"><label>Nombre del cliente</label><input name="customer_name" required /></div>
               <div className="field"><label>Teléfono</label><input name="customer_phone" /></div>
-              <div className="field"><label>Notas</label><input name="notes" placeholder="Ej: escribir «Feliz cumple Sofi»" /></div>
+              <div className="field"><label>Dedicatoria</label><input name="dedication" placeholder="Ej: ¡Feliz cumple Sofi!" /></div>
+              <div className="field"><label>Alergias / restricciones</label><input name="allergies" placeholder="Ej: sin TACC" /></div>
+              <div className="field"><label>Notas</label><input name="notes" /></div>
             </div>
             <div className="row" style={{ marginBottom: 12 }}>
               <label className="inline-label"><input type="checkbox" name="deposit_paid" /> La seña ya está cobrada</label>

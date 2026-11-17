@@ -111,3 +111,10 @@ th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: v
   .hero h1 { font-size: 30px; }
   .topbar .container { height: auto; padding-top: 10px; padding-bottom: 10px; flex-direction: column; align-items: flex-start; }
 }
+
+@media print {
+  .topbar, .no-print, .alert.info { display: none !important; }
+  body { background: #fff; }
+  .card { break-inside: avoid; border-color: #ccc; }
+  .page { padding-top: 0; }
+}

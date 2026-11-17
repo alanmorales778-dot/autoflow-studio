@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireBakery } from '@/lib/session';
-import { addRecipeItem, deleteRecipeItem, applySuggestedPrice } from '../../actions';
+import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings } from '../../actions';
+import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
 import { money, normName } from '@/lib/format';
 import { RECIPE_UNITS, normUnit, currentMargin, suggestedPrice } from '@/lib/costs';
@@ -100,6 +101,23 @@ export default async function Receta({ params, searchParams }) {
           </form>
         )}
       </div>
+      <div className="card">
+        <h2>Personalización y suscripción</h2>
+        <p className="muted">
+          Opciones que tu cliente elige al pedir, una por línea. Formato: <code>Grupo: opción | opción +precio extra</code>. Con <code>*</code> después del nombre es obligatoria.
+        </p>
+        <pre style={{ background: '#f6f1ec', padding: 10, borderRadius: 8, fontSize: 13, whiteSpace: 'pre-wrap' }}>{`Tamaño*: 15 cm (10 porciones) | 20 cm (20 porciones) +6000 | 25 cm (30 porciones) +12000
+Relleno*: Dulce de leche | Mousse de chocolate +2000 | Frutos rojos +3500
+Cobertura: Ganache | Merengue italiano +1500 | Fondant +5000`}</pre>
+        <form action={saveProductSettings}>
+          <input type="hidden" name="id" value={product.id} />
+          <div className="field"><textarea name="options" rows={5} defaultValue={formatOptionsText(product.options)} /></div>
+          <label className="inline-label" style={{ marginBottom: 12 }}><input type="checkbox" name="allow_subscription" defaultChecked={product.allow_subscription} /> Se puede pedir por suscripción (semanal o quincenal)</label>
+          <button className="btn">Guardar</button>
+        </form>
+        <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>El catálogo además pide dedicatoria, alergias y foto de referencia (opcionales) en todos los productos.</p>
+      </div>
+
       <p className="muted" style={{ fontSize: 13 }}>Los precios de los insumos salen de tu planilla «Insumos». Cuando cambiás un precio ahí, este costo se recalcula solo (cada 10 minutos o con «Actualizar ahora»).</p>
     </>
   );

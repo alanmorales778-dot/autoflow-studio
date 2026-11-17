@@ -15,6 +15,9 @@ import { PRICES } from '@/lib/modules';
 import { appUrl } from '@/lib/env';
 import { parseUpload } from '@/lib/xlsx';
 import { importRows } from '@/lib/imports';
+import { parseOptionsText } from '@/lib/options';
+import { markBalancePaid } from '@/lib/balance';
+import { createCustomerSubscription, changeSubscriptionStatus, generateRecurringOrders } from '@/lib/recurring';
 
 function back(path, { error, ok } = {}) {
   const p = new URLSearchParams();
@@ -210,6 +213,8 @@ export async function createManualOrder(fd) {
       customer_name: str(fd, 'customer_name'),
       customer_phone: str(fd, 'customer_phone'),
       notes: str(fd, 'notes'),
+      dedication: str(fd, 'dedication'),
+      allergies: str(fd, 'allergies'),
       channel: 'manual',
       deposit_paid: fd.get('deposit_paid') === 'on',
       force: fd.get('force') === 'on',
@@ -271,14 +276,81 @@ export async function applySuggestedPrice(fd) {
   back(backTo, err ? { error: err } : { ok: `Nuevo precio de ${p.name}: $${price.toLocaleString('es-AR')}` });
 }
 
+// ---------- Personalización y suscripción por producto ----------
+export async function saveProductSettings(fd) {
+  const { supabase, bakery } = await requireBakery();
+  const id = str(fd, 'id');
+  const options = parseOptionsText(str(fd, 'options'));
+  const { error } = await supabase
+    .from('products')
+    .update({ options, allow_subscription: fd.get('allow_subscription') === 'on' })
+    .eq('id', id)
+    .eq('bakery_id', bakery.id);
+  back(`/app/productos/${id}`, error ? { error: error.message } : { ok: `Guardado: ${options.length} grupos de opciones.` });
+}
+
+// ---------- Saldo ----------
+export async function markBalance(fd) {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const { data: order } = await admin.from('orders').select('id').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (order) await markBalancePaid(admin, order.id);
+  revalidatePath('/app', 'layout');
+  back(str(fd, 'back') || '/app/pedidos', { ok: 'Saldo marcado como cobrado.' });
+}
+
+// ---------- Suscripciones de clientes ----------
+export async function changeCustomerSubscription(fd) {
+  const { bakery } = await requireBakery();
+  const status = str(fd, 'status');
+  let err = null;
+  if (!['activa', 'pausada', 'cancelada'].includes(status)) back('/app/suscripciones');
+  try {
+    await changeSubscriptionStatus(createAdmin(), bakery, str(fd, 'id'), status);
+  } catch (e) {
+    err = e.message;
+  }
+  back('/app/suscripciones', err ? { error: err } : { ok: 'Suscripción actualizada.' });
+}
+
+export async function createManualSubscription(fd) {
+  const { bakery, access } = await requireBakery();
+  if (!access.recurring) back('/app/suscripciones', { error: 'Activá el módulo de Pedidos recurrentes.' });
+  const admin = createAdmin();
+  const { data: product } = await admin.from('products').select('*').eq('id', str(fd, 'product_id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (!product) back('/app/suscripciones', { error: 'Elegí un producto.' });
+  let err = null;
+  try {
+    await createCustomerSubscription(admin, bakery, product, {
+      quantity: str(fd, 'quantity'),
+      frequency_days: str(fd, 'frequency_days'),
+      weekday: str(fd, 'weekday'),
+      slot: str(fd, 'slot'),
+      fulfillment: str(fd, 'fulfillment'),
+      address: str(fd, 'address'),
+      customer_name: str(fd, 'customer_name'),
+      customer_phone: str(fd, 'customer_phone'),
+      notes: str(fd, 'notes'),
+      manual: true,
+      activate: true,
+    });
+    await generateRecurringOrders(admin);
+  } catch (e) {
+    err = e.message;
+  }
+  revalidatePath('/app', 'layout');
+  back('/app/suscripciones', err ? { error: err } : { ok: 'Suscripción creada. Los pedidos se generan solos cada semana.' });
+}
+
 // ---------- Plan ----------
 export async function subscribe(fd) {
   const { user, bakery } = await requireBakery();
   if (!process.env.MP_PLATFORM_ACCESS_TOKEN) back('/app/plan', { error: 'Los pagos de suscripción todavía no están habilitados. Escribinos para activarla.' });
   const costs = fd.get('costs') === 'on';
   const wa = fd.get('whatsapp') === 'on';
-  const amount = PRICES.base + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0);
-  const modules = ['Base', costs && 'Costos', wa && 'WhatsApp'].filter(Boolean).join(' + ');
+  const rec = fd.get('recurring') === 'on';
+  const amount = PRICES.base + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0) + (rec ? PRICES.recurring : 0);
+  const modules = ['Base', costs && 'Costos y producción', wa && 'WhatsApp', rec && 'Pedidos recurrentes'].filter(Boolean).join(' + ');
   let url = null;
   let err = null;
   try {
@@ -286,7 +358,7 @@ export async function subscribe(fd) {
       reason: `AutoFlow Cocina – ${modules}`,
       amount,
       payerEmail: user.email,
-      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}`,
+      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}`,
       backUrl: `${appUrl()}/app/plan`,
     });
     await createAdmin().from('subscriptions').update({ mp_preapproval_id: pre.id, amount, updated_at: new Date().toISOString() }).eq('bakery_id', bakery.id);

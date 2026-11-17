@@ -3,6 +3,7 @@ import { createAdmin } from '@/lib/supabase';
 import { expireDueOrders } from '@/lib/lifecycle';
 import { syncBakery } from '@/lib/sheets';
 import { safeEqual } from '@/lib/crypto';
+import { generateRecurringOrders, refreshPendingSubscriptions } from '@/lib/recurring';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,13 @@ async function run(request) {
 
   const admin = createAdmin();
   const expired = await expireDueOrders(admin);
+  let recurring = 0;
+  try {
+    await refreshPendingSubscriptions(admin);
+    recurring = await generateRecurringOrders(admin);
+  } catch (e) {
+    console.error('recurring', e);
+  }
 
   const staleBefore = new Date(Date.now() - 9 * 60000).toISOString();
   const { data: bakeries } = await admin
@@ -31,7 +39,7 @@ async function run(request) {
     const r = await syncBakery(admin, b);
     results.push({ id: b.id, changed: !!r.changed, error: r.error || null });
   }
-  return NextResponse.json({ ok: true, expired, synced: results.length, results });
+  return NextResponse.json({ ok: true, expired, recurring, synced: results.length, results });
 }
 
 export const GET = run;
