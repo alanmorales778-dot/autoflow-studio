@@ -16,6 +16,7 @@ Agenda de pedidos con cupos, señas con Mercado Pago, productos/stock/costos sin
 | SUPABASE_SERVICE_ROLE_KEY | **pendiente** | Catálogo público, webhooks y cron |
 | GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET | **pendiente** | Conectar Google Drive |
 | MP_PLATFORM_ACCESS_TOKEN | **pendiente** | Cobrar las suscripciones de AutoFlow |
+| ALERT_WEBHOOK_URL | opcional | Webhook de Discord, Slack o Google Chat para avisos de errores (máx. 1 por hora por error). Los errores siempre quedan en la tabla `app_errors`. |
 
 Después de cargar variables, hay que volver a desplegar (Deployments → Redeploy).
 
@@ -31,6 +32,11 @@ Después de cargar variables, hay que volver a desplegar (Deployments → Redepl
    - Cargar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` en Vercel.
 5. **Mercado Pago (cuenta de AutoFlow, para cobrar suscripciones)**: crear aplicación en Developers, copiar Access Token de producción a `MP_PLATFORM_ACCESS_TOKEN`. En la app → Webhooks: URL `https://autoflow-cocina.vercel.app/api/billing/webhook`, evento «Planes y suscripciones».
 6. Cada negocio conecta **su** Mercado Pago (señas) y **su** WhatsApp desde Configuración dentro de la app.
+
+## Monitoreo
+
+- `GET /api/health` responde 200 si la base contesta y el cron corrió en los últimos 30 min; si no, 503. Conectarlo a un monitor gratuito (UptimeRobot, Better Stack) que avise por mail.
+- Errores de cron, webhooks de Mercado Pago y bot de WhatsApp: tabla `app_errors` (solo service role).
 
 ## Estructura
 
