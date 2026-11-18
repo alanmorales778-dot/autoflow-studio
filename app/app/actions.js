@@ -226,8 +226,11 @@ export async function importFile(fd) {
   let err = null;
   try {
     const rows = await parseUpload(fd.get('file'));
-    const r = await importRows(createAdmin(), bakery, kind, rows);
-    msg = `Listo: ${r.count} ${kind === 'insumos' ? 'insumos' : 'productos'} actualizados${r.drive ? ' (también en tu planilla de Google Drive)' : ''}.${r.errors ? ` Hay ${r.errors} con datos para revisar.` : ''}`;
+    const replace = fd.get('replace') === 'on';
+    const r = await importRows(createAdmin(), bakery, kind, rows, { replace });
+    const noun = kind === 'insumos' ? 'insumos' : 'productos';
+    const gone = r.removed ? ` Se ${kind === 'insumos' ? 'borraron' : 'ocultaron'} ${r.removed} que no estaban en el archivo.` : replace || r.drive ? '' : ' Lo que no estaba en el archivo quedó igual.';
+    msg = `Listo: ${r.count} ${noun} actualizados${r.drive ? ' (también en tu planilla de Google Drive)' : ''}.${gone}${r.errors ? ` Hay ${r.errors} con datos para revisar.` : ''}`;
   } catch (e) {
     err = e.message;
   }
