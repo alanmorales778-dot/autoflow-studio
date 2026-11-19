@@ -128,7 +128,7 @@ export default function Home() {
               <ol className="story">
                 {EJEMPLO.map(([t, p], k) => (
                   <li key={t}>
-                    <span className="n num">{String(k + 1).padStart(2, '0')}</span>
+                    <span className="idx num">{String(k + 1).padStart(2, '0')}</span>
                     <div><strong>{t}</strong><p>{p}</p></div>
                   </li>
                 ))}

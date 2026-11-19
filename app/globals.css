@@ -431,7 +431,9 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 /* ---------- Landing multirrubro ---------- */
 .lead { font-size: 18px; color: var(--ink-2); text-wrap: pretty; }
 .demo-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; position: relative; z-index: 1; }
+.demo-tabs .chip { min-height: 32px; padding: 0 11px; }
 .demo-tabs .chip svg { flex: 0 0 auto; }
+@media (min-width: 900px) { .rubro-grid { grid-template-columns: repeat(3, 1fr); } }
 .rubro-card { display: flex; flex-direction: column; gap: 14px; padding: 24px; margin: 0; color: inherit; text-decoration: none; transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .2s; }
 .rubro-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
 .rubro-card:active { transform: scale(.98); }
@@ -445,7 +447,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .story { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
 .story li { display: flex; gap: 18px; padding: 18px 0; border-top: 1px solid var(--line); }
 .story li:first-child { border-top: 0; padding-top: 4px; }
-.story .n { flex: 0 0 40px; height: 40px; border-radius: 12px; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.story .idx { flex: 0 0 40px; height: 40px; border-radius: 12px; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
 .story strong { font-size: 17px; }
 .story p { margin: 4px 0 0; color: var(--ink-2); }
 .vocab { width: 100%; border-collapse: collapse; font-size: 14px; }
