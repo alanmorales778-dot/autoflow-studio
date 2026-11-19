@@ -1,5 +1,7 @@
 'use server';
 
+import crypto from 'node:crypto';
+
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getContext, requireBakery } from '@/lib/session';
@@ -15,7 +17,7 @@ import { suggestedPrice, RECIPE_UNITS } from '@/lib/costs';
 import { PRICES } from '@/lib/modules';
 import { appUrl } from '@/lib/env';
 import { parseUpload } from '@/lib/xlsx';
-import { importRows } from '@/lib/imports';
+import { importRows, previewImport } from '@/lib/imports';
 import { parseOptionsText } from '@/lib/options';
 import { markBalancePaid } from '@/lib/balance';
 import { newCalendarToken } from '@/lib/ics';
@@ -96,6 +98,7 @@ export async function saveSettings(fd) {
     delivery_enabled: fd.get('delivery_enabled') === 'on',
     deposit_percent: Math.min(100, Math.max(0, Math.round(parseNum(str(fd, 'deposit_percent')) ?? 50))),
     hold_minutes: Math.min(1440, Math.max(5, Math.round(parseNum(str(fd, 'hold_minutes')) ?? 30))),
+    manual_hold_hours: Math.min(168, Math.max(0, Math.round(parseNum(str(fd, 'manual_hold_hours')) ?? 24))),
     margin_percent: Math.min(90, Math.max(0, parseNum(str(fd, 'margin_percent')) ?? 40)),
     overhead_percent: Math.min(200, Math.max(0, parseNum(str(fd, 'overhead_percent')) ?? 10)),
     min_days_ahead: Math.min(60, Math.max(0, Math.round(parseNum(str(fd, 'min_days_ahead')) ?? 1))),
@@ -111,6 +114,16 @@ export async function saveSettings(fd) {
   }
   revalidatePath('/app', 'layout');
   back('/app/configuracion', { ok: 'Configuración guardada.' });
+}
+
+export async function saveNotifications(fd) {
+  const { supabase, bakery } = await requireBakery();
+  const email = str(fd, 'notify_email').toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) back('/app/configuracion#avisos', { error: 'Revisá el email de los avisos.' });
+  const { error } = await supabase.from('bakeries').update({ notify_orders: fd.get('notify_orders') === 'on', notify_email: email || null }).eq('id', bakery.id);
+  if (error) back('/app/configuracion#avisos', { error: error.message });
+  revalidatePath('/app/configuracion');
+  back('/app/configuracion', { ok: 'Avisos guardados.' });
 }
 
 // Enlace privado del calendario (.ics). Crearlo o regenerarlo invalida el anterior.
@@ -222,20 +235,52 @@ export async function importFile(fd) {
   const { bakery } = await requireBakery();
   const kind = str(fd, 'kind') === 'insumos' ? 'insumos' : 'productos';
   const to = kind === 'insumos' ? '/app/insumos' : '/app/productos';
+  let id = null;
+  let err = null;
+  try {
+    const file = fd.get('file');
+    const rows = await parseUpload(file);
+    const replace = fd.get('replace') === 'on';
+    const admin = createAdmin();
+    await previewImport(admin, bakery, kind, rows, { replace }); // valida antes de guardar
+    await admin.from('import_previews').delete().eq('bakery_id', bakery.id).lt('created_at', new Date(Date.now() - 86400000).toISOString());
+    const { data, error } = await admin.from('import_previews').insert({ bakery_id: bakery.id, kind, rows, replace, file_name: String(file?.name || '').slice(0, 120) || null }).select('id').single();
+    if (error) throw error;
+    id = data.id;
+  } catch (e) {
+    err = e.message;
+  }
+  if (err) back(to, { error: err });
+  redirect(`${to}?vista=${id}#importar`);
+}
+
+export async function applyImport(fd) {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const { data: pv } = await admin.from('import_previews').select('*').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (!pv) back('/app/insumos', { error: 'La vista previa venció. Volvé a subir el archivo.' });
+  const kind = pv.kind;
+  const to = kind === 'insumos' ? '/app/insumos' : '/app/productos';
   let msg = null;
   let err = null;
   try {
-    const rows = await parseUpload(fd.get('file'));
-    const replace = fd.get('replace') === 'on';
-    const r = await importRows(createAdmin(), bakery, kind, rows, { replace });
+    const r = await importRows(admin, bakery, kind, pv.rows, { replace: pv.replace });
     const noun = kind === 'insumos' ? 'insumos' : 'productos';
-    const gone = r.removed ? ` Se ${kind === 'insumos' ? 'borraron' : 'ocultaron'} ${r.removed} que no estaban en el archivo.` : replace || r.drive ? '' : ' Lo que no estaba en el archivo quedó igual.';
+    const gone = r.removed ? ` Se ${kind === 'insumos' ? 'borraron' : 'ocultaron'} ${r.removed} que no estaban en el archivo.` : pv.replace || r.drive ? '' : ' Lo que no estaba en el archivo quedó igual.';
     msg = `Listo: ${r.count} ${noun} actualizados${r.drive ? ' (también en tu planilla de Google Drive)' : ''}.${gone}${r.errors ? ` Hay ${r.errors} con datos para revisar.` : ''}`;
+    await admin.from('import_previews').delete().eq('id', pv.id);
   } catch (e) {
     err = e.message;
   }
   revalidatePath('/app', 'layout');
   back(to, err ? { error: err } : { ok: msg });
+}
+
+export async function discardImport(fd) {
+  const { bakery } = await requireBakery();
+  const kind = str(fd, 'kind') === 'insumos' ? 'insumos' : 'productos';
+  await createAdmin().from('import_previews').delete().eq('id', str(fd, 'id')).eq('bakery_id', bakery.id);
+  back(kind === 'insumos' ? '/app/insumos' : '/app/productos', { ok: 'Importación cancelada: no se cambió nada.' });
 }
 
 // ---------- Pedidos ----------
@@ -330,6 +375,57 @@ export async function applySuggestedPrice(fd) {
   }
   revalidatePath('/app', 'layout');
   back(backTo, err ? { error: err } : { ok: `Nuevo precio de ${p.name}: $${price.toLocaleString('es-AR')}` });
+}
+
+// ---------- Fotos de productos ----------
+async function setProductPhoto(bakery, product, url) {
+  const admin = createAdmin();
+  await admin.from('products').update({ photo_url: url }).eq('id', product.id).eq('bakery_id', bakery.id);
+  if (product.sheet_row && bakery.google_refresh_token_enc && bakery.sheet_productos_id) {
+    try {
+      await writeCells(bakery, [{ range: `Productos!G${product.sheet_row}`, values: [[url || '']] }]);
+    } catch {
+      // la foto queda en AutoFlow aunque no se pueda escribir la planilla
+    }
+  }
+}
+
+export async function uploadProductPhoto(fd) {
+  const { bakery } = await requireBakery();
+  const id = str(fd, 'id');
+  const to = `/app/productos/${id}#foto`;
+  const admin = createAdmin();
+  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  if (!product) back('/app/productos', { error: 'No encontramos ese producto.' });
+  const file = fd.get('foto');
+  if (!file || typeof file.arrayBuffer !== 'function' || !file.size) back(to, { error: 'Elegí una foto.' });
+  if (file.size > 5 * 1024 * 1024) back(to, { error: 'La foto es muy pesada (máximo 5 MB).' });
+  const type = String(file.type || '');
+  if (!/^image\/(jpeg|png|webp)$/.test(type)) back(to, { error: 'La foto tiene que ser JPG, PNG o WEBP.' });
+  const ext = type.split('/')[1].replace('jpeg', 'jpg');
+  const path = `${bakery.id}/${product.id}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+  const { error } = await admin.storage.from('productos').upload(path, Buffer.from(await file.arrayBuffer()), { contentType: type, upsert: false });
+  if (error) back(to, { error: 'No se pudo subir la foto. Probá de nuevo.' });
+  const url = admin.storage.from('productos').getPublicUrl(path).data.publicUrl;
+  await setProductPhoto(bakery, product, url);
+  const old = String(product.photo_url || '').split('/storage/v1/object/public/productos/')[1];
+  if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
+  revalidatePath('/app', 'layout');
+  revalidatePath(`/c/${bakery.slug}`);
+  back(to, { ok: 'Foto actualizada: ya se ve en tu catálogo.' });
+}
+
+export async function removeProductPhoto(fd) {
+  const { bakery } = await requireBakery();
+  const id = str(fd, 'id');
+  const admin = createAdmin();
+  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  if (!product) back('/app/productos', { error: 'No encontramos ese producto.' });
+  await setProductPhoto(bakery, product, null);
+  const old = String(product.photo_url || '').split('/storage/v1/object/public/productos/')[1];
+  if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
+  revalidatePath('/app', 'layout');
+  back(`/app/productos/${id}#foto`, { ok: 'Foto quitada.' });
 }
 
 // Simulador de inflación: aplica los precios sugeridos que el usuario eligió.

@@ -9,6 +9,7 @@ import { pushStockToSheet } from '@/lib/sheets';
 import { safeEqual } from '@/lib/crypto';
 import { ensureBalanceLink } from '@/lib/balance';
 import { createCustomerSubscription, subscriptionStatusUrl } from '@/lib/recurring';
+import { notifyOwner } from '@/lib/notify';
 
 const str = (fd, k) => String(fd.get(k) ?? '').trim();
 
@@ -66,6 +67,8 @@ export async function placeOrder(fd) {
       channel: 'web',
     });
     await pushStockToSheet(admin, bakery, [product.id]);
+    // Con link de Mercado Pago se avisa cuando entra la seña; sin link, ahora.
+    if (!order.payment_url) await notifyOwner(admin, bakery, order, 'nuevo');
   } catch (e) {
     err = e.message;
   }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { applySuggestedPrice, syncNow, importFile } from '../actions';
 import { Flash, Locked, UploadCard } from '../ui';
+import ImportPreview from '../import-preview';
 import { money } from '@/lib/format';
 import { currentMargin, suggestedPrice } from '@/lib/costs';
 import { reservedByProduct } from '@/lib/orders';
@@ -72,7 +73,8 @@ export default async function Productos({ searchParams }) {
           </table>
         )}
       </div>
-      <UploadCard kind="productos" action={importFile} driveConnected={!!bakery.sheet_productos_id} />
+      <ImportPreview bakery={bakery} kind="productos" id={sp.vista} />
+      {!sp.vista && <UploadCard kind="productos" action={importFile} driveConnected={!!bakery.sheet_productos_id} />}
     </>
   );
 }

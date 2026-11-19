@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { syncNow, importFile } from '../actions';
 import { Flash, Locked, UploadCard } from '../ui';
+import ImportPreview from '../import-preview';
 import { money, dateTimeLabel } from '@/lib/format';
 import { sheetUrl } from '@/lib/google';
 
@@ -27,7 +28,8 @@ export default async function Insumos({ searchParams }) {
       {!access.costs && <Locked title="Módulo de Costos">Con el módulo de Costos, cada cambio de precio acá recalcula el costo de todas tus recetas.</Locked>}
       {bakery.last_sync_error && <div className="alert bad">{bakery.last_sync_error}</div>}
 
-      <UploadCard kind="insumos" action={importFile} driveConnected={!!bakery.sheet_insumos_id} />
+      <ImportPreview bakery={bakery} kind="insumos" id={sp.vista} />
+      {!sp.vista && <UploadCard kind="insumos" action={importFile} driveConnected={!!bakery.sheet_insumos_id} />}
 
       <div className="card table-wrap">
         {!ingredients || ingredients.length === 0 ? (

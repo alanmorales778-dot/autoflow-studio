@@ -214,6 +214,15 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 .chip.static { cursor: default; }
 
+/* Botón flotante (solo celular) */
+.fab { display: none; }
+@media (max-width: 860px) {
+  .fab { position: fixed; right: 16px; bottom: 20px; z-index: 40; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 20px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; box-shadow: 0 14px 30px -10px rgba(194, 65, 12, .7); transition: transform .16s var(--ease), background-color .2s; }
+  .fab:hover { background: var(--brand-h); color: #fff; }
+  .fab:active { transform: scale(.95); }
+  .content { padding-bottom: 96px; }
+}
+
 /* Registro de actividad */
 .log { background: #17120f; border-radius: var(--radius); color: #e9ded2; overflow: hidden; }
 .log-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #2a221d; font-family: var(--font-mono); font-size: 13px; color: #bfae9f; }

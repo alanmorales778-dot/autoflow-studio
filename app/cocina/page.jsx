@@ -31,6 +31,14 @@ export default async function Cocina({ searchParams }) {
     .in('status', ['confirmado', 'entregado'])
     .order('slot')
     .order('created_at');
+  const { data: pendingRaw } = await supabase
+    .from('orders')
+    .select('id,quantity,product_name,slot,customer_name,expires_at,status')
+    .eq('bakery_id', bakery.id)
+    .eq('date', day)
+    .eq('status', 'pendiente_sena')
+    .order('slot');
+  const pending = (pendingRaw || []).filter((o) => !o.expires_at || new Date(o.expires_at) > new Date());
 
   const items = (data || []).map((o) => ({
     id: o.id,
@@ -59,6 +67,16 @@ export default async function Cocina({ searchParams }) {
         <Link href="/app" className="btn kitchen-exit">Salir del modo cocina</Link>
       </div>
       <Board items={items} />
+      {pending.length > 0 && (
+        <section aria-label="Esperando seña" style={{ border: '2px dashed #3a2f28', borderRadius: 18, padding: 20 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Todavía sin seña · no cocinar hasta confirmar</div>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 18, color: '#d9cbbe' }}>
+            {pending.map((o) => (
+              <li key={o.id}>{o.quantity} × {o.product_name} · {[o.slot, o.customer_name].filter(Boolean).join(' · ')}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p style={{ margin: 0, fontSize: 15, color: '#a39283' }}>Tocá cada tarjeta cuando esté lista. Solo aparecen pedidos con la seña pagada. La pantalla se actualiza sola cada minuto.</p>
     </div>
   );

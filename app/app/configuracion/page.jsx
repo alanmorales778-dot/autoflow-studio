@@ -1,7 +1,8 @@
 import { requireBakery } from '@/lib/session';
 import {
-  saveSettings, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow, rotateCalendarToken, disableCalendar,
+  saveSettings, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow, rotateCalendarToken, disableCalendar, saveNotifications,
 } from '../actions';
+import { mailEnabled } from '@/lib/notify';
 import { Flash, Locked } from '../ui';
 import { WEEKDAYS, dateLabel, todayAR, dateTimeLabel } from '@/lib/format';
 import { sheetUrl } from '@/lib/google';
@@ -11,7 +12,7 @@ import CopyField from './copy-field';
 
 export default async function Configuracion({ searchParams }) {
   const sp = await searchParams;
-  const { supabase, bakery, access } = await requireBakery();
+  const { supabase, bakery, access, user } = await requireBakery();
   const [{ data: rules }, { data: blocked }, { data: cats }] = await Promise.all([
     supabase.from('capacity_rules').select('*').eq('bakery_id', bakery.id).order('category').order('weekday'),
     supabase.from('blocked_dates').select('*').eq('bakery_id', bakery.id).gte('date', todayAR()).order('date'),
@@ -34,7 +35,8 @@ export default async function Configuracion({ searchParams }) {
             <div className="field"><label>WhatsApp de contacto</label><input name="whatsapp_contact" defaultValue={bakery.whatsapp_contact || ''} /></div>
             <div className="field"><label>Dirección de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
             <div className="field"><label>Seña (% del total)</label><input name="deposit_percent" type="number" min="0" max="100" defaultValue={bakery.deposit_percent} /></div>
-            <div className="field"><label>Minutos para pagar la seña</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
+            <div className="field"><label>Minutos para pagar la seña (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
+            <div className="field"><label>Horas que se guarda el cupo sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada en ese tiempo, el pedido vence y el cupo se libera. 0 = no vence.</div></div>
             <div className="field"><label>Días mínimos de anticipación</label><input name="min_days_ahead" type="number" min="0" defaultValue={bakery.min_days_ahead} /></div>
             <div className="field"><label>Hasta cuántos días adelante</label><input name="max_days_ahead" type="number" min="1" defaultValue={bakery.max_days_ahead} /></div>
             <div className="field"><label>Margen objetivo (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
@@ -47,6 +49,23 @@ export default async function Configuracion({ searchParams }) {
           <button className="btn">Guardar</button>
         </form>
         <p className="muted" style={{ marginTop: 12, fontSize: 13 }}><a href="/nueva-clave">Cambiar mi contraseña</a></p>
+      </div>
+
+      {/* Avisos */}
+      <div className="card" id="avisos">
+        <h2>Avisos de pedidos</h2>
+        <p className="muted">Te mandamos un mail cuando entra un pedido desde tu link o WhatsApp, y cuando se cobra una seña por Mercado Pago.</p>
+        {!mailEnabled() && <div className="alert warn">El envío de mails todavía no está activado en AutoFlow. Los avisos empiezan a llegar en cuanto lo esté.</div>}
+        <form action={saveNotifications} className="grid grid-2" style={{ alignItems: 'end' }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="notify_email">Mandar los avisos a</label>
+            <input id="notify_email" name="notify_email" type="email" defaultValue={bakery.notify_email || ''} placeholder={`${user.email} (el de tu cuenta)`} />
+          </div>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <label className="inline-label" style={{ margin: 0 }}><input type="checkbox" name="notify_orders" defaultChecked={bakery.notify_orders !== false} /> Avisarme cada pedido nuevo</label>
+            <button className="btn secondary">Guardar avisos</button>
+          </div>
+        </form>
       </div>
 
       {/* Cupos */}

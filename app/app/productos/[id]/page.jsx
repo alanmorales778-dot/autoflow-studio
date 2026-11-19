@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireBakery } from '@/lib/session';
-import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings } from '../../actions';
+import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings, uploadProductPhoto, removeProductPhoto } from '../../actions';
 import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
 import { money, normName } from '@/lib/format';
@@ -52,6 +52,31 @@ export default async function Receta({ params, searchParams }) {
         </div>
       </div>
       {product.cost_error && <div className="alert warn">Para completar el cálculo: {product.cost_error}</div>}
+
+      <div className="card" id="foto">
+        <h2>Foto en el catálogo</h2>
+        <div className="row" style={{ alignItems: 'flex-start', gap: 20 }}>
+          {product.photo_url ? (
+            <img src={product.photo_url} alt={product.name} style={{ width: 180, aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 12, border: '1px solid var(--line)' }} />
+          ) : (
+            <div aria-hidden="true" style={{ width: 180, aspectRatio: '4 / 3', borderRadius: 12, background: 'linear-gradient(140deg, #f6e3d3, #efe3d4)', display: 'grid', placeItems: 'center', color: '#b9a593', fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800 }}>{product.name.charAt(0)}</div>
+          )}
+          <div style={{ flex: '1 1 260px' }}>
+            <p className="muted" style={{ marginTop: 0 }}>Una buena foto vende más. JPG, PNG o WEBP de hasta 5 MB; se ve mejor apaisada (4:3).</p>
+            <form action={uploadProductPhoto} className="row">
+              <input type="hidden" name="id" value={product.id} />
+              <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style={{ maxWidth: 300 }} />
+              <button className="btn small">{product.photo_url ? 'Cambiar foto' : 'Subir foto'}</button>
+            </form>
+            {product.photo_url && (
+              <form action={removeProductPhoto} style={{ marginTop: 8 }}>
+                <input type="hidden" name="id" value={product.id} />
+                <button className="btn danger small">Quitar foto</button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="card table-wrap">
         <h2>Ingredientes por unidad de «{product.name}»</h2>
