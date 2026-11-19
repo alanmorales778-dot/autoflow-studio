@@ -261,7 +261,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .grain { background-image: radial-gradient(rgba(138, 90, 43, .07) 1px, transparent 1px); background-size: 22px 22px; }
 .hero { padding: 72px 0 88px; }
 .hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 56px; align-items: center; }
-.hero h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.02; font-weight: 800; letter-spacing: -.03em; text-wrap: balance; margin: 20px 0; }
+.hero h1 { font-size: clamp(36px, 4.3vw, 56px); line-height: 1.02; font-weight: 800; letter-spacing: -.03em; text-wrap: balance; margin: 20px 0; }
 .hero p.lead { font-size: 19px; color: var(--ink-2); max-width: 560px; text-wrap: pretty; }
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px rgba(21, 128, 61, .14); }
@@ -456,3 +456,38 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .vocab td:first-child { color: var(--ink); font-weight: 600; }
 .date-opt.full > span { cursor: not-allowed; background: var(--sunken); color: var(--muted); text-decoration: line-through; }
 .date-opt.full > span:active { transform: none; }
+
+/* ---------- Landing: venta ---------- */
+.trust { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.trust li { display: inline-flex; align-items: center; gap: 6px; }
+.pain-grid { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+.pain { padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+.pain .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--bad-soft); display: grid; place-items: center; }
+.pain h3 { font-size: 18px; margin: 0; }
+.pain p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.vs { width: 100%; border-collapse: collapse; font-size: 15px; }
+.vs th { text-align: left; padding: 14px 20px; background: var(--sunken); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); width: 50%; }
+.vs th + th { color: var(--ok); }
+.vs td { padding: 14px 20px; border-top: 1px solid var(--line); vertical-align: top; }
+.vs td:first-child { color: var(--muted); }
+.vs td:last-child { color: var(--ink); font-weight: 500; background: #fbfdfb; }
+.vs-c { display: flex; gap: 10px; align-items: flex-start; }
+.vs-c svg { flex: 0 0 auto; margin-top: 3px; }
+.calc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 0; padding: 0; overflow: hidden; }
+.calc-in { padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+.calc-row label { font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.calc-row input[type=range] { width: 100%; margin-top: 8px; accent-color: var(--brand); min-height: 0; padding: 0; border: 0; }
+.calc-out { padding: 28px; background: var(--ink); color: #fff; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.calc-out .muted { color: #c9b8a8 !important; }
+.calc-out p { color: #fff; }
+.calc-big { font-family: var(--font-display); font-size: clamp(36px, 5vw, 52px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
+.calc-out .calc-big[style] { color: #fb923c !important; }
+.audience { padding: 28px; }
+.audience h3 { margin: 0 0 12px; font-size: 20px; }
+.faq { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 12px; align-items: start; }
+.faq details { margin: 0; padding: 0; }
+.faq summary { cursor: pointer; padding: 18px 20px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-size: 20px; line-height: 1; color: var(--brand); transition: transform .2s var(--ease); }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { margin: 0; padding: 0 20px 18px; color: var(--ink-2); }
