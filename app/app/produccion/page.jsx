@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import { requireBakery } from '@/lib/session';
 import { Flash, Locked } from '../ui';
 import PrintButton from '../print-button';
@@ -8,6 +9,7 @@ import { optionsSummary } from '@/lib/options';
 export default async function Produccion({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
+  const T = rubroOf(bakery);
   const from = /^\d{4}-\d{2}-\d{2}$/.test(sp.desde || '') ? sp.desde : todayAR();
   const to = /^\d{4}-\d{2}-\d{2}$/.test(sp.hasta || '') ? sp.hasta : addDays(from, 6);
 
@@ -49,7 +51,7 @@ export default async function Produccion({ searchParams }) {
                 <div key={it.product_name} className="order-line">
                   <strong>{it.qty} × {it.product_name}</strong>
                   {it.orders.map((o) => {
-                    const details = [optionsSummary(o.options), o.dedication && `Dedicatoria: «${o.dedication}»`, o.notes].filter(Boolean).join(' · ');
+                    const details = [optionsSummary(o.options), o.dedication && `${T.note1.label}: «${o.dedication}»`, o.notes].filter(Boolean).join(' · ');
                     return (
                       <div key={o.id} style={{ fontSize: 13, marginTop: 4 }}>
                         {o.quantity} para {o.customer_name}{o.slot ? ` (${o.slot})` : ''}{details ? ` — ${details}` : ''}
@@ -67,18 +69,18 @@ export default async function Produccion({ searchParams }) {
         <div>
           <h2>Lista de compras</h2>
           {!access.costs ? (
-            <Locked title="Lista de compras automática">Con el módulo de Costos, AutoFlow suma los insumos de todas las recetas de estos pedidos y te dice qué comprar.</Locked>
+            <Locked title="Lista de compras automática">Con el módulo de Costos, AutoFlow suma lo que lleva cada pedido y te dice qué comprar.</Locked>
           ) : (
             <div className="card table-wrap">
               {list.rows.length === 0 ? (
-                <p className="muted" style={{ margin: 0 }}>Sin insumos para calcular{orders.length ? ': cargá las recetas de tus productos.' : '.'}</p>
+                <p className="muted" style={{ margin: 0 }}>Nada para calcular{orders.length ? `: cargá qué lleva cada uno de tus ${T.items.toLowerCase()}.` : '.'}</p>
               ) : (
                 <table>
-                  <thead><tr><th>Insumo</th><th>Necesitás</th><th>Comprar</th><th>Costo aprox.</th></tr></thead>
+                  <thead><tr><th>{T.insumo}</th><th>Necesitás</th><th>Comprar</th><th>Costo aprox.</th></tr></thead>
                   <tbody>
                     {list.rows.map((r) => (
                       <tr key={r.name}>
-                        <td>{r.name}{r.supplier && <><br /><small>{r.supplier}</small></>}{!r.known && <><br /><small style={{ color: 'var(--bad)' }}>No está en tus insumos</small></>}</td>
+                        <td>{r.name}{r.supplier && <><br /><small>{r.supplier}</small></>}{!r.known && <><br /><small style={{ color: 'var(--bad)' }}>No está en tu lista de {T.insumos.toLowerCase()}</small></>}</td>
                         <td>{r.needed}</td>
                         <td>{r.packLabel || '—'}</td>
                         <td>{r.estCost !== null ? money(r.estCost) : '—'}</td>
@@ -88,7 +90,7 @@ export default async function Produccion({ searchParams }) {
                 </table>
               )}
               {list.rows.length > 0 && <p style={{ marginTop: 12 }}><strong>Total estimado: {money(totalEst)}</strong> <small className="muted">(comprando presentaciones completas; no descuenta lo que ya tengas en la alacena)</small></p>}
-              {list.missing.length > 0 && <div className="alert warn" style={{ marginTop: 12 }}>Sin receta cargada (no se cuentan): {list.missing.join(', ')}.</div>}
+              {list.missing.length > 0 && <div className="alert warn" style={{ marginTop: 12 }}>Sin {T.receta.toLowerCase()} cargada (no se cuentan): {list.missing.join(', ')}.</div>}
               {list.warnings.map((w) => <div key={w} className="alert warn">{w}</div>)}
             </div>
           )}

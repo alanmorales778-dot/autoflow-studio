@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { applySuggestedPrice, syncNow, importFile } from '../actions';
@@ -12,6 +13,7 @@ import { sheetUrl } from '@/lib/google';
 export default async function Productos({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
+  const T = rubroOf(bakery);
   const { data: products } = await supabase.from('products').select('*').eq('bakery_id', bakery.id).not('sheet_row', 'is', null).order('sheet_row');
   const reserved = await reservedByProduct(createAdmin(), bakery.id);
 
@@ -19,18 +21,18 @@ export default async function Productos({ searchParams }) {
     <>
       <Flash sp={sp} />
       <div className="row between">
-        <h1 style={{ margin: 0 }}>Productos</h1>
+        <h1 style={{ margin: 0 }}>{T.items}</h1>
         <div className="row">
           {bakery.sheet_productos_id && <a className="btn secondary small" href={sheetUrl(bakery.sheet_productos_id)} target="_blank" rel="noreferrer">Abrir planilla de productos ↗</a>}
           {bakery.sheet_productos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
       </div>
       <p className="muted">Los productos, precios y stock se cargan con un archivo Excel/CSV o desde tu planilla de Google Drive. Margen objetivo: {Number(bakery.margin_percent)}% · indirectos {Number(bakery.overhead_percent)}% (se cambian en Configuración).</p>
-      {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada producto y si estás ganando tu margen.</Locked>}
+      {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada {T.item} y si estás ganando tu margen.</Locked>}
 
       <div className="card table-wrap">
         {!products || products.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Todavía no hay productos. Descargá la plantilla, completala y subila abajo, o conectá Google Drive en Configuración.</p>
+          <p className="muted" style={{ margin: 0 }}>Todavía no cargaste {T.items.toLowerCase()}. Descargá la plantilla, completala y subila abajo, o conectá Google Drive en Configuración.</p>
         ) : (
           <table>
             <thead>
@@ -58,7 +60,7 @@ export default async function Productos({ searchParams }) {
                       </>
                     )}
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      <Link className="btn secondary small" href={`/app/productos/${p.id}`}>{access.costs ? 'Receta y opciones' : 'Opciones'}</Link>{' '}
+                      <Link className="btn secondary small" href={`/app/productos/${p.id}`}>{access.costs ? `${T.key === 'cocina' ? 'Receta' : T.insumos} y opciones` : 'Opciones'}</Link>{' '}
                       {access.costs && below && (
                         <form action={applySuggestedPrice} style={{ display: 'inline' }}>
                           <input type="hidden" name="id" value={p.id} />

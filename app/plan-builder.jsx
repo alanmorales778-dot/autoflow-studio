@@ -9,8 +9,8 @@ export default function PlanBuilder({ prices }) {
   const [on, setOn] = useState({ costs: true, recurring: false, whatsapp: false });
   const [bump, setBump] = useState(0);
   const mods = [
-    { key: 'costs', name: 'Costos y producción', price: prices.costs, desc: 'Recetas con costo real, precio mínimo según tu margen, alerta de venta a pérdida, simulador de inflación, hoja de producción, modo cocina y lista de compras.' },
-    { key: 'recurring', name: 'Pedidos recurrentes', price: prices.recurring, desc: 'Viandas, cajas o budines por suscripción semanal o quincenal, con débito automático. Los pedidos se arman solos 7 días antes.' },
+    { key: 'costs', name: 'Costos y producción', price: prices.costs, desc: 'Costo real de cada producto o servicio según lo que lleva, precio mínimo según tu margen, alerta de venta a pérdida, simulador de inflación, hoja de producción, pantalla de trabajo del día y lista de compras.' },
+    { key: 'recurring', name: 'Pedidos recurrentes', price: prices.recurring, desc: 'Viandas, cajas, turnos fijos o abonos por suscripción semanal o quincenal, con débito automático. Los pedidos se arman solos 7 días antes.' },
     { key: 'whatsapp', name: 'Bot de WhatsApp', price: prices.whatsapp, desc: 'Toma pedidos por WhatsApp a toda hora, ofrece solo fechas con cupo y manda el link de la seña. Los mensajes de Meta se pagan aparte.' },
   ];
   const chosen = mods.filter((m) => on[m.key]);
@@ -41,10 +41,11 @@ export default function PlanBuilder({ prices }) {
           </div>
           <ul className="checks">
             <li>Catálogo online con tu link</li>
-            <li>Cupos por día y por franja</li>
+            <li>Cupos o turnos por día y por horario</li>
             <li>Seña con Mercado Pago que vence sola</li>
             <li>Cobro del saldo y recordatorios</li>
-            <li>Tortas personalizadas con foto y alergias</li>
+            <li>Pedidos personalizados con opciones, notas y foto</li>
+            <li>Aviso por mail de cada pedido nuevo</li>
             <li>Productos y stock desde Excel o Drive</li>
             <li>Tus pedidos en Google Calendar</li>
             <li>Registro de actividad</li>

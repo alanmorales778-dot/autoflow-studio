@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdmin } from '@/lib/supabase';
@@ -41,11 +42,11 @@ function DeliveryFields({ bakery }) {
       <div className="field">
         <label>Entrega</label>
         <select name="fulfillment">
-          <option value="retiro">Retiro{bakery.pickup_address ? ` en ${bakery.pickup_address}` : ''}</option>
-          {bakery.delivery_enabled && <option value="envio">Envío a domicilio</option>}
+          <option value="retiro">{rubroOf(bakery).retiro}{bakery.pickup_address ? ` · ${bakery.pickup_address}` : ''}</option>
+          {bakery.delivery_enabled && <option value="envio">{rubroOf(bakery).envio}</option>}
         </select>
       </div>
-      {bakery.delivery_enabled && <div className="field"><label>Dirección (solo si es envío)</label><input name="address" placeholder="Calle, número, piso, localidad" /></div>}
+      {bakery.delivery_enabled && <div className="field"><label>Dirección (solo si es {rubroOf(bakery).envio.toLowerCase()})</label><input name="address" placeholder="Calle, número, piso, localidad" /></div>}
       <div className="field"><label>Tu nombre</label><input name="customer_name" required autoComplete="name" /></div>
       <div className="field"><label>Tu WhatsApp</label><input name="customer_phone" required inputMode="tel" autoComplete="tel" placeholder="11 5555-5555" /></div>
     </>
@@ -58,6 +59,7 @@ export default async function Catalogo({ params, searchParams }) {
   const admin = createAdmin();
   const { data: bakery } = await admin.from('bakeries').select('*').eq('slug', slug).maybeSingle();
   if (!bakery) notFound();
+  const t = rubroOf(bakery);
   const { data: sub } = await admin.from('subscriptions').select('*').eq('bakery_id', bakery.id).maybeSingle();
   const access = moduleAccess(sub);
   const open = access.base;
@@ -87,8 +89,8 @@ export default async function Catalogo({ params, searchParams }) {
           <div style={{ flex: '1 1 320px' }}>
             <h1 className="disp">{bakery.name}</h1>
             <div className="store-chips">
-              {bakery.pickup_address && <span>Retiro en {bakery.pickup_address}</span>}
-              {bakery.delivery_enabled && <span>Hace envíos</span>}
+              {bakery.pickup_address && <span>{t.retiro} · {bakery.pickup_address}</span>}
+              {bakery.delivery_enabled && <span>{t.envio}</span>}
               {bakery.min_days_ahead > 0 && <span>Pedí con {bakery.min_days_ahead} {bakery.min_days_ahead === 1 ? 'día' : 'días'} de anticipación</span>}
               {depositPct > 0 && <span className="brand">Seña del {depositPct} % para reservar</span>}
             </div>
@@ -195,8 +197,8 @@ export default async function Catalogo({ params, searchParams }) {
                       </fieldset>
                       <DeliveryFields bakery={bakery} />
                       <div className="field"><label>¿Para qué ocasión? (opcional)</label><input name="occasion" placeholder="Ej: cumple de Sofi, aniversario" /></div>
-                      <div className="field"><label>Dedicatoria (opcional)</label><input name="dedication" maxLength={200} placeholder="Ej: ¡Feliz cumple Sofi!" /></div>
-                      <div className="field"><label>Alergias o restricciones (opcional)</label><input name="allergies" placeholder="Ej: sin TACC, sin frutos secos" /></div>
+                      <div className="field"><label>{t.note1.label} (opcional)</label><input name="dedication" maxLength={200} placeholder={t.note1.ph} /></div>
+                      <div className="field"><label>{t.note2.label} (opcional)</label><input name="allergies" placeholder={t.note2.ph} /></div>
                       <div className="field"><label>Foto de referencia (opcional)</label><input name="foto" type="file" accept="image/jpeg,image/png,image/webp" /></div>
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
                       <div className="summary" style={{ marginBottom: 12 }}>
@@ -245,7 +247,7 @@ export default async function Catalogo({ params, searchParams }) {
           </>
         )}
       </main>
-      <footer className="footer"><div className="container">Pedidos online con <Link href="/">AutoFlow Cocina</Link></div></footer>
+      <footer className="footer"><div className="container">Pedidos online con <Link href="/">AutoFlow</Link></div></footer>
     </>
   );
 }

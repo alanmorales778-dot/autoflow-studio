@@ -9,6 +9,7 @@ import { sheetUrl } from '@/lib/google';
 import { appUrl, has } from '@/lib/env';
 import { calendarUrl } from '@/lib/ics';
 import CopyField from './copy-field';
+import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
 
 export default async function Configuracion({ searchParams }) {
   const sp = await searchParams;
@@ -19,6 +20,7 @@ export default async function Configuracion({ searchParams }) {
     supabase.from('products').select('category').eq('bakery_id', bakery.id).not('sheet_row', 'is', null),
   ]);
   const categories = [...new Set((cats || []).map((c) => c.category))];
+  const t = rubroOf(bakery);
 
   return (
     <>
@@ -30,20 +32,21 @@ export default async function Configuracion({ searchParams }) {
         <h2>Tu negocio</h2>
         <form action={saveSettings}>
           <div className="grid grid-3">
+            <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia nombres, datos del pedido y ejemplos. No borra nada.</div></div>
             <div className="field"><label>Nombre</label><input name="name" defaultValue={bakery.name} required /></div>
             <div className="field"><label>Link (después de /c/)</label><input name="slug" defaultValue={bakery.slug} required /></div>
             <div className="field"><label>WhatsApp de contacto</label><input name="whatsapp_contact" defaultValue={bakery.whatsapp_contact || ''} /></div>
-            <div className="field"><label>Dirección de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
+            <div className="field"><label>Dirección del local o de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
             <div className="field"><label>Seña (% del total)</label><input name="deposit_percent" type="number" min="0" max="100" defaultValue={bakery.deposit_percent} /></div>
             <div className="field"><label>Minutos para pagar la seña (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
             <div className="field"><label>Horas que se guarda el cupo sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada en ese tiempo, el pedido vence y el cupo se libera. 0 = no vence.</div></div>
             <div className="field"><label>Días mínimos de anticipación</label><input name="min_days_ahead" type="number" min="0" defaultValue={bakery.min_days_ahead} /></div>
             <div className="field"><label>Hasta cuántos días adelante</label><input name="max_days_ahead" type="number" min="1" defaultValue={bakery.max_days_ahead} /></div>
             <div className="field"><label>Margen objetivo (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
-            <div className="field"><label>Indirectos: gas, luz, envases (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /></div>
-            <div className="field"><label>Franjas horarias (una por línea)</label><textarea name="slots" defaultValue={(bakery.slots || []).join('\n')} /></div>
+            <div className="field"><label>Indirectos: luz, gas, alquiler, envases (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /></div>
+            <div className="field"><label>Horarios o franjas (uno por línea)</label><textarea name="slots" defaultValue={(bakery.slots || []).join('\n')} /></div>
             <div className="field" style={{ display: 'flex', alignItems: 'center' }}>
-              <label className="inline-label"><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Hago envíos a domicilio</label>
+              <label className="inline-label"><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Ofrezco «{t.envio.toLowerCase()}»</label>
             </div>
           </div>
           <button className="btn">Guardar</button>
@@ -70,8 +73,8 @@ export default async function Configuracion({ searchParams }) {
 
       {/* Cupos */}
       <div className="card" id="cupos">
-        <h2>Cupos de producción</h2>
-        <p className="muted">Cuántas unidades podés hacer por día. Cuando se llena, esa fecha deja de ofrecerse. Usá «Todas» para un tope general, o una categoría de tu planilla (ej: Tortas grandes). Sin reglas, no hay límite.</p>
+        <h2>Cupos por día</h2>
+        <p className="muted">{t.capTitle.replace(/^Poné c/, 'C')}. Cuando se llena, esa fecha deja de ofrecerse. Usá «Todas» para un tope general, o una categoría de tu planilla (ej: {t.capExample}). Sin reglas, no hay límite.</p>
         {rules && rules.length > 0 && (
           <div className="table-wrap" style={{ marginBottom: 12 }}>
             <table>
@@ -142,7 +145,7 @@ export default async function Configuracion({ searchParams }) {
                 <li><strong>iPhone</strong>: Ajustes → Calendario → Cuentas → Agregar cuenta → Otra → Agregar calendario suscrito, y pegá el enlace.</li>
                 <li><strong>Outlook</strong>: Agregar calendario → Suscribirse desde la web.</li>
               </ol>
-              <p className="muted">⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, dedicatoria, alergias y el saldo a cobrar.</p>
+              <p className="muted">⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, {t.note1.label.toLowerCase()}, {t.note2.label.toLowerCase()} y el saldo a cobrar.</p>
             </details>
             <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus pedidos. Si lo compartiste por error, regeneralo.</p>
             <div className="row">

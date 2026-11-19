@@ -1,10 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import { publicRubros } from '@/lib/rubros';
 import { AuthShell, AuthTabs, PasswordInput, StrengthMeter, validEmail } from '../auth-shell';
 
+const RUBROS = publicRubros();
+
 export default function Registro() {
+  const [rubro, setRubro] = useState('cocina');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('rubro');
+    if (q && RUBROS.some((r) => r.key === q)) setRubro(q);
+  }, []);
+  const ph = (RUBROS.find((r) => r.key === rubro) || RUBROS[0]).bizPh;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [business, setBusiness] = useState('');
@@ -32,7 +41,7 @@ export default function Registro() {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { business_name: business.trim() } },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { business_name: business.trim(), business_type: rubro } },
     });
     setLoading(false);
     if (error) {
@@ -65,8 +74,15 @@ export default function Registro() {
           <AuthTabs active="registro" />
           <form key={shake} className={shake ? 'shake' : ''} onSubmit={onSubmit} noValidate>
             <div className="field">
+              <label htmlFor="rubro">Rubro</label>
+              <select id="rubro" value={rubro} onChange={(e) => setRubro(e.target.value)}>
+                {RUBROS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+              </select>
+              <div className="hint">Adapta los nombres, los datos de cada pedido y los ejemplos. Lo podés cambiar después.</div>
+            </div>
+            <div className="field">
               <label htmlFor="business">Nombre de tu emprendimiento</label>
-              <input id="business" value={business} onChange={(e) => setBusiness(e.target.value)} onBlur={touch('biz')} placeholder="Ej: Lola Pastelería" autoComplete="organization" className={bizErr ? 'err' : ''} aria-invalid={bizErr || undefined} />
+              <input id="business" value={business} onChange={(e) => setBusiness(e.target.value)} onBlur={touch('biz')} placeholder={ph} autoComplete="organization" className={bizErr ? 'err' : ''} aria-invalid={bizErr || undefined} />
               <div className={`hint ${bizErr ? 'err' : ''}`}>{bizErr ? 'Poné el nombre con el que te conocen.' : 'Va a aparecer en tu link de pedidos.'}</div>
             </div>
             <div className="field">

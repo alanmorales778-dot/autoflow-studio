@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { Flash, Locked } from '../ui';
@@ -8,6 +9,7 @@ import Simulator from './simulator';
 export default async function Costos({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
+  const T = rubroOf(bakery);
 
   if (!access.costs) {
     return (
@@ -44,15 +46,15 @@ export default async function Costos({ searchParams }) {
       <div className="page-head">
         <div>
           <h1>Costos e inflación</h1>
-          <p>Simulá una suba de insumos y mirá qué productos dejan de ser negocio antes de que pase. Nada cambia hasta que aplicás.</p>
+          <p>Simulá una suba de {T.insumos.toLowerCase()} y mirá qué {T.items.toLowerCase()} dejan de ser negocio antes de que pase. Nada cambia hasta que aplicás.</p>
         </div>
-        <Link href="/app/insumos" className="btn secondary small">Actualizar precios de insumos</Link>
+        <Link href="/app/insumos" className="btn secondary small">Actualizar precios de {T.insumos.toLowerCase()}</Link>
       </div>
       {rows.length === 0 ? (
         <div className="card">
-          <h2>{incomplete.length ? 'Tus recetas están incompletas' : 'Todavía no hay recetas con costo'}</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>Cargá tus insumos y la receta de cada producto para usar el simulador.</p>
-          <Link href="/app/productos" className="btn">Ir a Productos</Link>
+          <h2>{incomplete.length ? 'Hay fichas incompletas' : 'Todavía no hay nada con costo'}</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>Cargá tus {T.insumos.toLowerCase()} y qué lleva cada {T.item} para usar el simulador.</p>
+          <Link href="/app/productos" className="btn">Ir a {T.items}</Link>
         </div>
       ) : (
         <Simulator rows={rows} overhead={Number(bakery.overhead_percent) || 0} margin={Number(bakery.margin_percent) || 0} drive={!!bakery.google_refresh_token_enc} />

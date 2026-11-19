@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdmin } from '@/lib/supabase';
@@ -17,6 +18,7 @@ export default async function PedidoEstado({ params, searchParams }) {
   const sp = await searchParams;
   const admin = createAdmin();
   const { data: bakery } = await admin.from('bakeries').select('*').eq('slug', slug).maybeSingle();
+  const T = rubroOf(bakery);
   if (!bakery) notFound();
   let { data: order } = await admin.from('orders').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
   if (!order || !safeEqual(order.public_token, sp.t)) notFound();
@@ -56,10 +58,10 @@ export default async function PedidoEstado({ params, searchParams }) {
         <p>
           {order.quantity} × {order.product_name}<br />
           {order.options?.length > 0 && <><small>{optionsSummary(order.options)}</small><br /></>}
-          {order.dedication && <><small>Dedicatoria: «{order.dedication}»</small><br /></>}
-          {order.allergies && <><small>Alergias / restricciones: {order.allergies}</small><br /></>}
+          {order.dedication && <><small>{T.note1.label}: «{order.dedication}»</small><br /></>}
+          {order.allergies && <><small>{T.note2.label}: {order.allergies}</small><br /></>}
           Fecha: {dateLabel(order.date)}{order.slot ? ` · ${order.slot}` : ''}<br />
-          {order.fulfillment === 'envio' ? `Envío a: ${order.address}` : `Retiro${bakery.pickup_address ? ` en ${bakery.pickup_address}` : ''}`}<br />
+          {order.fulfillment === 'envio' ? `${T.envio}: ${order.address}` : `${T.retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ''}`}<br />
           Total: {money(order.total)} · Seña: {money(order.deposit_amount)}{order.paid_at ? ' (pagada)' : ''}<br />
           Saldo a pagar: {money(due)}
         </p>

@@ -21,6 +21,7 @@ import { importRows, previewImport } from '@/lib/imports';
 import { parseOptionsText } from '@/lib/options';
 import { markBalancePaid } from '@/lib/balance';
 import { newCalendarToken } from '@/lib/ics';
+import { rubroOf, RUBROS } from '@/lib/rubros';
 import { createCustomerSubscription, changeSubscriptionStatus, generateRecurringOrders } from '@/lib/recurring';
 
 function back(path, { error, ok } = {}) {
@@ -41,7 +42,8 @@ export async function createBakery(fd) {
   const slug = slugify(str(fd, 'slug') || name);
   if (!name) back('/app', { error: 'Poné el nombre de tu emprendimiento.' });
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
-  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null });
+  const rubro = rubroOf(str(fd, 'business_type'));
+  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots });
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
   back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
 }
@@ -56,13 +58,14 @@ export async function loadExampleData() {
   let err = null;
   try {
     const { count: ingCount } = await admin.from('ingredients').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id);
-    if (!ingCount) await applyInsumos(admin, bakery, EXAMPLE_INSUMOS);
-    await applyProductos(admin, bakery, EXAMPLE_PRODUCTOS);
-    const { data: prods } = await admin.from('products').select('id,sku').eq('bakery_id', bakery.id).in('sku', Object.keys(EXAMPLE_RECIPES));
+    const sample = rubroOf(bakery).sample;
+    if (!ingCount) await applyInsumos(admin, bakery, sample.insumos);
+    await applyProductos(admin, bakery, sample.productos);
+    const { data: prods } = await admin.from('products').select('id,sku').eq('bakery_id', bakery.id).in('sku', Object.keys(sample.recipes));
     const rows = [];
     for (const p of prods || []) {
       const { count: rc } = await admin.from('recipe_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id);
-      if (!rc) EXAMPLE_RECIPES[p.sku].forEach(([ingredient_name, qty, unit]) => rows.push({ product_id: p.id, ingredient_name, qty, unit }));
+      if (!rc) sample.recipes[p.sku].forEach(([ingredient_name, qty, unit]) => rows.push({ product_id: p.id, ingredient_name, qty, unit }));
     }
     if (rows.length) await admin.from('recipe_items').insert(rows);
     await recomputeCosts(admin, bakery);
@@ -70,7 +73,7 @@ export async function loadExampleData() {
     err = e.message;
   }
   revalidatePath('/app', 'layout');
-  back('/app', err ? { error: err } : { ok: 'Cargamos 2 productos de ejemplo con receta. Cambiales nombre y precio, o reemplazalos subiendo tu planilla en Productos.' });
+  back('/app', err ? { error: err } : { ok: `Cargamos 2 ${rubroOf(bakery).items.toLowerCase()} de ejemplo con sus ${rubroOf(bakery).insumos.toLowerCase()}. Cambiales nombre y precio, o reemplazalos subiendo tu planilla.` });
 }
 
 export async function dismissOnboarding() {
@@ -104,6 +107,7 @@ export async function saveSettings(fd) {
     min_days_ahead: Math.min(60, Math.max(0, Math.round(parseNum(str(fd, 'min_days_ahead')) ?? 1))),
     max_days_ahead: Math.min(120, Math.max(1, Math.round(parseNum(str(fd, 'max_days_ahead')) ?? 21))),
     slots: slots.length ? slots : bakery.slots,
+    business_type: fd.get('business_type') ? rubroOf(str(fd, 'business_type')).key : rubroOf(bakery).key,
   };
   const { error } = await supabase.from('bakeries').update(patch).eq('id', bakery.id);
   if (error) back('/app/configuracion', { error: error.code === '23505' ? 'Ese link ya está en uso.' : error.message });
@@ -539,7 +543,7 @@ export async function subscribe(fd) {
   let err = null;
   try {
     const pre = await createPreapproval(process.env.MP_PLATFORM_ACCESS_TOKEN, {
-      reason: `AutoFlow Cocina – ${modules}`,
+      reason: `AutoFlow – ${modules}`,
       amount,
       payerEmail: user.email,
       externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}`,

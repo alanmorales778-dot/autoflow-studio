@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { changeOrderStatus, createManualOrder, markBalance } from '../actions';
@@ -27,6 +28,7 @@ function Action({ id, status, label, cls = 'secondary' }) {
 export default async function Pedidos({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery } = await requireBakery();
+  const T = rubroOf(bakery);
   const filter = sp.f || 'activos';
   let q = supabase.from('orders').select('*').eq('bakery_id', bakery.id);
   if (filter === 'activos') q = q.in('status', ['pendiente_sena', 'confirmado']).gte('date', addDays(todayAR(), -7)).order('date');
@@ -61,14 +63,14 @@ export default async function Pedidos({ searchParams }) {
                   <td>
                     {o.quantity} × {o.product_name}
                     {o.options?.length > 0 && <><br /><small>{optionsSummary(o.options)}</small></>}
-                    {o.dedication && <><br /><small>Dedicatoria: «{o.dedication}»</small></>}
+                    {o.dedication && <><br /><small>{T.note1.label}: «{o.dedication}»</small></>}
                     {o.allergies && <><br /><span className="badge bad">⚠ {o.allergies}</span></>}
                     {o.reference_photo_url && <><br /><a href={o.reference_photo_url} target="_blank" rel="noreferrer"><small>Ver foto de referencia</small></a></>}
                     <br /><small>{{ whatsapp: 'WhatsApp', manual: 'Cargado a mano', suscripcion: 'Suscripción', web: 'Web' }[o.channel]} · {dateTimeLabel(o.created_at)}{o.occasion ? ` · ${o.occasion}` : ''}</small>
                     {o.notes ? <><br /><small>{o.notes}</small></> : null}
                   </td>
                   <td>{o.customer_name}<br /><small>{o.customer_phone || ''}</small></td>
-                  <td>{o.fulfillment === 'envio' ? `Envío: ${o.address}` : 'Retira'}</td>
+                  <td>{o.fulfillment === 'envio' ? `${T.envio}: ${o.address}` : T.retiro}</td>
                   <td>
                     {money(o.total)}<br /><small>Seña {money(o.deposit_amount)}{o.paid_at ? ' ✓' : ''}</small>
                     <br />{balanceDue(o) > 0 ? <small style={{ color: 'var(--warn)' }}>Saldo {money(balanceDue(o))}</small> : <small style={{ color: 'var(--ok)' }}>Pagado ✓</small>}
@@ -123,13 +125,13 @@ export default async function Pedidos({ searchParams }) {
               </div>
               <div className="field">
                 <label>Entrega</label>
-                <select name="fulfillment"><option value="retiro">Retira</option>{bakery.delivery_enabled && <option value="envio">Envío</option>}</select>
+                <select name="fulfillment"><option value="retiro">{T.retiro}</option>{bakery.delivery_enabled && <option value="envio">{T.envio}</option>}</select>
               </div>
-              <div className="field"><label>Dirección (si es envío)</label><input name="address" /></div>
+              <div className="field"><label>Dirección (si es {T.envio.toLowerCase()})</label><input name="address" /></div>
               <div className="field"><label>Nombre del cliente</label><input name="customer_name" required /></div>
               <div className="field"><label>Teléfono</label><input name="customer_phone" /></div>
-              <div className="field"><label>Dedicatoria</label><input name="dedication" placeholder="Ej: ¡Feliz cumple Sofi!" /></div>
-              <div className="field"><label>Alergias / restricciones</label><input name="allergies" placeholder="Ej: sin TACC" /></div>
+              <div className="field"><label>{T.note1.label}</label><input name="dedication" placeholder={T.note1.ph} /></div>
+              <div className="field"><label>{T.note2.label}</label><input name="allergies" placeholder={T.note2.ph} /></div>
               <div className="field"><label>Notas</label><input name="notes" /></div>
             </div>
             <div className="row" style={{ marginBottom: 12 }}>

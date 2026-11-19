@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireBakery } from '@/lib/session';
@@ -11,6 +12,7 @@ export default async function Receta({ params, searchParams }) {
   const { id } = await params;
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
+  const T = rubroOf(bakery);
   const { data: product } = await supabase.from('products').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
   if (!product) notFound();
   const [{ data: items }, { data: ingredients }] = await Promise.all([
@@ -30,10 +32,10 @@ export default async function Receta({ params, searchParams }) {
 
   return (
     <>
-      <Link href="/app/productos">← Productos</Link>
-      <h1 style={{ marginTop: 12 }}>Receta: {product.name}</h1>
+      <Link href="/app/productos">← {T.items}</Link>
+      <h1 style={{ marginTop: 12 }}>{T.key === 'cocina' ? 'Receta' : 'Ficha'}: {product.name}</h1>
       <Flash sp={sp} />
-      {!access.costs && <Locked title="Módulo de Costos">Cargá recetas y calculá el costo real de cada producto.</Locked>}
+      {!access.costs && <Locked title="Módulo de Costos">Cargá qué lleva cada {T.item} y calculá su costo real.</Locked>}
 
       <div className="grid grid-3">
         <div className="card"><small className="muted">Precio de venta</small><div className="price">{money(product.price)}</div></div>
@@ -79,12 +81,12 @@ export default async function Receta({ params, searchParams }) {
       </div>
 
       <div className="card table-wrap">
-        <h2>Ingredientes por unidad de «{product.name}»</h2>
+        <h2>{T.key === 'cocina' ? 'Ingredientes' : T.insumos} por unidad de «{product.name}»</h2>
         {!items || items.length === 0 ? (
-          <p className="muted">Todavía no cargaste la receta.</p>
+          <p className="muted">Todavía no cargaste qué lleva.</p>
         ) : (
           <table>
-            <thead><tr><th>Insumo</th><th>Cantidad</th><th>Costo</th><th></th></tr></thead>
+            <thead><tr><th>{T.insumo}</th><th>Cantidad</th><th>Costo</th><th></th></tr></thead>
             <tbody>
               {items.map((it) => {
                 const c = lineCost(it);
@@ -112,7 +114,7 @@ export default async function Receta({ params, searchParams }) {
             <input type="hidden" name="product_id" value={product.id} />
             <div className="grid grid-3">
               <div className="field">
-                <label>Insumo</label>
+                <label>{T.insumo}</label>
                 <input name="ingredient_name" list="insumos" required placeholder="Elegí o escribí" />
                 <datalist id="insumos">{(ingredients || []).map((i) => <option key={i.id} value={i.name} />)}</datalist>
               </div>
@@ -140,10 +142,10 @@ Cobertura: Ganache | Merengue italiano +1500 | Fondant +5000`}</pre>
           <label className="inline-label" style={{ marginBottom: 12 }}><input type="checkbox" name="allow_subscription" defaultChecked={product.allow_subscription} /> Se puede pedir por suscripción (semanal o quincenal)</label>
           <button className="btn">Guardar</button>
         </form>
-        <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>El catálogo además pide dedicatoria, alergias y foto de referencia (opcionales) en todos los productos.</p>
+        <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>El catálogo además pide {T.note1.label.toLowerCase()}, {T.note2.label.toLowerCase()} y foto de referencia (opcionales) en todos los productos.</p>
       </div>
 
-      <p className="muted" style={{ fontSize: 13 }}>Los precios de los insumos salen de tu planilla «Insumos». Cuando cambiás un precio ahí, este costo se recalcula solo (cada 10 minutos o con «Actualizar ahora»).</p>
+      <p className="muted" style={{ fontSize: 13 }}>Los precios salen de tu lista de {T.insumos.toLowerCase()}. Cuando cambiás un precio ahí, este costo se recalcula solo (cada 10 minutos o con «Actualizar ahora»).</p>
     </>
   );
 }

@@ -10,11 +10,11 @@ export function AuthShell({ children }) {
       <aside className="auth-side">
         <Logo mark="#C2410C" />
         <div style={{ maxWidth: 460 }}>
-          <h2 className="disp">Tu cocina, ordenada antes de prender el horno.</h2>
+          <h2 className="disp">Tu negocio, ordenado antes de empezar el día.</h2>
           <ul>
-            <li>Pedidos con seña cobrada, ordenados por día</li>
+            <li>Pedidos y turnos con seña cobrada, ordenados por día</li>
             <li>Cupos que cierran la fecha cuando no das abasto</li>
-            <li>Precios que se recalculan cuando sube un insumo</li>
+            <li>Precios que se recalculan cuando sube lo que comprás</li>
           </ul>
         </div>
         <p className="foot">14 días gratis con todos los módulos. Sin tarjeta.</p>

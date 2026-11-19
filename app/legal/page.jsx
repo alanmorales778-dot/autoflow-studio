@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Logo from '../logo';
 
-export const metadata = { title: 'Términos y privacidad — AutoFlow Cocina' };
+export const metadata = { title: 'Términos y privacidad — AutoFlow' };
 
 const CONTACT = 'alan.morales778@gmail.com';
 
@@ -34,7 +34,7 @@ export default function Legal() {
         </nav>
 
         <h2 id="servicio">1. El servicio</h2>
-        <p>AutoFlow Cocina es un servicio de AutoFlow Studio que ayuda a negocios gastronómicos a tomar pedidos online, administrar cupos de producción, cobrar señas, calcular costos y llevar el stock. Al crear una cuenta aceptás estos términos.</p>
+        <p>AutoFlow es un servicio de AutoFlow Studio que ayuda a negocios que trabajan por encargo, turno o reserva (cocina, belleza, regalos, talleres, alquileres y otros) a tomar pedidos online, administrar cupos de producción, cobrar señas, calcular costos y llevar el stock. Al crear una cuenta aceptás estos términos.</p>
 
         <h2 id="cuenta">2. Tu cuenta y uso aceptable</h2>
         <p>Sos responsable de la información que cargás, de mantener segura tu contraseña y de lo que pase desde tu cuenta. No podés usar el servicio para vender productos ilegales, enviar mensajes no solicitados ni cargar datos de terceros sin derecho a hacerlo. Podemos suspender cuentas que incumplan estas reglas, avisando antes salvo que haya un riesgo urgente.</p>
@@ -48,8 +48,8 @@ export default function Legal() {
         <h2 id="datos">5. Datos que tratamos y para qué</h2>
         <ul>
           <li><strong>Tu cuenta:</strong> email, nombre del negocio, dirección de retiro y WhatsApp de contacto. Para darte acceso y mostrar tu catálogo.</li>
-          <li><strong>Tu operación:</strong> productos, precios, insumos, recetas, cupos y stock. Para calcular costos, disponibilidad y producción.</li>
-          <li><strong>Pedidos de tus clientes:</strong> nombre, teléfono, dirección de entrega si hay envío, detalle del pedido, dedicatoria, foto de referencia y alergias si las indican. Para preparar y entregar el pedido y cobrar la seña y el saldo.</li>
+          <li><strong>Tu operación:</strong> productos o servicios, precios, insumos o materiales, recetas, cupos y stock. Para calcular costos, disponibilidad y producción.</li>
+          <li><strong>Pedidos de tus clientes:</strong> nombre, teléfono, dirección de entrega si hay envío, detalle del pedido, notas como dedicatoria o detalle, foto de referencia y alergias o sensibilidades si las indican. Para preparar y entregar el pedido y cobrar la seña y el saldo.</li>
           <li><strong>Datos técnicos:</strong> registros de errores y de uso del servicio. Para mantenerlo funcionando y seguro.</li>
         </ul>
         <p>No vendemos datos ni los usamos para publicidad. Solo usamos cookies necesarias para mantener tu sesión iniciada.</p>
@@ -75,7 +75,7 @@ export default function Legal() {
         <h2 id="cambios">12. Cambios y contacto</h2>
         <p>Si cambiamos estos términos de forma importante, te avisamos por email o dentro de la app antes de que rijan. Estos términos se rigen por las leyes de la República Argentina. Contacto: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
       </main>
-      <footer className="footer"><div className="container">© {new Date().getFullYear()} AutoFlow Cocina</div></footer>
+      <footer className="footer"><div className="container">© {new Date().getFullYear()} AutoFlow</div></footer>
     </>
   );
 }

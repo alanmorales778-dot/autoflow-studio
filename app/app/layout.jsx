@@ -3,6 +3,7 @@ import { getContext } from '@/lib/session';
 import { signOut } from './actions';
 import Logo from '../logo';
 import Sidebar from './sidebar';
+import { rubroOf } from '@/lib/rubros';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export default async function AppLayout({ children }) {
             </a>
             <Link className="btn dark small" href="/cocina">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 13.9A4 4 0 0 1 7.5 6a5 5 0 0 1 9 0A4 4 0 0 1 18 13.9V21H6z" /><path d="M6 17h12" /></svg>
-              Modo cocina
+              {rubroOf(bakery).workMode}
             </Link>
             <span className="avatar" aria-hidden="true">{initials(bakery.name)}</span>
             <form action={signOut}><button className="btn secondary small">Salir</button></form>
@@ -54,7 +55,7 @@ export default async function AppLayout({ children }) {
         </div>
       </header>
       <div className="shell">
-        <Sidebar />
+        <Sidebar terms={{ items: rubroOf(bakery).items, insumos: rubroOf(bakery).insumos, workMode: rubroOf(bakery).workMode }} />
         <main className="content fade-in">
           {!access.base && (
             <div className="alert bad">Tu prueba terminó o la suscripción no está activa: tu catálogo y el bot no toman pedidos nuevos. <Link href="/app/plan">Activar plan</Link></div>

@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { setPrepared } from './actions';
 
-export default function Board({ items }) {
+export default function Board({ items, labels = { note1: 'Dedicatoria', note2: 'Alergias', warn: true } }) {
   const router = useRouter();
   const [done, setDone] = useState(() => Object.fromEntries(items.map((i) => [i.id, i.done])));
   const [, start] = useTransition();
@@ -42,8 +42,8 @@ export default function Board({ items }) {
               <span className="kt">{k.qty} × {k.product}</span>
               <span className="ks">{[k.slot, k.customer, k.mode].filter(Boolean).join(' · ')}</span>
               {k.options && <span className="ks">{k.options}</span>}
-              {k.dedication && <span className="kn">Dedicatoria: «{k.dedication}»</span>}
-              {k.allergies && <span className="kn allergy">⚠ Alergias: {k.allergies}</span>}
+              {k.dedication && <span className="kn">{labels.note1}: «{k.dedication}»</span>}
+              {k.allergies && <span className={`kn ${labels.warn ? 'allergy' : ''}`}>{labels.warn ? '⚠ ' : ''}{labels.note2}: {k.allergies}</span>}
               {k.notes && <span className="ks">Nota: {k.notes}</span>}
             </span>
           </button>

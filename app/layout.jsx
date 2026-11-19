@@ -5,8 +5,8 @@ import './globals.css';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
 export const metadata = {
-  title: 'AutoFlow Cocina — Pedidos, señas y costos para pastelería',
-  description: 'Agenda de pedidos con cupos, señas automáticas con Mercado Pago, costos que se actualizan desde tu Excel o Google Drive y bot de WhatsApp.',
+  title: 'AutoFlow — Pedidos, turnos, señas y costos para negocios por encargo',
+  description: 'Link de pedidos y turnos con cupos por día, señas automáticas con Mercado Pago, costos que se actualizan desde tu Excel o Google Drive y bot de WhatsApp.',
 };
 
 export const viewport = { themeColor: '#faf7f2' };

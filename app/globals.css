@@ -1,4 +1,4 @@
-/* AutoFlow Cocina · sistema de diseño v2
+/* AutoFlow · sistema de diseño v2
    Blancos rotos y tostados, un solo naranja para la acción, números tabulares
    y movimiento corto (ease-out, clic a scale .95). */
 :root {
@@ -427,3 +427,28 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .steps li.done .check { background: var(--ok); border-color: var(--ok); }
 .steps li.done strong { color: var(--muted); font-weight: 500; text-decoration: line-through; }
 @media (max-width: 560px) { .steps li { flex-wrap: wrap; } }
+
+/* ---------- Landing multirrubro ---------- */
+.lead { font-size: 18px; color: var(--ink-2); text-wrap: pretty; }
+.demo-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; position: relative; z-index: 1; }
+.demo-tabs .chip svg { flex: 0 0 auto; }
+.rubro-card { display: flex; flex-direction: column; gap: 14px; padding: 24px; margin: 0; color: inherit; text-decoration: none; transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .2s; }
+.rubro-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
+.rubro-card:active { transform: scale(.98); }
+.rubro-card .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--brand-soft); display: grid; place-items: center; }
+.rubro-card h3 { font-size: 19px; margin: 0 0 6px; }
+.rubro-card p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.rubro-card .go { margin-top: auto; font-size: 14px; font-weight: 600; color: var(--brand); }
+.rubro-card.featured { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.section-band { background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 88px; }
+.section-band .section { padding: 72px 0; }
+.story { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.story li { display: flex; gap: 18px; padding: 18px 0; border-top: 1px solid var(--line); }
+.story li:first-child { border-top: 0; padding-top: 4px; }
+.story .n { flex: 0 0 40px; height: 40px; border-radius: 12px; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.story strong { font-size: 17px; }
+.story p { margin: 4px 0 0; color: var(--ink-2); }
+.vocab { width: 100%; border-collapse: collapse; font-size: 14px; }
+.vocab th { text-align: left; padding: 12px 16px; background: var(--sunken); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.vocab td { padding: 11px 16px; border-top: 1px solid var(--line); color: var(--ink-2); }
+.vocab td:first-child { color: var(--ink); font-weight: 600; }

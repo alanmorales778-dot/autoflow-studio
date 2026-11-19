@@ -1,3 +1,4 @@
+import { rubroOf } from '@/lib/rubros';
 import { NextResponse } from 'next/server';
 import { createClient, createAdmin } from '@/lib/supabase';
 import { exchangeCode, emailFromIdToken } from '@/lib/google';
@@ -35,7 +36,7 @@ export async function GET(request) {
 
     let fresh = { ...bakery, ...patch };
     if (!bakery.sheet_productos_id) {
-      const ids = await createTemplateSheets(tokens.access_token, bakery.name);
+      const ids = await createTemplateSheets(tokens.access_token, bakery.name, rubroOf(bakery).sample);
       patch.sheet_insumos_id = ids.insumos;
       patch.sheet_productos_id = ids.productos;
       fresh = { ...fresh, ...patch };
@@ -46,11 +47,11 @@ export async function GET(request) {
     if (r.error) return back(request, { error: `Conectado, pero falló la primera lectura: ${r.error}` });
 
     // recetas de ejemplo para los productos de ejemplo (solo si todavía no tienen)
-    const { data: prods } = await admin.from('products').select('id,sku').eq('bakery_id', bakery.id).in('sku', Object.keys(EXAMPLE_RECIPES));
+    const { data: prods } = await admin.from('products').select('id,sku').eq('bakery_id', bakery.id).in('sku', Object.keys(rubroOf(bakery).sample.recipes));
     const toSeed = [];
     for (const p of prods || []) {
       const { count } = await admin.from('recipe_items').select('id', { count: 'exact', head: true }).eq('product_id', p.id);
-      if (!count) EXAMPLE_RECIPES[p.sku].forEach(([ingredient_name, qty, unit]) => toSeed.push({ product_id: p.id, ingredient_name, qty, unit }));
+      if (!count) rubroOf(bakery).sample.recipes[p.sku].forEach(([ingredient_name, qty, unit]) => toSeed.push({ product_id: p.id, ingredient_name, qty, unit }));
     }
     if (toSeed.length) {
       await admin.from('recipe_items').insert(toSeed);

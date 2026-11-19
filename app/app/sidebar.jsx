@@ -20,15 +20,15 @@ const I = {
   plan: 'M20 12V8H6a2 2 0 0 1 0-4h12v4M4 6v12a2 2 0 0 0 2 2h14v-4M18 12a2 2 0 0 0 0 4h4v-4z',
 };
 
-const GROUPS = [
+const groups = (t) => [
   ['Operación', [['/app', 'Agenda', 'agenda'], ['/app/pedidos', 'Pedidos', 'pedidos'], ['/app/cobros', 'Cobros', 'cobros'], ['/app/produccion', 'Producción y compras', 'produccion'], ['/app/clientes', 'Clientes', 'clientes'], ['/app/suscripciones', 'Recurrentes', 'recurrentes']]],
-  ['Catálogo y costos', [['/app/productos', 'Productos', 'productos'], ['/app/insumos', 'Insumos', 'insumos'], ['/app/costos', 'Costos e inflación', 'costos'], ['/app/rentabilidad', 'Rentabilidad', 'rentabilidad']]],
+  ['Catálogo y costos', [['/app/productos', t.items, 'productos'], ['/app/insumos', t.insumos, 'insumos'], ['/app/costos', 'Costos e inflación', 'costos'], ['/app/rentabilidad', 'Rentabilidad', 'rentabilidad']]],
   ['Cuenta', [['/app/actividad', 'Actividad', 'actividad'], ['/app/configuracion', 'Ajustes', 'ajustes'], ['/app/plan', 'Plan', 'plan']]],
 ];
 
 const KEYS = { a: '/app', p: '/app/pedidos', n: '/app/pedidos#nuevo', c: '/cocina', b: '/app/cobros', r: '/app/costos' };
 
-export default function Sidebar() {
+export default function Sidebar({ terms }) {
   const path = usePathname();
   const router = useRouter();
 
@@ -48,7 +48,7 @@ export default function Sidebar() {
 
   return (
     <nav className="side no-print" aria-label="Secciones">
-      {GROUPS.map(([title, links]) => (
+      {groups(terms).map(([title, links]) => (
         <div key={title} style={{ display: 'contents' }}>
           <div className="side-group">{title}</div>
           {links.map(([href, label, icon]) => {
@@ -62,7 +62,7 @@ export default function Sidebar() {
           })}
         </div>
       ))}
-      <p className="kbd-hint">Atajos: <kbd>A</kbd> agenda · <kbd>P</kbd> pedidos · <kbd>N</kbd> pedido nuevo · <kbd>B</kbd> cobros · <kbd>R</kbd> costos · <kbd>C</kbd> modo cocina</p>
+      <p className="kbd-hint">Atajos: <kbd>A</kbd> agenda · <kbd>P</kbd> pedidos · <kbd>N</kbd> pedido nuevo · <kbd>B</kbd> cobros · <kbd>R</kbd> costos · <kbd>C</kbd> {terms.workMode.toLowerCase()}</p>
     </nav>
   );
 }

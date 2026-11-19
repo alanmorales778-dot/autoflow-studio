@@ -9,6 +9,7 @@ import { appUrl } from '@/lib/env';
 import { balanceDue, reminderLink } from '@/lib/balance';
 import { optionsSummary } from '@/lib/options';
 import { productionOrders, shoppingList } from '@/lib/production';
+import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
 
 export default async function Agenda({ searchParams }) {
   const sp = await searchParams;
@@ -16,6 +17,7 @@ export default async function Agenda({ searchParams }) {
 
   if (!bakery) {
     const suggested = user.user_metadata?.business_name || '';
+    const r = rubroOf(user.user_metadata?.business_type);
     return (
       <div className="narrow" style={{ marginTop: 0 }}>
         <div className="card">
@@ -24,14 +26,20 @@ export default async function Agenda({ searchParams }) {
           <Flash sp={sp} />
           <form action={createBakery}>
             <div className="field">
+              <label>Rubro</label>
+              <select name="business_type" defaultValue={r.key}>
+                {RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}
+              </select>
+            </div>
+            <div className="field">
               <label>Nombre del emprendimiento</label>
-              <input name="name" required defaultValue={suggested} />
+              <input name="name" required defaultValue={suggested} placeholder={r.bizPh} />
             </div>
             <div className="field">
               <label>Tu link de pedidos</label>
               <div className="row" style={{ flexWrap: 'nowrap' }}>
                 <span className="muted" style={{ whiteSpace: 'nowrap' }}>{appUrl().replace(/^https?:\/\//, '')}/c/</span>
-                <input name="slug" defaultValue={slugify(suggested)} placeholder="dulce-lola" />
+                <input name="slug" defaultValue={slugify(suggested)} placeholder={r.slugPh} />
               </div>
             </div>
             <div className="field">
@@ -45,6 +53,7 @@ export default async function Agenda({ searchParams }) {
     );
   }
 
+  const T = rubroOf(bakery);
   const today = todayAR();
   const until = addDays(today, 13);
   const [{ data: orders }, { data: rules }, { data: products }, { data: blocked }] = await Promise.all([
@@ -114,7 +123,7 @@ export default async function Agenda({ searchParams }) {
           <p>Próximos 14 días · {dateLabel(today)} es hoy</p>
         </div>
         <div className="row">
-          <Link href="/cocina" className="btn secondary small">Modo cocina</Link>
+          <Link href="/cocina" className="btn secondary small">{T.workMode}</Link>
           <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
         </div>
       </div>
@@ -159,9 +168,9 @@ export default async function Agenda({ searchParams }) {
           <div style={{ flex: '1 1 320px' }}>
             <strong>Compras para los próximos 3 días</strong>
             <div style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 2 }}>
-              Según las recetas de {shopping.orders} {shopping.orders === 1 ? 'pedido' : 'pedidos'} vas a usar{' '}
+              Según lo que llevan {shopping.orders} {shopping.orders === 1 ? 'pedido' : 'pedidos'} vas a usar{' '}
               {shopping.rows.slice(0, 4).map((r) => `${r.needed} de ${r.name.toLowerCase()}`).join(', ')}
-              {shopping.rows.length > 4 ? ` y ${shopping.rows.length - 4} insumos más` : ''}
+              {shopping.rows.length > 4 ? ` y ${shopping.rows.length - 4} ${T.insumos.toLowerCase()} más` : ''}
               {shopping.total ? ` (unos ${money(shopping.total)})` : ''}. Revisá qué te falta.
             </div>
           </div>
@@ -275,9 +284,9 @@ export default async function Agenda({ searchParams }) {
                     <StatusBadge status={o.status} />
                   </div>
                   <div className="muted" style={{ fontSize: 13 }}>
-                    {o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}{o.slot ? ` · ${o.slot}` : ''} · {o.fulfillment === 'envio' ? `Envío: ${o.address}` : 'Retira'}
+                    {o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}{o.slot ? ` · ${o.slot}` : ''} · {o.fulfillment === 'envio' ? `${T.envio}: ${o.address}` : T.retiro}
                     {o.options?.length > 0 && <><br />{optionsSummary(o.options)}</>}
-                    {o.dedication && <><br />Dedicatoria: «{o.dedication}»</>}
+                    {o.dedication && <><br />{T.note1.label}: «{o.dedication}»</>}
                     {balanceDue(o) > 0 && o.status !== 'pendiente_sena' && <><br />Saldo a cobrar: {money(balanceDue(o))}</>}
                   </div>
                   {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
