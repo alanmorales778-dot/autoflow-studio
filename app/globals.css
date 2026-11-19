@@ -495,4 +495,4 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
   .topbar .nav > a:not(.btn):not([href="/login"]) { display: none; }
   .vs th, .vs td { padding: 12px; font-size: 14px; }
 }
-@media (max-width: 420px) { .topbar .nav > a[href="/login"] { display: none; } }
+@media (max-width: 420px) { .topbar .nav { gap: 4px; } .topbar .nav .btn { padding: 0 12px; min-height: 36px; font-size: 14px; } }
