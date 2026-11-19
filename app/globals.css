@@ -491,3 +491,7 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .faq summary::after { content: "+"; font-size: 20px; line-height: 1; color: var(--brand); transition: transform .2s var(--ease); }
 .faq details[open] summary::after { transform: rotate(45deg); }
 .faq details p { margin: 0; padding: 0 20px 18px; color: var(--ink-2); }
+@media (max-width: 720px) {
+  .topbar .nav > a:not(.btn):not([href="/login"]) { display: none; }
+  .vs th, .vs td { padding: 12px; font-size: 14px; }
+}
