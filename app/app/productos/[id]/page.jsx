@@ -129,7 +129,7 @@ export default async function Receta({ params, searchParams }) {
         )}
       </div>
       <div className="card">
-        <h2>Personalización y suscripción</h2>
+        <h2>Duración, opciones y suscripción</h2>
         <p className="muted">
           Opciones que tu cliente elige al pedir, una por línea. Formato: <code>Grupo: opción | opción +precio extra</code>. Con <code>*</code> después del nombre es obligatoria.
         </p>
@@ -139,6 +139,7 @@ Cobertura: Ganache | Merengue italiano +1500 | Fondant +5000`}</pre>
         <form action={saveProductSettings}>
           <input type="hidden" name="id" value={product.id} />
           <div className="field"><textarea name="options" rows={5} defaultValue={formatOptionsText(product.options)} /></div>
+          <div className="field" style={{ maxWidth: 320 }}><label>Duración (minutos, opcional)</label><input name="duration_minutes" type="number" min="5" max="1440" step="5" defaultValue={product.duration_minutes ?? ''} placeholder="Ej: 90" />{bakery.slot_capacity ? <div className="hint">Un turno de este {T.item} ocupa los horarios que entran en ese tiempo.</div> : <div className="hint">Se usa cuando ponés «Clientes a la vez por horario» en Ajustes.</div>}</div>
           <label className="inline-label" style={{ marginBottom: 12 }}><input type="checkbox" name="allow_subscription" defaultChecked={product.allow_subscription} /> Se puede pedir por suscripción (semanal o quincenal)</label>
           <button className="btn">Guardar</button>
         </form>

@@ -43,7 +43,7 @@ export async function createBakery(fd) {
   if (!name) back('/app', { error: 'Poné el nombre de tu emprendimiento.' });
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
   const rubro = rubroOf(str(fd, 'business_type'));
-  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots });
+  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null });
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
   back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
 }
@@ -108,6 +108,7 @@ export async function saveSettings(fd) {
     max_days_ahead: Math.min(120, Math.max(1, Math.round(parseNum(str(fd, 'max_days_ahead')) ?? 21))),
     slots: slots.length ? slots : bakery.slots,
     business_type: fd.get('business_type') ? rubroOf(str(fd, 'business_type')).key : rubroOf(bakery).key,
+    slot_capacity: fd.has('slot_capacity') ? (Math.round(parseNum(str(fd, 'slot_capacity')) || 0) >= 1 ? Math.min(100, Math.round(parseNum(str(fd, 'slot_capacity')))) : null) : bakery.slot_capacity ?? null,
   };
   const { error } = await supabase.from('bakeries').update(patch).eq('id', bakery.id);
   if (error) back('/app/configuracion', { error: error.code === '23505' ? 'Ese link ya está en uso.' : error.message });
@@ -469,9 +470,14 @@ export async function saveProductSettings(fd) {
   const { supabase, bakery } = await requireBakery();
   const id = str(fd, 'id');
   const options = parseOptionsText(str(fd, 'options'));
+  const patch = { options, allow_subscription: fd.get('allow_subscription') === 'on' };
+  if (fd.has('duration_minutes')) {
+    const d = Math.round(parseNum(str(fd, 'duration_minutes')) || 0);
+    patch.duration_minutes = d >= 5 ? Math.min(d, 1440) : null;
+  }
   const { error } = await supabase
     .from('products')
-    .update({ options, allow_subscription: fd.get('allow_subscription') === 'on' })
+    .update(patch)
     .eq('id', id)
     .eq('bakery_id', bakery.id);
   back(`/app/productos/${id}`, error ? { error: error.message } : { ok: `Guardado: ${options.length} grupos de opciones.` });

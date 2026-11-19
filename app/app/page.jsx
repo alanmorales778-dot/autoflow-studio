@@ -10,6 +10,7 @@ import { balanceDue, reminderLink } from '@/lib/balance';
 import { optionsSummary } from '@/lib/options';
 import { productionOrders, shoppingList } from '@/lib/production';
 import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
+import { slotLoad } from '@/lib/slots';
 
 export default async function Agenda({ searchParams }) {
   const sp = await searchParams;
@@ -274,6 +275,16 @@ export default async function Agenda({ searchParams }) {
                 ))}
               </div>
             )}
+            {bakery.slot_capacity && (bakery.slots || []).length > 0 && dayOrders.length > 0 && (() => {
+              const load = slotLoad(bakery.slots, dayOrders.filter((o) => o.status === 'entregado' || isHolding(o)));
+              return (
+                <div className="row" style={{ margin: '6px 0', gap: 6 }} aria-label="Ocupación por horario">
+                  {bakery.slots.map((sl) => (
+                    <span key={sl} className={`badge ${load[sl] >= bakery.slot_capacity ? 'bad' : load[sl] > 0 ? 'warn' : ''}`}>{sl} · {load[sl]}/{bakery.slot_capacity}</span>
+                  ))}
+                </div>
+              );
+            })()}
             {dayOrders.length === 0 ? (
               <p className="muted" style={{ margin: '6px 0 0' }}>Sin pedidos</p>
             ) : (

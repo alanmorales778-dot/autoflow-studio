@@ -45,6 +45,7 @@ export default async function Configuracion({ searchParams }) {
             <div className="field"><label>Margen objetivo (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
             <div className="field"><label>Indirectos: luz, gas, alquiler, envases (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /></div>
             <div className="field"><label>Horarios o franjas (uno por línea)</label><textarea name="slots" defaultValue={(bakery.slots || []).join('\n')} /></div>
+            <div className="field"><label>Clientes a la vez por horario</label><input name="slot_capacity" type="number" min="1" max="100" defaultValue={bakery.slot_capacity ?? ''} placeholder="Sin límite" /><div className="hint">Para turnos: cuántas personas atienden en el mismo horario. Si un servicio dura más, ocupa también los horarios siguientes. Vacío = sin límite por horario.</div></div>
             <div className="field" style={{ display: 'flex', alignItems: 'center' }}>
               <label className="inline-label"><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Ofrezco «{t.envio.toLowerCase()}»</label>
             </div>

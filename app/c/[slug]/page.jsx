@@ -1,4 +1,5 @@
 import { rubroOf } from '@/lib/rubros';
+import DateSlotPicker from './date-slot-picker';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdmin } from '@/lib/supabase';
@@ -23,10 +24,10 @@ function waLink(num) {
 
 const Trap = () => <input type="text" name="website" tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} aria-hidden="true" />;
 
-function DeliveryFields({ bakery }) {
+function DeliveryFields({ bakery, noSlots = false }) {
   return (
     <>
-      {(bakery.slots || []).length > 0 && (
+      {!noSlots && (bakery.slots || []).length > 0 && (
         <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 14px' }}>
           <legend style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink-2)', marginBottom: 6, padding: 0 }}>Horario</legend>
           <div className="dates">
@@ -177,25 +178,12 @@ export default async function Catalogo({ params, searchParams }) {
                           </select>
                         </div>
                       ))}
-                      <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 14px' }}>
-                        <legend style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink-2)', marginBottom: 6, padding: 0 }}>Fecha · solo te mostramos días con lugar</legend>
-                        <div className="dates">
-                          {dates.map((d, i) => {
-                            const [wd, dm] = dateLabel(d.date).split(' ');
-                            return (
-                              <label key={d.date} className="date-opt" style={{ margin: 0 }}>
-                                <input type="radio" name="date" value={d.date} required defaultChecked={i === 0} />
-                                <span>
-                                  <span className="wd">{wd}</span>
-                                  <span className="dn">{dm.split('/')[0]}</span>
-                                  <span className={`lf ${d.left !== null && d.left <= 1 ? 'low' : ''}`}>{d.left === null ? `${dm}` : d.left <= 1 ? 'Queda 1' : d.left <= 3 ? `Quedan ${d.left}` : dm}</span>
-                                </span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </fieldset>
-                      <DeliveryFields bakery={bakery} />
+<DateSlotPicker
+                        dates={dates.map((d) => { const [wd, dm] = dateLabel(d.date).split(' '); return { ...d, wd, dm, dn: dm.split('/')[0] }; })}
+                        allSlots={bakery.slots || []}
+                        perSlot={!!bakery.slot_capacity}
+                      />
+                      <DeliveryFields bakery={bakery} noSlots />
                       <div className="field"><label>¿Para qué ocasión? (opcional)</label><input name="occasion" placeholder="Ej: cumple de Sofi, aniversario" /></div>
                       <div className="field"><label>{t.note1.label} (opcional)</label><input name="dedication" maxLength={200} placeholder={t.note1.ph} /></div>
                       <div className="field"><label>{t.note2.label} (opcional)</label><input name="allergies" placeholder={t.note2.ph} /></div>
