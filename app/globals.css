@@ -383,9 +383,9 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .dates { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; }
 .date-opt { position: relative; flex: 0 0 auto; }
 .date-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
-.date-opt span { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: transform .16s var(--ease), border-color .2s, background-color .2s, color .2s; }
-.date-opt span:hover { border-color: var(--line-strong); }
-.date-opt span:active { transform: scale(.95); }
+.date-opt > span { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: transform .16s var(--ease), border-color .2s, background-color .2s, color .2s; }
+.date-opt > span:hover { border-color: var(--line-strong); }
+.date-opt > span:active { transform: scale(.95); }
 .date-opt .wd { font-size: 12px; font-weight: 600; text-transform: capitalize; color: inherit; }
 .date-opt .dn { font-family: var(--font-display); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .date-opt .lf { font-size: 11px; font-weight: 600; color: var(--muted); }
@@ -454,5 +454,5 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
 .vocab th { text-align: left; padding: 12px 16px; background: var(--sunken); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .vocab td { padding: 11px 16px; border-top: 1px solid var(--line); color: var(--ink-2); }
 .vocab td:first-child { color: var(--ink); font-weight: 600; }
-.date-opt.full span { cursor: not-allowed; background: var(--sunken); color: var(--muted); text-decoration: line-through; }
-.date-opt.full span:active { transform: none; }
+.date-opt.full > span { cursor: not-allowed; background: var(--sunken); color: var(--muted); text-decoration: line-through; }
+.date-opt.full > span:active { transform: none; }
