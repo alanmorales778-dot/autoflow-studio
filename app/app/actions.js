@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { getContext, requireBakery } from '@/lib/session';
 import { createAdmin, createClient } from '@/lib/supabase';
 import { encrypt } from '@/lib/crypto';
-import { slugify, parseNum, todayAR } from '@/lib/format';
+import { slugify, parseNum, todayAR, pct } from '@/lib/format';
 import { syncBakery, recomputeCosts, pushStockToSheet, writeCells, EXAMPLE_INSUMOS, EXAMPLE_PRODUCTOS, EXAMPLE_RECIPES } from '@/lib/sheets';
 import { applyInsumos, applyProductos } from '@/lib/catalog';
 import { setOrderStatus } from '@/lib/lifecycle';
@@ -461,7 +461,7 @@ export async function saveIngredient(fd) {
   await recomputeCosts(admin, bakery);
   revalidatePath('/app', 'layout');
   const name = patch.name || prev?.name;
-  const change = prev && Number(prev.price) !== price && Number(prev.price) > 0 ? ` (${price > prev.price ? '+' : ''}${Math.round(((price - prev.price) / prev.price) * 1000) / 10} %)` : '';
+  const change = prev && Number(prev.price) !== price && Number(prev.price) > 0 ? ` (${price > prev.price ? '+' : ''}${pct(((price - prev.price) / prev.price) * 100)})` : '';
   back(path, { ok: id ? `Nuevo precio de ${name}: $${price.toLocaleString('es-AR')}${change}. Los costos ya se recalcularon.` : `Agregamos ${name}.` });
 }
 
