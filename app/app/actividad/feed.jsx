@@ -12,7 +12,7 @@ const KIND = {
   sistema: ['Sistema', '#c4b5a8'],
 };
 const FILTERS = [['todo', 'Todo'], ['pedido', 'Pedidos'], ['pago', 'Pagos'], ['cupo', 'Cupos'], ['cocina', 'Cocina'], ['costo', 'Costos'], ['sistema', 'Sistema']];
-const fmt = new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fmt = new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 export default function Feed({ events }) {
   const router = useRouter();

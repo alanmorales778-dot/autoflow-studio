@@ -36,7 +36,8 @@ async function run(request) {
     return true;
   };
 
-  await check('landing', page('/', 'Dejá de responder pedidos'));
+  // Se busca el link a «Crear cuenta», no un título: los textos de venta cambian seguido y no son una falla.
+  await check('landing', page('/', 'href="/registro'));
   await check('login', page('/login', 'Hola de nuevo'));
   await check('registro', page('/registro', 'Probá 14 días gratis'));
   await check('legal', page('/legal', 'Ley 25.326'));

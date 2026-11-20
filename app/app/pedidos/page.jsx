@@ -5,6 +5,7 @@ import { changeOrderStatus, createManualOrder, markBalance } from '../actions';
 import { balanceDue, reminderLink } from '@/lib/balance';
 import { optionsSummary } from '@/lib/options';
 import { Flash, StatusBadge } from '../ui';
+import ConfirmButton from '../confirm-button';
 import { money, dateLabel, dateTimeLabel, todayAR, addDays, STATUS_LABEL } from '@/lib/format';
 
 const FILTERS = [
@@ -15,12 +16,12 @@ const FILTERS = [
   ['cancelado,vencido', 'Cancelados / vencidos'],
 ];
 
-function Action({ id, status, label, cls = 'secondary' }) {
+function Action({ id, status, label, cls = 'secondary', confirm }) {
   return (
     <form action={changeOrderStatus} style={{ display: 'inline' }}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className={`btn small ${cls}`}>{label}</button>
+      {confirm ? <ConfirmButton className={`btn small ${cls}`} message={confirm}>{label}</ConfirmButton> : <button className={`btn small ${cls}`}>{label}</button>}
     </form>
   );
 }
@@ -72,8 +73,8 @@ export default async function Pedidos({ searchParams }) {
                   <td>{o.customer_name}<br /><small>{o.customer_phone || ''}</small></td>
                   <td>{o.fulfillment === 'envio' ? `${T.envio}: ${o.address}` : T.retiro}</td>
                   <td>
-                    {money(o.total)}<br /><small>Seña {money(o.deposit_amount)}{o.paid_at ? ' ✓' : ''}</small>
-                    <br />{balanceDue(o) > 0 ? <small style={{ color: 'var(--warn)' }}>Saldo {money(balanceDue(o))}</small> : <small style={{ color: 'var(--ok)' }}>Pagado ✓</small>}
+                    {money(o.total)}<br /><small>Seña {money(o.deposit_amount)}{o.paid_at ? ' ✓' : ' sin cobrar'}</small>
+                    <br />{o.status === 'pendiente_sena' ? null : balanceDue(o) > 0 ? <small style={{ color: 'var(--warn)' }}>Saldo {money(balanceDue(o))}</small> : <small style={{ color: 'var(--ok)' }}>Pagado ✓</small>}
                   </td>
                   <td>
                     <StatusBadge status={o.status} />
@@ -82,7 +83,7 @@ export default async function Pedidos({ searchParams }) {
                   <td style={{ whiteSpace: 'nowrap' }}>
                     {o.status === 'pendiente_sena' && <Action id={o.id} status="confirmado" label="Seña cobrada" />}{' '}
                     {o.status === 'confirmado' && <Action id={o.id} status="entregado" label="Entregado" />}{' '}
-                    {['pendiente_sena', 'confirmado'].includes(o.status) && <Action id={o.id} status="cancelado" label="Cancelar" cls="danger" />}
+                    {['pendiente_sena', 'confirmado'].includes(o.status) && <span style={{ marginLeft: 10 }}><Action id={o.id} status="cancelado" label="Cancelar" cls="danger" confirm={`¿Cancelar el pedido de ${o.customer_name} (${o.quantity} × ${o.product_name}, ${dateLabel(o.date)})?${o.paid_at ? ' Ya pagó la seña: acordá con el cliente la devolución.' : ''} Se libera el cupo.`} /></span>}
                     {o.status === 'vencido' && <Action id={o.id} status="confirmado" label="Confirmar igual" />}
                     {['confirmado', 'entregado'].includes(o.status) && (
                       <div className="row" style={{ gap: 6, marginTop: 6 }}>

@@ -6,7 +6,7 @@ import { decrypt, safeEqual } from '@/lib/crypto';
 import { getPayment } from '@/lib/mp';
 import { confirmPaidOrder } from '@/lib/lifecycle';
 import { markBalancePaid, balanceDue } from '@/lib/balance';
-import { money, dateLabel, dateTimeLabel } from '@/lib/format';
+import { money, dateLabel, whenLabel } from '@/lib/format';
 import { optionsSummary } from '@/lib/options';
 import { isHolding } from '@/lib/orders';
 import { payBalance } from '../../actions';
@@ -49,7 +49,7 @@ export default async function PedidoEstado({ params, searchParams }) {
         ) : order.status === 'pendiente_sena' ? (
           <div className="alert warn">
             <strong>Falta pagar la seña.</strong>
-            {order.expires_at ? <> Tenés tiempo hasta las {dateTimeLabel(order.expires_at).split(', ').pop()}.</> : <> {bakery.name} te va a contactar para coordinar el pago.</>}
+            {order.expires_at ? <> Tenés tiempo hasta {whenLabel(order.expires_at)}; si no, el lugar se libera.{!order.payment_url && <> {bakery.name} te va a escribir por WhatsApp para coordinar el pago.</>}</> : <> {bakery.name} te va a contactar para coordinar el pago.</>}
           </div>
         ) : (
           <div className="alert bad"><strong>Este pedido {order.status === 'vencido' ? 'venció porque no se pagó la seña a tiempo' : 'fue cancelado'}.</strong> Podés hacer uno nuevo.</div>
@@ -61,9 +61,13 @@ export default async function PedidoEstado({ params, searchParams }) {
           {order.dedication && <><small>{T.note1.label}: «{order.dedication}»</small><br /></>}
           {order.allergies && <><small>{T.note2.label}: {order.allergies}</small><br /></>}
           Fecha: {dateLabel(order.date)}{order.slot ? ` · ${order.slot}` : ''}<br />
-          {order.fulfillment === 'envio' ? `${T.envio}: ${order.address}` : `${T.retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ''}`}<br />
-          Total: {money(order.total)} · Seña: {money(order.deposit_amount)}{order.paid_at ? ' (pagada)' : ''}<br />
-          Saldo a pagar: {money(due)}
+          {order.fulfillment === 'envio' ? `${T.envio}: ${order.address}` : `${T.retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ' · te confirmamos la dirección por WhatsApp'}`}<br />
+          Total: {money(order.total)}<br />
+          {order.status === 'pendiente_sena' && Number(order.deposit_amount) > 0 ? (
+            <>Seña para reservar: <strong>{money(order.deposit_amount)}</strong> · Resto al {order.fulfillment === 'envio' ? 'recibir' : 'retirar'}: {money(Number(order.total) - Number(order.deposit_amount))}</>
+          ) : (
+            <>{Number(order.deposit_amount) > 0 && <>Seña: {money(order.deposit_amount)}{order.paid_at ? ' (pagada)' : ''} · </>}{due > 0 ? <>Saldo a pagar: {money(due)}</> : 'Todo pago'}</>
+          )}
         </p>
         {order.reference_photo_url && <img src={order.reference_photo_url} alt="Foto de referencia" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 12 }} />}
         {pendingValid && order.payment_url && <a className="btn block" href={order.payment_url}>Pagar seña con Mercado Pago</a>}

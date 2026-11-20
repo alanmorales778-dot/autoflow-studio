@@ -91,6 +91,8 @@ input[type=file] { padding: 9px 12px; }
 input.err { border-color: #e2a3a3; box-shadow: 0 0 0 4px rgba(185, 28, 28, .08); }
 textarea { min-height: 88px; }
 .field { margin-bottom: 14px; }
+/* Un fieldset toma por defecto el ancho de su contenido: sin esto la tira de fechas ensancha toda la página en el celular */
+fieldset { min-width: 0; max-width: 100%; }
 .inline-label { display: flex; align-items: center; font-weight: 500; }
 .hint { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 18px; }
 .hint.err { color: var(--bad); }

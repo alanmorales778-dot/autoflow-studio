@@ -213,7 +213,7 @@ export default async function Agenda({ searchParams }) {
       ) : (
         <>
           {!bakery.sheet_productos_id && !(products || []).length && (
-            <div className="alert warn">Cargá tus productos: <Link href="/app/productos">subí un Excel o CSV</Link> o <Link href="/app/configuracion#drive">conectá Google Drive</Link> para que se actualicen solos.</div>
+            <div className="alert warn">Cargá tus productos: <Link href="/app/productos#nuevo">agregalos de a uno</Link> o subí un Excel o CSV desde <Link href="/app/productos">Productos</Link>.</div>
           )}
           {!bakery.mp_access_token_enc && (
             <div className="alert warn">Conectá Mercado Pago para cobrar señas automáticas. Mientras tanto, los pedidos quedan pendientes y coordinás el pago a mano. <Link href="/app/configuracion#mercadopago">Conectar</Link></div>
@@ -221,6 +221,11 @@ export default async function Agenda({ searchParams }) {
         </>
       )}
       {bakery.last_sync_error && <div className="alert bad">Problema con tus planillas: {bakery.last_sync_error}</div>}
+      {!bakery.pickup_address && active.some((o) => o.fulfillment === 'retiro') && (
+        <div className="alert warn">
+          Tenés pedidos para <strong>retirar</strong> y no cargaste la dirección de retiro: tus clientes no saben adónde ir. <Link href="/app/configuracion">Cargar dirección</Link>
+        </div>
+      )}
       {owed.length > 0 && (
         <div className="alert warn">
           Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? 'pedido que ya pasó' : 'pedidos que ya pasaron'}. <Link href="/app/cobros">Ver y recordar</Link>

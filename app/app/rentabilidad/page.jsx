@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { Locked } from '../ui';
-import { todayAR, money } from '@/lib/format';
+import { todayAR, money, pct } from '@/lib/format';
+import { liveCosts } from '@/lib/sheets';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -33,15 +34,17 @@ export default async function Rentabilidad({ searchParams }) {
     );
   }
 
-  const [{ data: orders }, { data: products }] = await Promise.all([
+  const [{ data: orders }, live] = await Promise.all([
     supabase.from('orders').select('product_id,product_name,quantity,total,status,options_total').eq('bakery_id', bakery.id).gte('date', from).lte('date', to).in('status', ['confirmado', 'entregado']),
-    supabase.from('products').select('id,name,cost').eq('bakery_id', bakery.id),
+    liveCosts(supabase, bakery),
   ]);
-  const costById = new Map((products || []).map((p) => [p.id, p.cost]));
+  // Costo con los precios de hoy: el mismo número que muestran Productos y Costos e inflación.
+  const costById = new Map([...live].map(([id, c]) => [id, c.cost]));
+  const reasonById = new Map([...live].map(([id, c]) => [id, c.error]));
   const rows = new Map();
   for (const o of orders || []) {
     const k = o.product_id || o.product_name;
-    if (!rows.has(k)) rows.set(k, { name: o.product_name, units: 0, revenue: 0, cost: 0, costKnown: true });
+    if (!rows.has(k)) rows.set(k, { id: o.product_id, name: o.product_name, units: 0, revenue: 0, cost: 0, costKnown: true });
     const r = rows.get(k);
     r.units += o.quantity;
     r.revenue += Number(o.total);
@@ -69,8 +72,8 @@ export default async function Rentabilidad({ searchParams }) {
       <p className="muted">Pedidos confirmados y entregados del mes. El costo usa el costo actual de cada receta (con indirectos); los adicionales de personalización se cuentan como ingreso.</p>
       <div className="grid grid-3">
         <div className="card"><small className="muted">Ventas</small><div className="price">{money(revenue)}</div></div>
-        <div className="card"><small className="muted">Ganancia estimada</small><div className="price">{money(profit)}</div>{knownRevenue < revenue && <small className="muted">sin contar productos sin receta</small>}</div>
-        <div className="card"><small className="muted">Margen promedio (objetivo {target}%)</small><div className="price">{knownRevenue ? `${Math.round((profit / knownRevenue) * 1000) / 10}%` : '—'}</div></div>
+        <div className="card"><small className="muted">Ganancia estimada</small><div className="price">{money(profit)}</div>{knownRevenue < revenue && <small className="muted">sin contar los que no tienen costo calculado</small>}</div>
+        <div className="card"><small className="muted">Margen promedio (objetivo {pct(target, 0)})</small><div className="price">{knownRevenue ? pct((profit / knownRevenue) * 100) : '—'}</div></div>
       </div>
       <div className="card table-wrap">
         {list.length === 0 ? (
@@ -84,9 +87,9 @@ export default async function Rentabilidad({ searchParams }) {
                   <td>{r.name}</td>
                   <td>{r.units}</td>
                   <td>{money(r.revenue)}</td>
-                  <td>{r.costKnown ? money(r.cost) : <small className="muted">sin receta</small>}</td>
+                  <td>{r.costKnown ? money(r.cost) : r.id ? <Link href={`/app/productos/${r.id}`}><small>{reasonById.get(r.id) === 'Sin receta cargada' || !reasonById.has(r.id) ? 'sin receta' : 'receta incompleta'}</small></Link> : <small className="muted">producto borrado</small>}</td>
                   <td>{r.profit !== null ? money(r.profit) : '—'}</td>
-                  <td>{r.margin !== null ? <span className={`badge ${r.margin < target ? 'bad' : 'ok'}`}>{r.margin}%</span> : '—'}</td>
+                  <td>{r.margin !== null ? <span className={`badge ${r.margin < target ? 'bad' : 'ok'}`}>{pct(r.margin)}</span> : '—'}</td>
                 </tr>
               ))}
             </tbody>

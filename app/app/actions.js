@@ -7,13 +7,13 @@ import { revalidatePath } from 'next/cache';
 import { getContext, requireBakery } from '@/lib/session';
 import { createAdmin, createClient } from '@/lib/supabase';
 import { encrypt } from '@/lib/crypto';
-import { slugify, parseNum } from '@/lib/format';
+import { slugify, parseNum, todayAR } from '@/lib/format';
 import { syncBakery, recomputeCosts, pushStockToSheet, writeCells, EXAMPLE_INSUMOS, EXAMPLE_PRODUCTOS, EXAMPLE_RECIPES } from '@/lib/sheets';
 import { applyInsumos, applyProductos } from '@/lib/catalog';
 import { setOrderStatus } from '@/lib/lifecycle';
 import { createOrder } from '@/lib/orders';
 import { testToken, createPreapproval } from '@/lib/mp';
-import { suggestedPrice, RECIPE_UNITS } from '@/lib/costs';
+import { suggestedPrice, RECIPE_UNITS, normUnit } from '@/lib/costs';
 import { PRICES } from '@/lib/modules';
 import { appUrl } from '@/lib/env';
 import { parseUpload } from '@/lib/xlsx';
@@ -359,6 +359,110 @@ export async function deleteRecipeItem(fd) {
   await recomputeCosts(admin, bakery, [productId]);
   await pushStockToSheet(admin, bakery, [productId]);
   back(`/app/productos/${productId}`);
+}
+
+// ---------- Productos e insumos desde la pantalla (sin planilla) ----------
+async function nextSheetRow(admin, table, bakeryId) {
+  const { data } = await admin.from(table).select('sheet_row').eq('bakery_id', bakeryId).not('sheet_row', 'is', null).order('sheet_row', { ascending: false }).limit(1);
+  return Math.max(2, (data?.[0]?.sheet_row || 1) + 1);
+}
+
+const todayLabel = () => todayAR().split('-').reverse().join('/');
+
+export async function createProduct(fd) {
+  const { bakery } = await requireBakery();
+  const T = rubroOf(bakery);
+  if (bakery.sheet_productos_id) back('/app/productos', { error: `Tus ${T.items.toLowerCase()} vienen de Google Drive: agregalos en tu planilla.` });
+  const name = str(fd, 'name').slice(0, 120);
+  const price = parseNum(str(fd, 'price'));
+  if (!name) back('/app/productos', { error: 'Poné el nombre.' });
+  if (price === null || price < 0) back('/app/productos', { error: 'Poné un precio válido (solo números).' });
+  const admin = createAdmin();
+  const { data: same } = await admin.from('products').select('id').eq('bakery_id', bakery.id).ilike('name', name).not('sheet_row', 'is', null).maybeSingle();
+  if (same) back('/app/productos', { error: `Ya tenés uno llamado «${name}».` });
+  const stock = parseNum(str(fd, 'stock'));
+  const row = {
+    bakery_id: bakery.id,
+    sku: `P-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+    name,
+    category: str(fd, 'category').slice(0, 60) || 'General',
+    price,
+    description: str(fd, 'description').slice(0, 500) || null,
+    stock_loaded: stock === null ? null : Math.max(0, Math.round(stock)),
+    visible: true,
+    sheet_row: await nextSheetRow(admin, 'products', bakery.id),
+  };
+  const { data, error } = await admin.from('products').insert(row).select('id').single();
+  if (error) back('/app/productos', { error: error.message });
+  await recomputeCosts(admin, bakery, [data.id]);
+  revalidatePath('/app', 'layout');
+  back(`/app/productos/${data.id}`, { ok: `Listo, «${name}» ya está en tu catálogo.${T.key === 'cocina' ? ' Cargale la receta para saber cuánto te cuesta.' : ''}` });
+}
+
+export async function updateProduct(fd) {
+  const { bakery } = await requireBakery();
+  const id = str(fd, 'id');
+  const path = `/app/productos/${id}`;
+  const admin = createAdmin();
+  const { data: p } = await admin.from('products').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  if (!p) back('/app/productos', { error: 'No encontramos ese producto.' });
+  if (bakery.sheet_productos_id) back(path, { error: 'Este producto viene de tu planilla de Google Drive: cambialo ahí.' });
+  const name = str(fd, 'name').slice(0, 120);
+  const price = parseNum(str(fd, 'price'));
+  if (!name) back(path, { error: 'Poné el nombre.' });
+  if (price === null || price < 0) back(path, { error: 'Poné un precio válido (solo números).' });
+  const stockRaw = str(fd, 'stock');
+  const stock = stockRaw === '' ? null : parseNum(stockRaw);
+  const { error } = await admin.from('products').update({
+    name,
+    price,
+    category: str(fd, 'category').slice(0, 60) || 'General',
+    description: str(fd, 'description').slice(0, 500) || null,
+    stock_loaded: stock === null ? null : Math.max(0, Math.round(stock)),
+    visible: fd.get('visible') === 'on',
+  }).eq('id', id);
+  if (error) back(path, { error: error.message });
+  revalidatePath('/app', 'layout');
+  back(path, { ok: 'Cambios guardados.' });
+}
+
+export async function saveIngredient(fd) {
+  const { bakery } = await requireBakery();
+  const T = rubroOf(bakery);
+  const path = '/app/insumos';
+  if (bakery.sheet_insumos_id) back(path, { error: `Tus ${T.insumos.toLowerCase()} vienen de Google Drive: cambialos en tu planilla.` });
+  const id = str(fd, 'id');
+  const admin = createAdmin();
+  const price = parseNum(str(fd, 'price'));
+  if (price === null || price < 0) back(path, { error: 'Poné un precio válido (solo números).' });
+  let patch = { price, updated_label: todayLabel(), error: null };
+  let prev = null;
+  if (id) {
+    const { data } = await admin.from('ingredients').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+    if (!data) back(path, { error: 'No encontramos ese insumo.' });
+    prev = data;
+  }
+  // Alta, o edición completa (si viene el nombre): validamos presentación y unidad.
+  if (!id || fd.has('name')) {
+    const name = str(fd, 'name').slice(0, 120);
+    const qty = parseNum(str(fd, 'qty'));
+    const unit = str(fd, 'unit');
+    if (!name) back(path, { error: 'Poné el nombre.' });
+    if (!qty || qty <= 0) back(path, { error: 'Poné cuánto trae la presentación que comprás (por ejemplo 1000 si es un paquete de 1 kg en gramos).' });
+    if (!normUnit(unit)) back(path, { error: 'Elegí la unidad (g, kg, ml, l o u).' });
+    const { data: same } = await admin.from('ingredients').select('id').eq('bakery_id', bakery.id).ilike('name', name).maybeSingle();
+    if (same && same.id !== id) back(path, { error: `Ya tenés uno llamado «${name}».` });
+    patch = { ...patch, name, qty, unit, purchase_unit: str(fd, 'purchase_unit').slice(0, 80) || null, supplier: str(fd, 'supplier').slice(0, 80) || null };
+  }
+  const { error } = id
+    ? await admin.from('ingredients').update(patch).eq('id', id)
+    : await admin.from('ingredients').insert({ ...patch, bakery_id: bakery.id, sheet_row: await nextSheetRow(admin, 'ingredients', bakery.id) });
+  if (error) back(path, { error: error.message });
+  await recomputeCosts(admin, bakery);
+  revalidatePath('/app', 'layout');
+  const name = patch.name || prev?.name;
+  const change = prev && Number(prev.price) !== price && Number(prev.price) > 0 ? ` (${price > prev.price ? '+' : ''}${Math.round(((price - prev.price) / prev.price) * 1000) / 10} %)` : '';
+  back(path, { ok: id ? `Nuevo precio de ${name}: $${price.toLocaleString('es-AR')}${change}. Los costos ya se recalcularon.` : `Agregamos ${name}.` });
 }
 
 export async function applySuggestedPrice(fd) {

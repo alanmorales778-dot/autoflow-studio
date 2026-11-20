@@ -55,11 +55,11 @@ export default async function Configuracion({ searchParams }) {
         <p className="muted" style={{ marginTop: 12, fontSize: 13 }}><a href="/nueva-clave">Cambiar mi contraseña</a></p>
       </div>
 
-      {/* Avisos */}
+      {/* Avisos: solo se muestra cuando el envío de mails está configurado en el servidor */}
+      {mailEnabled() && (
       <div className="card" id="avisos">
         <h2>Avisos de pedidos</h2>
         <p className="muted">Te mandamos un mail cuando entra un pedido desde tu link o WhatsApp, y cuando se cobra una seña por Mercado Pago.</p>
-        {!mailEnabled() && <div className="alert warn">El envío de mails todavía no está activado en AutoFlow. Los avisos empiezan a llegar en cuanto lo esté.</div>}
         <form action={saveNotifications} className="grid grid-2" style={{ alignItems: 'end' }}>
           <div className="field" style={{ margin: 0 }}>
             <label htmlFor="notify_email">Mandar los avisos a</label>
@@ -71,11 +71,12 @@ export default async function Configuracion({ searchParams }) {
           </div>
         </form>
       </div>
+      )}
 
       {/* Cupos */}
       <div className="card" id="cupos">
         <h2>Cupos por día</h2>
-        <p className="muted">{t.capTitle.replace(/^Poné c/, 'C')}. Cuando se llena, esa fecha deja de ofrecerse. Usá «Todas» para un tope general, o una categoría de tu planilla (ej: {t.capExample}). Sin reglas, no hay límite.</p>
+        <p className="muted">{t.capTitle.replace(/^Poné c/, 'C')}. Cuando se llena, esa fecha deja de ofrecerse. Usá «Todas» para un tope general, o una de tus categorías (ej: {t.capExample}). Sin reglas, no hay límite.</p>
         {rules && rules.length > 0 && (
           <div className="table-wrap" style={{ marginBottom: 12 }}>
             <table>
@@ -159,13 +160,12 @@ export default async function Configuracion({ searchParams }) {
         )}
       </div>
 
-      {/* Google Drive */}
+      {/* Google Drive: solo si la conexión con Google está configurada en el servidor */}
+      {has.google() && (
       <div className="card" id="drive">
         <h2>Google Drive (productos, stock e insumos)</h2>
         <p className="muted">Opcional. Si preferís, podés cargar todo subiendo un Excel o CSV desde <a href="/app/productos">Productos</a> e <a href="/app/insumos">Insumos</a>. Con Drive conectado, los cambios en tus planillas se toman solos cada 10 minutos.</p>
-        {!has.google() ? (
-          <div className="alert warn">La conexión con Google todavía no está habilitada en este servidor.</div>
-        ) : bakery.google_refresh_token_enc ? (
+        {bakery.google_refresh_token_enc ? (
           <>
             <p>Conectado{bakery.google_email ? ` como ${bakery.google_email}` : ''}. Última sincronización: {dateTimeLabel(bakery.last_sync_at)}.</p>
             <div className="row">
@@ -183,6 +183,7 @@ export default async function Configuracion({ searchParams }) {
           </>
         )}
       </div>
+      )}
 
       {/* Mercado Pago */}
       <div className="card" id="mercadopago">

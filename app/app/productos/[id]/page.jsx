@@ -2,10 +2,11 @@ import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireBakery } from '@/lib/session';
-import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings, uploadProductPhoto, removeProductPhoto } from '../../actions';
+import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings, uploadProductPhoto, removeProductPhoto, updateProduct } from '../../actions';
+import { liveCosts } from '@/lib/sheets';
 import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
-import { money, normName } from '@/lib/format';
+import { money, normName, pct } from '@/lib/format';
 import { RECIPE_UNITS, normUnit, currentMargin, suggestedPrice } from '@/lib/costs';
 
 export default async function Receta({ params, searchParams }) {
@@ -13,8 +14,12 @@ export default async function Receta({ params, searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
   const T = rubroOf(bakery);
-  const { data: product } = await supabase.from('products').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
-  if (!product) notFound();
+  const { data: stored } = await supabase.from('products').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  if (!stored) notFound();
+  // Costo con los precios de hoy, igual que en el resto de las pantallas.
+  const live = (await liveCosts(supabase, bakery, [id])).get(id);
+  const product = live ? { ...stored, cost: live.cost, min_price: live.min, cost_error: live.error } : stored;
+  const fromDrive = !!bakery.sheet_productos_id;
   const [{ data: items }, { data: ingredients }] = await Promise.all([
     supabase.from('recipe_items').select('*').eq('product_id', id).order('ingredient_name'),
     supabase.from('ingredients').select('*').eq('bakery_id', bakery.id).order('name'),
@@ -39,11 +44,11 @@ export default async function Receta({ params, searchParams }) {
 
       <div className="grid grid-3">
         <div className="card"><small className="muted">Precio de venta</small><div className="price">{money(product.price)}</div></div>
-        <div className="card"><small className="muted">Costo (con {Number(bakery.overhead_percent)}% indirectos)</small><div className="price">{product.cost !== null ? money(product.cost) : '—'}</div></div>
+        <div className="card"><small className="muted">Costo (con {pct(bakery.overhead_percent, 0)} de indirectos)</small><div className="price">{product.cost !== null ? money(product.cost) : '—'}</div></div>
         <div className="card">
-          <small className="muted">Precio mínimo para {Number(bakery.margin_percent)}% de margen</small>
+          <small className="muted">Precio mínimo para {pct(bakery.margin_percent, 0)} de margen</small>
           <div className="price">{product.min_price ? money(product.min_price) : '—'}</div>
-          {margin !== null && <span className={`badge ${below ? 'bad' : 'ok'}`}>Margen actual {margin}%</span>}
+          {margin !== null && <span className={`badge ${below ? 'bad' : 'ok'}`}>Margen actual {pct(margin)}</span>}
           {below && (
             <form action={applySuggestedPrice} style={{ marginTop: 8 }}>
               <input type="hidden" name="id" value={product.id} />
@@ -53,7 +58,27 @@ export default async function Receta({ params, searchParams }) {
           )}
         </div>
       </div>
-      {product.cost_error && <div className="alert warn">Para completar el cálculo: {product.cost_error}</div>}
+      {product.cost_error && access.costs && <div className="alert warn">{product.cost_error === 'Sin receta cargada' ? <>Cargá abajo qué lleva para calcular el costo.</> : <>Para completar el cálculo: {product.cost_error}. <Link href="/app/insumos#nuevo">Agregar {T.insumo.toLowerCase()}</Link></>}</div>}
+
+      {!fromDrive && (
+        <div className="card" id="datos">
+          <h2>Datos</h2>
+          <form action={updateProduct}>
+            <input type="hidden" name="id" value={product.id} />
+            <div className="grid grid-3" style={{ gap: 8 }}>
+              <div className="field"><label>Nombre</label><input name="name" required defaultValue={product.name} /></div>
+              <div className="field"><label>Precio</label><input name="price" required inputMode="decimal" defaultValue={Number(product.price)} /></div>
+              <div className="field"><label>Categoría</label><input name="category" defaultValue={product.category || ''} /></div>
+            </div>
+            <div className="grid grid-2" style={{ gap: 8 }}>
+              <div className="field"><label>Descripción</label><input name="description" defaultValue={product.description || ''} /></div>
+              <div className="field"><label>Stock (vacío = a pedido)</label><input name="stock" inputMode="numeric" defaultValue={product.stock_loaded ?? ''} /></div>
+            </div>
+            <label className="inline-label" style={{ marginBottom: 12 }}><input type="checkbox" name="visible" defaultChecked={product.visible} /> Se muestra en el catálogo</label>
+            <div><button className="btn">Guardar cambios</button></div>
+          </form>
+        </div>
+      )}
 
       <div className="card" id="foto">
         <h2>Foto en el catálogo</h2>
@@ -92,7 +117,7 @@ export default async function Receta({ params, searchParams }) {
                 const c = lineCost(it);
                 return (
                   <tr key={it.id}>
-                    <td>{it.ingredient_name}{!byName.get(normName(it.ingredient_name)) && <><br /><small style={{ color: 'var(--bad)' }}>No está en tu planilla de insumos</small></>}</td>
+                    <td>{it.ingredient_name}{!byName.get(normName(it.ingredient_name)) && <><br /><small style={{ color: 'var(--bad)' }}>No está en tu lista de {T.insumos.toLowerCase()}. <Link href="/app/insumos#nuevo">Agregalo</Link></small></>}</td>
                     <td>{Number(it.qty)} {it.unit}</td>
                     <td>{c === null ? '—' : money(c)}</td>
                     <td>
@@ -146,7 +171,7 @@ Cobertura: Ganache | Merengue italiano +1500 | Fondant +5000`}</pre>
         <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>El catálogo además pide {T.note1.label.toLowerCase()}, {T.note2.label.toLowerCase()} y foto de referencia (opcionales) en todos los productos.</p>
       </div>
 
-      <p className="muted" style={{ fontSize: 13 }}>Los precios salen de tu lista de {T.insumos.toLowerCase()}. Cuando cambiás un precio ahí, este costo se recalcula solo (cada 10 minutos o con «Actualizar ahora»).</p>
+      <p className="muted" style={{ fontSize: 13 }}>Los precios salen de tu lista de {T.insumos.toLowerCase()}. Cuando cambiás un precio en <Link href="/app/insumos">{T.insumos}</Link>, este costo se recalcula al instante.</p>
     </>
   );
 }

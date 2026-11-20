@@ -103,7 +103,7 @@ export default async function Clientes({ searchParams }) {
           <p className="muted">Todavía no hay clientes. Aparecen solos cuando entran pedidos.</p>
         ) : (
           <table style={{ marginTop: 8 }}>
-            <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total comprado</th><th>Último pedido</th><th></th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total comprado</th><th>Último pedido / próximo</th><th></th></tr></thead>
             <tbody>
               {list.map((c) => {
                 const link = waMeLink(c.phone, `¡Hola ${String(c.name).split(' ')[0]}! `);
@@ -112,7 +112,7 @@ export default async function Clientes({ searchParams }) {
                     <td>{c.name}<br /><small>{c.phone}{c.email ? ` · ${c.email}` : ''}</small></td>
                     <td>{c.count}</td>
                     <td>{money(c.spent)}</td>
-                    <td>{c.last ? <>{dateLabel(c.last)}<br /><small>{c.lastProduct}</small></> : '—'}</td>
+                    <td>{c.last ? <>{c.last > today ? <span className="badge ok">Próximo: {dateLabel(c.last)}</span> : dateLabel(c.last)}<br /><small>{c.lastProduct}</small></> : '—'}</td>
                     <td>{link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">WhatsApp</a>}</td>
                   </tr>
                 );

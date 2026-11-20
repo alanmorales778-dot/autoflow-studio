@@ -7,6 +7,7 @@ import { moduleAccess } from '@/lib/modules';
 import { availableDates, reservedByProduct } from '@/lib/orders';
 import { money, dateLabel, WEEKDAYS } from '@/lib/format';
 import { placeOrder, placeSubscription } from './actions';
+import { QtyPicker, FulfillmentFields, FormMemory } from './order-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,14 +41,12 @@ function DeliveryFields({ bakery, noSlots = false }) {
           </div>
         </fieldset>
       )}
-      <div className="field">
-        <label>Entrega</label>
-        <select name="fulfillment">
-          <option value="retiro">{rubroOf(bakery).retiro}{bakery.pickup_address ? ` · ${bakery.pickup_address}` : ''}</option>
-          {bakery.delivery_enabled && <option value="envio">{rubroOf(bakery).envio}</option>}
-        </select>
-      </div>
-      {bakery.delivery_enabled && <div className="field"><label>Dirección (solo si es {rubroOf(bakery).envio.toLowerCase()})</label><input name="address" placeholder="Calle, número, piso, localidad" /></div>}
+      <FulfillmentFields
+        retiroLabel={`${rubroOf(bakery).retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ''}`}
+        envioLabel={rubroOf(bakery).envio}
+        deliveryEnabled={!!bakery.delivery_enabled}
+        noPickupAddress={!bakery.pickup_address}
+      />
       <div className="field"><label>Tu nombre</label><input name="customer_name" required autoComplete="name" /></div>
       <div className="field"><label>Tu WhatsApp</label><input name="customer_phone" required inputMode="tel" autoComplete="tel" placeholder="11 5555-5555" /></div>
     </>
@@ -130,6 +129,7 @@ export default async function Catalogo({ params, searchParams }) {
                     <input type="hidden" name="slug" value={slug} />
                     <input type="hidden" name="product_id" value={selected.id} />
                     <Trap />
+                    <FormMemory storageKey={`af-susc-${selected.id}`} restore={!!sp.error} />
                     <div className="grid grid-2" style={{ gap: 8 }}>
                       <div className="field"><label>Cantidad por entrega</label><input name="quantity" type="number" min="1" max="50" defaultValue="1" /></div>
                       <div className="field">
@@ -151,12 +151,7 @@ export default async function Catalogo({ params, searchParams }) {
               ) : (
                 <>
                   <h2>Tu pedido</h2>
-                  <form method="get" className="row" style={{ marginBottom: 12 }}>
-                    <input type="hidden" name="p" value={selected.id} />
-                    <label style={{ margin: 0 }}>Cantidad</label>
-                    <input name="q" type="number" min="1" max="50" defaultValue={qty} style={{ maxWidth: 90 }} />
-                    <button className="btn secondary small">Ver fechas</button>
-                  </form>
+                  <QtyPicker productId={selected.id} qty={qty} />
                   {left(selected) === 0 ? (
                     <div className="alert warn">Agotado por ahora.</div>
                   ) : left(selected) !== null && left(selected) < qty ? (
@@ -169,6 +164,7 @@ export default async function Catalogo({ params, searchParams }) {
                       <input type="hidden" name="product_id" value={selected.id} />
                       <input type="hidden" name="quantity" value={qty} />
                       <Trap />
+                      <FormMemory storageKey={`af-pedido-${selected.id}`} restore={!!sp.error} />
                       {groups.map((g, gi) => (
                         <div className="field" key={gi}>
                           <label>{g.name}{g.required ? '' : ' (opcional)'}</label>
@@ -178,7 +174,7 @@ export default async function Catalogo({ params, searchParams }) {
                           </select>
                         </div>
                       ))}
-<DateSlotPicker
+                      <DateSlotPicker
                         dates={dates.map((d) => { const [wd, dm] = dateLabel(d.date).split(' '); return { ...d, wd, dm, dn: dm.split('/')[0] }; })}
                         allSlots={bakery.slots || []}
                         perSlot={!!bakery.slot_capacity}
@@ -190,7 +186,7 @@ export default async function Catalogo({ params, searchParams }) {
                       <div className="field"><label>Foto de referencia (opcional)</label><input name="foto" type="file" accept="image/jpeg,image/png,image/webp" /></div>
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
                       <div className="summary" style={{ marginBottom: 12 }}>
-                        Precio base: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
+                        {qty > 1 && <>{qty} unidades · </>}Precio base: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
                         {depositPct > 0 && <> · Seña: {depositPct}% del total</>}
                         {depositPct > 0 && bakery.mp_access_token_enc && <div className="muted" style={{ fontSize: 13 }}>Vas a pagar la seña con Mercado Pago. Tenés {bakery.hold_minutes} minutos; si no, el cupo se libera.</div>}
                       </div>

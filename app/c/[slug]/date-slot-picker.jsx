@@ -6,7 +6,9 @@ const legend = { fontWeight: 600, fontSize: 13, color: 'var(--ink-2)', marginBot
 
 // Fecha y horario juntos: con cupo por horario, al cambiar el día se muestran solo los horarios con lugar.
 export default function DateSlotPicker({ dates, allSlots, perSlot }) {
-  const [date, setDate] = useState(dates[0]?.date);
+  const [picked, setDate] = useState(dates[0]?.date);
+  // Si cambia la cantidad y el día elegido ya no tiene lugar, pasamos al primero disponible.
+  const date = dates.some((d) => d.date === picked) ? picked : dates[0]?.date;
   const day = dates.find((d) => d.date === date) || dates[0];
   const slots = day?.slots || allSlots.map((s) => ({ slot: s, left: null }));
   const firstOpen = slots.find((s) => s.left === null || s.left > 0)?.slot;

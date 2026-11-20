@@ -5,6 +5,7 @@ import { Flash, Locked } from '../ui';
 import { normName } from '@/lib/format';
 import { costBreakdown } from '@/lib/costs';
 import Simulator from './simulator';
+import { liveCosts } from '@/lib/sheets';
 
 export default async function Costos({ searchParams }) {
   const sp = await searchParams;
@@ -20,10 +21,12 @@ export default async function Costos({ searchParams }) {
     );
   }
 
-  const [{ data: products }, { data: ingredients }] = await Promise.all([
+  const [{ data: rawProducts }, { data: ingredients }, live] = await Promise.all([
     supabase.from('products').select('id,name,price,cost,cost_error').eq('bakery_id', bakery.id).not('sheet_row', 'is', null).order('sheet_row'),
     supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
+    liveCosts(supabase, bakery),
   ]);
+  const products = (rawProducts || []).map((p) => ({ ...p, cost_error: live.get(p.id)?.error ?? p.cost_error }));
   const ids = (products || []).map((p) => p.id);
   const { data: items } = ids.length ? await supabase.from('recipe_items').select('*').in('product_id', ids) : { data: [] };
   const ingByName = new Map((ingredients || []).map((i) => [normName(i.name), i]));
