@@ -63,7 +63,7 @@ export default async function AppLayout({ children }) {
           {children}
         </main>
       </div>
-      <Link href="/app/pedidos#nuevo" className="fab no-print" aria-label="Cargar pedido nuevo">
+      <Link href="/app/pedidos?nuevo=1#nuevo" className="fab no-print" aria-label="Cargar pedido nuevo">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         Pedido
       </Link>

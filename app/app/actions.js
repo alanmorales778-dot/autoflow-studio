@@ -11,7 +11,8 @@ import { slugify, parseNum, todayAR, pct } from '@/lib/format';
 import { syncBakery, recomputeCosts, pushStockToSheet, writeCells, EXAMPLE_INSUMOS, EXAMPLE_PRODUCTOS, EXAMPLE_RECIPES } from '@/lib/sheets';
 import { applyInsumos, applyProductos } from '@/lib/catalog';
 import { setOrderStatus } from '@/lib/lifecycle';
-import { createOrder } from '@/lib/orders';
+import { createOrder, capacityMap } from '@/lib/orders';
+import { upsertCustomer, normPhone } from '@/lib/customers';
 import { testToken, createPreapproval } from '@/lib/mp';
 import { suggestedPrice, RECIPE_UNITS, normUnit } from '@/lib/costs';
 import { PRICES } from '@/lib/modules';
@@ -29,7 +30,7 @@ function back(path, { error, ok } = {}) {
   if (error) p.set('error', String(error).slice(0, 300));
   if (ok) p.set('ok', String(ok).slice(0, 300));
   const qs = p.toString();
-  redirect(qs ? `${path}?${qs}` : path);
+  redirect(qs ? `${path}${path.includes('?') ? '&' : '?'}${qs}` : path);
 }
 
 const str = (fd, k) => String(fd.get(k) ?? '').trim();
@@ -595,6 +596,106 @@ export async function markBalance(fd) {
   if (order) await markBalancePaid(admin, order.id);
   revalidatePath('/app', 'layout');
   back(str(fd, 'back') || '/app/pedidos', { ok: 'Saldo marcado como cobrado.' });
+}
+
+// Editar un pedido activo: fecha, horario, cantidad, entrega y datos del cliente.
+// No bloquea por cupo (lo carga el dueño, como «Cargar aunque no haya cupo»), pero avisa si el día se pasó.
+export async function updateOrder(fd) {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const backTo = str(fd, 'back').startsWith('/app') ? str(fd, 'back') : '/app/pedidos';
+  const { data: o } = await admin.from('orders').select('*').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (!o) back(backTo, { error: 'No encontramos ese pedido.' });
+  if (!['pendiente_sena', 'confirmado'].includes(o.status)) back(backTo, { error: 'Solo se pueden editar pedidos que esperan seña o están confirmados.' });
+
+  const date = str(fd, 'date');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) back(backTo, { error: 'Elegí una fecha válida.' });
+  const quantity = Math.floor(Number(str(fd, 'quantity')));
+  if (!Number.isFinite(quantity) || quantity < 1 || quantity > 999) back(backTo, { error: 'La cantidad tiene que ser un número entre 1 y 999.' });
+  const customerName = str(fd, 'customer_name').slice(0, 120);
+  if (!customerName) back(backTo, { error: 'Falta el nombre del cliente.' });
+  const fulfillment = str(fd, 'fulfillment') === 'envio' && bakery.delivery_enabled ? 'envio' : 'retiro';
+  const address = str(fd, 'address').slice(0, 300);
+  if (fulfillment === 'envio' && !address) back(backTo, { error: 'Falta la dirección de entrega.' });
+  if (quantity !== o.quantity && o.payment_url && !o.paid_at) {
+    back(backTo, { error: 'Este pedido ya tiene un link de pago de seña con el importe anterior. Para cambiar la cantidad, cancelalo y cargalo de nuevo.' });
+  }
+
+  const unitPrice = o.unit_price !== null && o.unit_price !== undefined ? Number(o.unit_price) : Number(o.total) / Math.max(1, o.quantity);
+  const total = Math.round(unitPrice * quantity * 100) / 100;
+  // La seña ya cobrada no cambia; si todavía no se cobró, se recalcula con el nuevo total.
+  const deposit = o.paid_at ? Number(o.deposit_amount) : Math.round((total * Number(bakery.deposit_percent)) / 100);
+  const phone = str(fd, 'customer_phone').slice(0, 40);
+  const patch = {
+    date,
+    slot: str(fd, 'slot') || null,
+    quantity,
+    total,
+    deposit_amount: deposit,
+    fulfillment,
+    address: fulfillment === 'envio' ? address : null,
+    customer_name: customerName,
+    customer_phone: phone || null,
+    notes: str(fd, 'notes').slice(0, 500) || null,
+    dedication: str(fd, 'dedication').slice(0, 200) || null,
+    allergies: str(fd, 'allergies').slice(0, 300) || null,
+  };
+  // El link de Mercado Pago del saldo tenía el importe viejo: se arma de nuevo cuando haga falta.
+  if (total !== Number(o.total)) patch.balance_payment_url = null;
+  if (phone && phone !== (o.customer_phone || '')) {
+    const customerId = await upsertCustomer(admin, bakery.id, { name: customerName, phone });
+    if (customerId) patch.customer_id = customerId;
+  }
+  const { error } = await admin.from('orders').update(patch).eq('id', o.id);
+  if (error) back(backTo, { error: error.message });
+  if (quantity !== o.quantity && o.product_id) await pushStockToSheet(admin, bakery, [o.product_id]);
+
+  let warn = '';
+  if (date !== o.date || quantity !== o.quantity) {
+    const cap = await capacityMap(admin, bakery, o.category, date, date);
+    const day = cap.get(date);
+    if (day?.blocked) warn = ' Ojo: ese día lo tenés marcado como sin pedidos.';
+    else if (day && day.max !== null && day.used > day.max) warn = ` Ojo: ese día quedó con ${day.used} de ${day.max} de cupo.`;
+  }
+  revalidatePath('/app', 'layout');
+  back(backTo, { ok: `Pedido de ${customerName} actualizado.${warn}` });
+}
+
+// Corregir nombre, teléfono o email de un cliente (los pedidos nuevos no lo pisan).
+export async function updateCustomer(fd) {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const path = '/app/clientes';
+  const id = str(fd, 'id');
+  const name = str(fd, 'name').slice(0, 120);
+  const phone = str(fd, 'phone').slice(0, 40);
+  const email = str(fd, 'email').slice(0, 160);
+  const notes = str(fd, 'notes').slice(0, 300);
+  if (!name) back(path, { error: 'Poné el nombre.' });
+  const phone_norm = normPhone(phone);
+  if (!phone_norm) back(path, { error: 'Revisá el teléfono: tiene que tener código de área (ej. 11 5555-5555).' });
+  const { data: same } = await admin.from('customers').select('id,name').eq('bakery_id', bakery.id).eq('phone_norm', phone_norm).maybeSingle();
+  if (same && same.id !== id) back(path, { error: `Ese teléfono ya es de ${same.name}.` });
+  const { error } = await admin.from('customers').update({ name, phone, phone_norm, email: email || null, notes: notes || null }).eq('id', id).eq('bakery_id', bakery.id);
+  if (error) back(path, { error: error.message });
+  revalidatePath('/app/clientes');
+  back(path, { ok: `Guardamos los datos de ${name}.` });
+}
+
+// Borrar un insumo. Si alguna receta lo usa, ese producto queda «sin costo» hasta que lo reemplaces.
+export async function deleteIngredient(fd) {
+  const { bakery } = await requireBakery();
+  const T = rubroOf(bakery);
+  const path = '/app/insumos';
+  if (bakery.sheet_insumos_id) back(path, { error: `Tus ${T.insumos.toLowerCase()} vienen de Google Drive: borralos en tu planilla.` });
+  const admin = createAdmin();
+  const { data: ing } = await admin.from('ingredients').select('id,name').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (!ing) back(path, { error: 'No encontramos ese insumo.' });
+  const { error } = await admin.from('ingredients').delete().eq('id', ing.id);
+  if (error) back(path, { error: error.message });
+  await recomputeCosts(admin, bakery);
+  revalidatePath('/app', 'layout');
+  back(path, { ok: `Borramos ${ing.name}.` });
 }
 
 // ---------- Suscripciones de clientes ----------

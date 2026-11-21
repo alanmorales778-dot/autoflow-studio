@@ -34,58 +34,54 @@ export default async function Productos({ searchParams }) {
           {bakery.sheet_productos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
       </div>
-      <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Agregá {T.items.toLowerCase()} de a uno <a href="#nuevo">acá abajo</a> o todos juntos subiendo un Excel/CSV.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (se cambian en Configuración).</p>
+      <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Tocá «Editar» en cada uno para cambiar precio, foto, receta u opciones.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (<Link href="/app/configuracion">cambiar</Link>).</p>
       {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada {T.item} y si estás ganando tu margen.</Locked>}
 
-      <div className="card table-wrap">
+      <div className="card">
         {!products || products.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Todavía no cargaste {T.items.toLowerCase()}. Agregá el primero abajo o subí tu lista en un Excel/CSV.</p>
+          <p className="muted" style={{ margin: 0 }}>Todavía no cargaste {T.items.toLowerCase()}. Agregá el primero abajo.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Producto</th><th>Precio</th><th>Stock</th>
-                {access.costs && <><th>Costo</th><th>Precio mínimo</th><th>Margen</th></>}
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => {
-                const res = reserved.get(p.id) || 0;
-                const margin = currentMargin(p.price, p.cost);
-                const below = p.min_price && Number(p.price) < Number(p.min_price);
-                return (
-                  <tr key={p.id}>
-                    <td><strong>{p.name}</strong><br /><small>{p.sku} · {p.category}{p.visible ? '' : ' · oculto'}</small></td>
-                    <td>{money(p.price)}</td>
-                    <td>{p.stock_loaded === null ? <small>A pedido</small> : <>{Math.max(0, p.stock_loaded - res)} disp.<br /><small>{p.stock_loaded} cargado · {res} reservado</small></>}</td>
-                    {access.costs && (
-                      <>
-                        <td>{p.cost !== null ? money(p.cost) : <small className="muted">—</small>}{p.cost_error && <><br /><small style={{ color: p.cost_error === 'Sin receta cargada' ? 'var(--muted)' : 'var(--bad)' }}>{p.cost_error}</small></>}</td>
-                        <td>{p.min_price ? money(p.min_price) : '—'}</td>
-                        <td>{margin === null ? '—' : <span className={`badge ${below ? 'bad' : 'ok'}`}>{pct(margin)}</span>}</td>
-                      </>
+          <ul className="items">
+            {products.map((p) => {
+              const res = reserved.get(p.id) || 0;
+              const margin = currentMargin(p.price, p.cost);
+              const below = p.min_price && Number(p.price) < Number(p.min_price);
+              return (
+                <li key={p.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <div className="item-title">{p.name}</div>
+                      <div className="item-sub">{[p.category, !p.visible && 'oculto en el catálogo', p.stock_loaded === null ? 'a pedido' : `${Math.max(0, p.stock_loaded - res)} disponibles (${res} reservados)`].filter(Boolean).join(' · ')}</div>
+                    </div>
+                    <div className="item-title money-col">{money(p.price)}</div>
+                  </div>
+                  {access.costs && (
+                    <div className="item-meta">
+                      <span>Costo {p.cost !== null && p.cost !== undefined ? money(p.cost) : '—'}</span>
+                      {p.min_price ? <span>Mínimo {money(p.min_price)}</span> : null}
+                      {margin !== null && <span className={`badge ${below ? 'bad' : 'ok'}`}>Margen {pct(margin)}</span>}
+                      {p.cost_error && <span style={{ color: p.cost_error === 'Sin receta cargada' ? 'var(--muted)' : 'var(--bad)' }}>{p.cost_error}</span>}
+                    </div>
+                  )}
+                  <div className="item-actions">
+                    <Link className="btn secondary small" href={`/app/productos/${p.id}`}>Editar</Link>
+                    {access.costs && below && (
+                      <form action={applySuggestedPrice}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button className="btn small">Subir a {money(suggestedPrice(p.min_price))}</button>
+                      </form>
                     )}
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <Link className="btn secondary small" href={`/app/productos/${p.id}`}>{access.costs ? `${T.key === 'cocina' ? 'Receta' : T.insumos} y opciones` : 'Opciones'}</Link>{' '}
-                      {access.costs && below && (
-                        <form action={applySuggestedPrice} style={{ display: 'inline' }}>
-                          <input type="hidden" name="id" value={p.id} />
-                          <button className="btn small">Usar {money(suggestedPrice(p.min_price))}</button>
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
       {!fromDrive && (
-        <div className="card" id="nuevo">
-          <h2>Agregar {T.item}</h2>
-          <form action={createProduct}>
+        <details className="card fold" id="nuevo" open={!products || products.length === 0}>
+          <summary><h2>Agregar {T.item}</h2></summary>
+          <form action={createProduct} style={{ marginTop: 12 }}>
             <div className="grid grid-3" style={{ gap: 8 }}>
               <div className="field"><label>Nombre</label><input name="name" required placeholder="Ej: Torta de chocolate 20 cm" /></div>
               <div className="field"><label>Precio</label><input name="price" required inputMode="decimal" placeholder="Ej: 38000" /></div>
@@ -98,10 +94,15 @@ export default async function Productos({ searchParams }) {
             </div>
             <button className="btn">Agregar</button>
           </form>
-        </div>
+        </details>
       )}
       <ImportPreview bakery={bakery} kind="productos" id={sp.vista} />
-      {!sp.vista && <UploadCard kind="productos" action={importFile} driveConnected={!!bakery.sheet_productos_id} />}
+      {!sp.vista && (
+        <details className="fold" style={{ marginTop: 8 }}>
+          <summary className="btn secondary small">Cargar o descargar muchos con un Excel</summary>
+          <div style={{ marginTop: 12 }}><UploadCard kind="productos" action={importFile} driveConnected={!!bakery.sheet_productos_id} /></div>
+        </details>
+      )}
     </>
   );
 }

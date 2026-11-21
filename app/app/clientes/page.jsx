@@ -1,4 +1,6 @@
 import { requireBakery } from '@/lib/session';
+import { updateCustomer } from '../actions';
+import { normName } from '@/lib/format';
 import { Flash } from '../ui';
 import { todayAR, addDays, dateLabel, money } from '@/lib/format';
 import { waMeLink } from '@/lib/customers';
@@ -43,41 +45,109 @@ export default async function Clientes({ searchParams }) {
   const campaign = typeof sp.msg === 'string' && sp.msg.trim() ? sp.msg.trim().slice(0, 600) : '';
   const inactive = list.filter((c) => c.last && c.last < addDays(today, -60));
 
+  const search = typeof sp.q === 'string' ? sp.q.trim().slice(0, 60) : '';
+  const needle = normName(search);
+  const digits = search.replace(/\D/g, '');
+  const shown = list.filter((c) => !needle || normName(c.name).includes(needle) || (digits.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(digits)));
+
   return (
     <>
       <Flash sp={sp} />
-      <h1>Clientes</h1>
-      <p className="muted">Se arma solo con los pedidos (web, WhatsApp y cargados a mano). Los mensajes se abren en tu WhatsApp, listos para enviar.</p>
+      <div className="page-head">
+        <div>
+          <h1>Clientes</h1>
+          <p>Se arma solo con los pedidos. Tocá «Editar» para corregir un nombre o teléfono.</p>
+        </div>
+      </div>
+
+      {occasions.length > 0 && (
+        <div className="card todo">
+          <h2>Para escribirles: hace un año pidieron para esta fecha</h2>
+          <ul>
+            {occasions.map((o) => {
+              const name = String(o.customer_name).split(' ')[0];
+              const anniversary = addDays(o.date, 365);
+              const text = `¡Hola ${name}! El año pasado te hicimos ${o.product_name}${o.occasion ? ` para ${o.occasion}` : ''} (${dateLabel(o.date)}). ¿Lo festejamos de nuevo este año? 🎂 Podés pedir acá: ${catalog}`;
+              const link = waMeLink(o.customer_phone, text);
+              return (
+                <li key={o.id} className="todo-info">
+                  <span className="todo-dot" aria-hidden="true" />
+                  <span className="todo-text"><strong>{o.customer_name}</strong> · {o.product_name}{o.occasion ? ` · ${o.occasion}` : ''} · se cumple el {dateLabel(anniversary)}</span>
+                  {link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">Escribirle</a>}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <form method="get" className="row" style={{ marginBottom: 12, gap: 8, flexWrap: 'nowrap' }}>
+        <input type="search" name="q" defaultValue={search} placeholder="Buscar por nombre o teléfono" aria-label="Buscar clientes" />
+        <button className="btn secondary">Buscar</button>
+      </form>
 
       <div className="card">
-        <h2>Ocasiones para recordar (próximos 30 días)</h2>
-        <p className="muted">Clientes que hace un año pidieron para una fecha que se viene. Es el momento ideal para escribirles.</p>
-        {occasions.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Nada para recordar por ahora.</p>
+        <div className="row between" style={{ marginBottom: 4 }}>
+          <h2 style={{ margin: 0 }}>{search ? `${shown.length} de ${list.length} clientes` : `${list.length} clientes`}</h2>
+          {inactive.length > 0 && <span className="badge warn">{inactive.length} sin pedir hace más de 60 días</span>}
+        </div>
+        {list.length === 0 ? (
+          <p className="muted">Todavía no hay clientes. Aparecen solos cuando entran pedidos.</p>
+        ) : shown.length === 0 ? (
+          <p className="muted">Nadie coincide con «{search}».</p>
         ) : (
-          occasions.map((o) => {
-            const name = String(o.customer_name).split(' ')[0];
-            const anniversary = addDays(o.date, 365);
-            const text = `¡Hola ${name}! El año pasado te hicimos ${o.product_name}${o.occasion ? ` para ${o.occasion}` : ''} (${dateLabel(o.date)}). ¿Lo festejamos de nuevo este año? 🎂 Podés pedir acá: ${catalog}`;
-            const link = waMeLink(o.customer_phone, text);
-            return (
-              <div key={o.id} className="order-line row between">
-                <span><strong>{o.customer_name}</strong> · {o.product_name}{o.occasion ? ` · ${o.occasion}` : ''} · se cumple el {dateLabel(anniversary)}</span>
-                {link && <a className="btn small" href={link} target="_blank" rel="noreferrer">Escribirle</a>}
-              </div>
-            );
-          })
+          <ul className="items">
+            {shown.map((c) => {
+              const link = waMeLink(c.phone, `¡Hola ${String(c.name).split(' ')[0]}! `);
+              return (
+                <li key={c.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <div className="item-title">{c.name}</div>
+                      <div className="item-sub">{c.phone}{c.email ? ` · ${c.email}` : ''}</div>
+                    </div>
+                    <div className="money-col">
+                      <div className="item-title">{money(c.spent)}</div>
+                      <div className="item-sub">{c.count} {c.count === 1 ? 'pedido' : 'pedidos'}</div>
+                    </div>
+                  </div>
+                  {(c.last || c.notes) && (
+                    <div className="item-meta">
+                      {c.last && (c.last > today ? <span className="badge ok">Próximo: {dateLabel(c.last)}</span> : <span>Último: {dateLabel(c.last)} · {c.lastProduct}</span>)}
+                      {c.notes && <span>📝 {c.notes}</span>}
+                    </div>
+                  )}
+                  <div className="item-actions">
+                    {link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">WhatsApp</a>}
+                    <details className="fold">
+                      <summary className="btn secondary small">Editar</summary>
+                      <form action={updateCustomer} className="fold-body">
+                        <input type="hidden" name="id" value={c.id} />
+                        <div className="grid grid-3" style={{ gap: 10 }}>
+                          <div className="field"><label>Nombre</label><input name="name" defaultValue={c.name} required /></div>
+                          <div className="field"><label>Teléfono</label><input name="phone" defaultValue={c.phone || ''} inputMode="tel" required /></div>
+                          <div className="field"><label>Email (opcional)</label><input name="email" type="email" defaultValue={c.email || ''} /></div>
+                        </div>
+                        <div className="field"><label>Nota (solo la ves vos)</label><input name="notes" defaultValue={c.notes || ''} placeholder="Ej: celíaca, prefiere retirar a la tarde" /></div>
+                        <button className="btn small">Guardar</button>
+                      </form>
+                    </details>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
-      <div className="card">
-        <h2>Mensaje para todos (preventas y fechas especiales)</h2>
-        <p className="muted">Ej.: «¡Abrimos la preventa del Día de la Madre! Hay cupos limitados: {catalog}». Escribí el mensaje y te armamos un botón por cliente.</p>
+      <details className="card fold" open={!!campaign}>
+        <summary><h2>Mandar un mensaje a todos</h2></summary>
+        <p className="muted" style={{ marginTop: 8 }}>Para preventas y fechas especiales. Escribí el mensaje y te armamos un botón por cliente que abre tu WhatsApp con el texto listo.</p>
         <form method="get" className="stack">
-          <textarea name="msg" defaultValue={campaign} placeholder="Escribí tu mensaje" />
+          <textarea name="msg" defaultValue={campaign} placeholder={`Ej.: ¡Abrimos la preventa del Día de la Madre! Hay cupos limitados: ${catalog}`} />
           <div className="row">
             <button className="btn">Preparar mensajes</button>
-            <a className="btn secondary" href={`/app/clientes?msg=${encodeURIComponent(`¡Hola! Te extrañamos 😊 Esta semana tenemos cupos libres. Pedí acá: ${catalog}`)}`}>Usar mensaje «te extrañamos»</a>
+            <a className="btn secondary" href={`/app/clientes?msg=${encodeURIComponent(`¡Hola {nombre}! Te extrañamos 😊 Esta semana tenemos cupos libres. Pedí acá: ${catalog}`)}`}>Usar «te extrañamos»</a>
           </div>
         </form>
         {campaign && (
@@ -89,38 +159,10 @@ export default async function Clientes({ searchParams }) {
                 return link ? <a key={c.id} className="btn secondary small" href={link} target="_blank" rel="noreferrer">{c.name}</a> : null;
               })}
             </div>
-            <p className="muted" style={{ fontSize: 13 }}>Tip: escribí {'{nombre}'} en el mensaje y se reemplaza por el nombre de cada cliente.</p>
           </div>
         )}
-      </div>
-
-      <div className="card table-wrap">
-        <div className="row between">
-          <h2 style={{ margin: 0 }}>Todos los clientes ({list.length})</h2>
-          {inactive.length > 0 && <span className="badge warn">{inactive.length} sin pedir hace más de 60 días</span>}
-        </div>
-        {list.length === 0 ? (
-          <p className="muted">Todavía no hay clientes. Aparecen solos cuando entran pedidos.</p>
-        ) : (
-          <table style={{ marginTop: 8 }}>
-            <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total comprado</th><th>Último pedido / próximo</th><th></th></tr></thead>
-            <tbody>
-              {list.map((c) => {
-                const link = waMeLink(c.phone, `¡Hola ${String(c.name).split(' ')[0]}! `);
-                return (
-                  <tr key={c.id}>
-                    <td>{c.name}<br /><small>{c.phone}{c.email ? ` · ${c.email}` : ''}</small></td>
-                    <td>{c.count}</td>
-                    <td>{money(c.spent)}</td>
-                    <td>{c.last ? <>{c.last > today ? <span className="badge ok">Próximo: {dateLabel(c.last)}</span> : dateLabel(c.last)}<br /><small>{c.lastProduct}</small></> : '—'}</td>
-                    <td>{link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">WhatsApp</a>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+        <p className="muted" style={{ fontSize: 13, marginBottom: 0 }}>Tip: escribí {'{nombre}'} y se reemplaza por el nombre de cada cliente.</p>
+      </details>
     </>
   );
 }

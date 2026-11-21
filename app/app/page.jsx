@@ -3,6 +3,7 @@ import { getContext } from '@/lib/session';
 import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding } from './actions';
 import { onboardingSteps } from '@/lib/onboarding';
 import { Flash, StatusBadge } from './ui';
+import CopyLink from './copy-link';
 import { todayAR, addDays, dateLabel, weekdayOf, money, slugify } from '@/lib/format';
 import { isHolding } from '@/lib/orders';
 import { appUrl } from '@/lib/env';
@@ -115,17 +116,30 @@ export default async function Agenda({ searchParams }) {
   }
   const todayCap = days[0].usage.find((u) => u.label === 'Total') || days[0].usage[0] || null;
 
+  // Todo lo que hay que mirar, en una sola lista (antes eran varios avisos sueltos)
+  const todo = [];
+  if (bakery.last_sync_error) todo.push({ tone: 'bad', text: <>Problema con tus planillas: {bakery.last_sync_error}</>, href: '/app/configuracion#drive', cta: 'Revisar' });
+  if (owed.length > 0) todo.push({ tone: 'warn', text: <>Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? 'pedido que ya pasó' : 'pedidos que ya pasaron'}.</>, href: '/app/cobros', cta: 'Cobrar' });
+  if (underMin.length > 0) todo.push({ tone: 'bad', text: <><strong>{underMin.length} {underMin.length === 1 ? 'producto está' : 'productos están'} por debajo de tu margen</strong>: {underMin.slice(0, 3).map((p) => p.name).join(', ')}{underMin.length > 3 ? '…' : ''}</>, href: '/app/productos', cta: 'Ver precios' });
+  if (!bakery.pickup_address && active.some((o) => o.fulfillment === 'retiro')) todo.push({ tone: 'warn', text: <>Tenés pedidos para <strong>retirar</strong> y falta tu dirección de retiro.</>, href: '/app/configuracion', cta: 'Cargar' });
+  if (shopping) todo.push({ tone: 'info', text: <>Para los próximos 3 días vas a usar {shopping.rows.slice(0, 3).map((r) => r.name.toLowerCase()).join(', ')}{shopping.rows.length > 3 ? ` y ${shopping.rows.length - 3} más` : ''}{shopping.total ? ` (unos ${money(shopping.total)})` : ''}.</>, href: `/app/produccion?desde=${today}&hasta=${addDays(today, 2)}&ver=compras`, cta: 'Lista de compras' });
+  if (!showOnboarding && !bakery.sheet_productos_id && !(products || []).length) todo.push({ tone: 'warn', text: <>Todavía no cargaste tus productos.</>, href: '/app/productos', cta: 'Cargar' });
+  if (!showOnboarding && !bakery.mp_access_token_enc) todo.push({ tone: 'info', text: <>Conectá Mercado Pago para cobrar las señas solas.</>, href: '/app/configuracion#mercadopago', cta: 'Conectar' });
+
+  const busyDays = days.filter((x) => x.d === today || x.dayOrders.length > 0);
+  const freeDays = days.filter((x) => x.d !== today && x.dayOrders.length === 0);
+
   return (
     <>
       <Flash sp={sp} />
       <div className="page-head">
         <div>
           <h1>Agenda</h1>
-          <p>Próximos 14 días · {dateLabel(today)} es hoy</p>
+          <p>Hoy es {dateLabel(today)} · próximos 14 días</p>
         </div>
         <div className="row">
-          <Link href="/cocina" className="btn secondary small">{T.workMode}</Link>
-          <Link href="/app/pedidos#nuevo" className="btn small">+ Cargar pedido</Link>
+          <CopyLink value={catalogUrl} label="Copiar mi link de pedidos" />
+          <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar pedido</Link>
         </div>
       </div>
 
@@ -136,9 +150,9 @@ export default async function Agenda({ searchParams }) {
           <small>{todayWaiting ? `${todayWaiting} esperando seña` : todayOrders.length ? 'Todos confirmados' : 'Día libre'}</small>
         </div>
         <div className="card kpi">
-          <span className="l">Señas cobradas · últimos 7 días</span>
+          <span className="l">Señas cobradas · 7 días</span>
           <span className="v">{money(depositsWeek)}</span>
-          <small>{bakery.mp_access_token_enc ? 'Por Mercado Pago' : 'Conectá Mercado Pago para cobrarlas solas'}</small>
+          <small>{bakery.mp_access_token_enc ? 'Por Mercado Pago' : 'Cobradas a mano'}</small>
         </div>
         <div className="card kpi">
           <span className="l">Saldo por cobrar · 14 días</span>
@@ -161,25 +175,7 @@ export default async function Agenda({ searchParams }) {
         </div>
       </div>
 
-      {shopping && (
-        <div className="card callout warn">
-          <span className="ico" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" /></svg>
-          </span>
-          <div style={{ flex: '1 1 320px' }}>
-            <strong>Compras para los próximos 3 días</strong>
-            <div style={{ fontSize: 14, color: 'var(--ink-2)', marginTop: 2 }}>
-              Según lo que llevan {shopping.orders} {shopping.orders === 1 ? 'pedido' : 'pedidos'} vas a usar{' '}
-              {shopping.rows.slice(0, 4).map((r) => `${r.needed} de ${r.name.toLowerCase()}`).join(', ')}
-              {shopping.rows.length > 4 ? ` y ${shopping.rows.length - 4} ${T.insumos.toLowerCase()} más` : ''}
-              {shopping.total ? ` (unos ${money(shopping.total)})` : ''}. Revisá qué te falta.
-            </div>
-          </div>
-          <Link className="btn small" href={`/app/produccion?desde=${today}&hasta=${addDays(today, 2)}&ver=compras`}>Ver lista de compras</Link>
-        </div>
-      )}
-
-      {showOnboarding ? (
+      {showOnboarding && (
         <div className="card onboarding">
           <div className="row between">
             <h2 style={{ margin: 0 }}>Primeros pasos · {onboarding.done} de {onboarding.total}</h2>
@@ -210,39 +206,27 @@ export default async function Agenda({ searchParams }) {
             ))}
           </ol>
         </div>
-      ) : (
-        <>
-          {!bakery.sheet_productos_id && !(products || []).length && (
-            <div className="alert warn">Cargá tus productos: <Link href="/app/productos#nuevo">agregalos de a uno</Link> o subí un Excel o CSV desde <Link href="/app/productos">Productos</Link>.</div>
-          )}
-          {!bakery.mp_access_token_enc && (
-            <div className="alert warn">Conectá Mercado Pago para cobrar señas automáticas. Mientras tanto, los pedidos quedan pendientes y coordinás el pago a mano. <Link href="/app/configuracion#mercadopago">Conectar</Link></div>
-          )}
-        </>
       )}
-      {bakery.last_sync_error && <div className="alert bad">Problema con tus planillas: {bakery.last_sync_error}</div>}
-      {!bakery.pickup_address && active.some((o) => o.fulfillment === 'retiro') && (
-        <div className="alert warn">
-          Tenés pedidos para <strong>retirar</strong> y no cargaste la dirección de retiro: tus clientes no saben adónde ir. <Link href="/app/configuracion">Cargar dirección</Link>
-        </div>
-      )}
-      {owed.length > 0 && (
-        <div className="alert warn">
-          Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? 'pedido que ya pasó' : 'pedidos que ya pasaron'}. <Link href="/app/cobros">Ver y recordar</Link>
-        </div>
-      )}
-      {underMin.length > 0 && (
-        <div className="alert bad">
-          <strong>{underMin.length} {underMin.length === 1 ? 'producto está' : 'productos están'} por debajo de tu margen:</strong>{' '}
-          {underMin.slice(0, 4).map((p) => `${p.name} (${money(p.price)}, mínimo ${money(p.min_price)})`).join(' · ')}{' '}
-          <Link href="/app/productos">Revisar precios</Link>
+
+      {todo.length > 0 && (
+        <div className="card todo">
+          <h2>Para revisar</h2>
+          <ul>
+            {todo.map((it, i) => (
+              <li key={i} className={`todo-${it.tone}`}>
+                <span className="todo-dot" aria-hidden="true" />
+                <span className="todo-text">{it.text}</span>
+                <Link className="btn secondary small" href={it.href}>{it.cta}</Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
       {tomorrowOrders.length > 0 && (
         <div className="card">
           <h2>Mañana: {tomorrowOrders.length} {tomorrowOrders.length === 1 ? 'entrega' : 'entregas'}</h2>
-          <p className="muted">Mandales un recordatorio con el saldo y el link de pago. Se abre tu WhatsApp con el mensaje listo.</p>
+          <p className="muted">Mandales un recordatorio con el saldo. Se abre tu WhatsApp con el mensaje listo.</p>
           {tomorrowOrders.map((o) => {
             const link = o.customer_phone ? reminderLink(bakery, o) : null;
             return (
@@ -255,17 +239,8 @@ export default async function Agenda({ searchParams }) {
         </div>
       )}
 
-      <div className="card">
-        <div className="row between">
-          <div>
-            <strong>Tu link de pedidos:</strong> <a href={catalogUrl} target="_blank" rel="noreferrer">{catalogUrl}</a>
-          </div>
-          <span className="muted">Compartilo en Instagram y WhatsApp</span>
-        </div>
-      </div>
-
       <div className="grid grid-2">
-        {days.map(({ d, dayOrders, usage }) => (
+        {busyDays.map(({ d, dayOrders, usage }) => (
           <div key={d} className={`card day ${dayOrders.length ? '' : 'empty'} ${d === today ? 'today' : ''}`} style={{ marginBottom: 0 }}>
             <div className="row between">
               <h3 style={{ margin: 0 }}>{d === today ? 'Hoy · ' : ''}{dateLabel(d)}</h3>
@@ -291,7 +266,7 @@ export default async function Agenda({ searchParams }) {
               );
             })()}
             {dayOrders.length === 0 ? (
-              <p className="muted" style={{ margin: '6px 0 0' }}>Sin pedidos</p>
+              <p className="muted" style={{ margin: '6px 0 0' }}>Sin pedidos para hoy</p>
             ) : (
               dayOrders.map((o) => (
                 <div key={o.id} className="order-line">
@@ -307,11 +282,12 @@ export default async function Agenda({ searchParams }) {
                   </div>
                   {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
                   {o.status === 'confirmado' && (
-                    <form action={changeOrderStatus} style={{ marginTop: 6 }}>
+                    <form action={changeOrderStatus} className="row" style={{ marginTop: 6, gap: 8 }}>
                       <input type="hidden" name="id" value={o.id} />
                       <input type="hidden" name="status" value="entregado" />
                       <input type="hidden" name="back" value="/app" />
                       <button className="btn secondary small">Marcar entregado</button>
+                      <Link className="btn secondary small" href={`/app/pedidos?editar=${o.id}#p-${o.id}`}>Editar</Link>
                     </form>
                   )}
                 </div>
@@ -320,6 +296,11 @@ export default async function Agenda({ searchParams }) {
           </div>
         ))}
       </div>
+      {freeDays.length > 0 && (
+        <p className="muted free-days">
+          Sin pedidos: {freeDays.map((x) => `${dateLabel(x.d)}${blockedSet.has(x.d) ? ' (bloqueado)' : ''}`).join(' · ')}
+        </p>
+      )}
     </>
   );
 }

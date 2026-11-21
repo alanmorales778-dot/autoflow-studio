@@ -26,7 +26,7 @@ const groups = (t) => [
   ['Cuenta', [['/app/actividad', 'Actividad', 'actividad'], ['/app/configuracion', 'Ajustes', 'ajustes'], ['/app/plan', 'Plan', 'plan']]],
 ];
 
-const KEYS = { a: '/app', p: '/app/pedidos', n: '/app/pedidos#nuevo', c: '/cocina', b: '/app/cobros', r: '/app/costos' };
+const KEYS = { a: '/app', p: '/app/pedidos', n: '/app/pedidos?nuevo=1#nuevo', c: '/cocina', b: '/app/cobros', r: '/app/costos' };
 
 export default function Sidebar({ terms }) {
   const path = usePathname();

@@ -498,3 +498,58 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-r
   .vs th, .vs td { padding: 12px; font-size: 14px; }
 }
 @media (max-width: 420px) { .topbar .nav { gap: 4px; } .topbar .nav .btn { padding: 0 12px; min-height: 36px; font-size: 14px; } }
+
+/* ---------- Orden y edición (21/11) ---------- */
+/* «Para revisar»: todos los avisos de la Agenda en una sola lista */
+.todo h2 { font-size: 17px; margin-bottom: 4px; }
+.todo ul { list-style: none; margin: 0; padding: 0; }
+.todo li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.todo li:first-child { border-top: 0; }
+.todo-text { flex: 1; min-width: 0; color: var(--ink-2); }
+.todo-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: var(--muted); }
+.todo-bad .todo-dot { background: var(--bad); }
+.todo-warn .todo-dot { background: var(--warn); }
+.todo-info .todo-dot { background: var(--brand); }
+.free-days { font-size: 13px; margin: 14px 2px 0; }
+@media (max-width: 860px) {
+  .hide-mobile { display: none !important; }
+  .app-top .avatar { display: none; }
+}
+
+/* Bloques plegables («Editar», «Cargar…», «Subir archivo») */
+details.fold > summary { list-style: none; cursor: pointer; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary.btn { display: inline-flex; }
+details.fold[open] > summary.btn { background: var(--sunken); border-color: var(--line-strong); color: var(--ink); }
+.fold-body { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fcfaf7; }
+.fold-body .field { margin-bottom: 10px; }
+details.fold > summary h2 { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+details.fold > summary h2::after { content: "▾"; font-size: 14px; color: var(--muted); transition: transform .2s var(--ease); }
+details.fold:not([open]) > summary h2::after { transform: rotate(-90deg); }
+
+/* Listas en tarjetas (pedidos, clientes, insumos): se leen bien en el celular */
+.items { list-style: none; margin: 0; padding: 0; }
+.item { padding: 14px 0; border-top: 1px solid var(--line); scroll-margin-top: 80px; }
+.items > .item:first-child { border-top: 0; padding-top: 4px; }
+.item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.item-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+.item-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.item-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.item-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.item-actions form { display: inline; }
+.item.highlight { background: var(--brand-soft); border-radius: 12px; padding-left: 12px; padding-right: 12px; }
+.filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding-bottom: 2px; }
+.filters::-webkit-scrollbar { display: none; }
+.filters .chip { flex: 0 0 auto; text-decoration: none; }
+.money-col { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpis .kpi { padding: 12px 14px; }
+  .kpis .kpi .v { font-size: 22px; }
+  .kpis .kpi small, .kpis .kpi .l { font-size: 12px; }
+  .app-top .biz, .app-top .sep { display: none; }
+  .app-top-in { gap: 8px; padding: 8px 12px; }
+}
+/* El panel «Editar» de una fila ocupa todo el ancho debajo de los botones */
+.item-actions details.fold[open] { flex-basis: 100%; }
+.fold-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 0 2px; }
