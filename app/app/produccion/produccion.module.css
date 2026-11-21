@@ -1,0 +1,78 @@
+/* Producción y compras: encabezado, pestañas, fechas y tarjetas de cada día */
+
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.title { margin: 0; }
+
+/* ---------- Pestañas ---------- */
+.tabs { display: flex; gap: 4px; margin: 16px 0 14px; padding: 4px; background: var(--sunken); border-radius: 14px; max-width: 460px; }
+.tab {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 12px;
+  border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap;
+  transition: background-color 180ms ease-out, color 180ms ease-out, transform 140ms ease-out; -webkit-tap-highlight-color: transparent;
+}
+.tab:hover { color: var(--ink); }
+.tab:active { transform: scale(.98); }
+.tabOn { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(31, 25, 21, .08), 0 0 0 1px rgba(31, 25, 21, .04); }
+.badge { font-size: 12px; font-weight: 700; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; display: inline-grid; place-items: center; background: rgba(31, 25, 21, .07); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tabOn .badge { background: var(--brand); color: #fff; }
+
+/* ---------- Fechas ---------- */
+.ranges { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; margin-bottom: 12px; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: #fff; font-size: 14px; font-weight: 500; color: var(--ink-2); text-decoration: none; cursor: pointer; list-style: none;
+  transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out;
+}
+.chip::-webkit-details-marker { display: none; }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chipOn { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chipOn:hover { color: #fff; border-color: var(--ink); }
+.custom { display: flex; flex-direction: column; gap: 6px; }
+.customForm { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 4px; }
+.customForm label { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 12px; color: var(--muted); }
+.customForm input { max-width: 170px; }
+
+.summary { margin: 0 0 14px; font-size: 15px; color: var(--ink-2); }
+.summary strong { color: var(--ink); }
+.hint { color: var(--muted); font-size: 13px; }
+
+/* ---------- Días ---------- */
+.days { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); align-items: start; }
+.day { margin: 0; padding: 16px 18px; }
+.dayToday { border-color: var(--brand-line); box-shadow: 0 0 0 3px rgba(194, 65, 12, .07); }
+.dayTitle { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 17px; text-transform: capitalize; }
+.todayTag, .tomorrowTag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 999px; }
+.todayTag { background: var(--brand); color: #fff; }
+.tomorrowTag { background: var(--brand-soft); color: var(--brand-h); }
+
+.products { list-style: none; margin: 0; padding: 0; }
+.product { padding: 10px 0; border-top: 1px solid var(--line); }
+.product:first-child { border-top: 0; }
+.productHead { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.qty { min-width: 32px; height: 28px; padding: 0 8px; border-radius: 8px; background: var(--sunken); display: inline-grid; place-items: center; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); }
+.orders { list-style: none; margin: 6px 0 0 42px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.orders li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.who { color: var(--ink-2); font-weight: 500; }
+.detail { color: var(--muted); flex-basis: 100%; }
+.photo { font-size: 13px; }
+
+.nextStep {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px 18px; min-height: 52px;
+  border: 1px solid var(--brand-line); background: var(--brand-soft); border-radius: 14px; color: var(--brand-h); font-weight: 600; text-decoration: none;
+  transition: background-color 160ms ease-out, transform 140ms ease-out;
+}
+.nextStep:hover { background: #ffe8d6; color: var(--brand-h); }
+.nextStep:active { transform: scale(.99); }
+
+/* ---------- Compras ---------- */
+.shopping { max-width: 680px; }
+.note { margin: 6px 4px 0; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .tabs { max-width: none; }
+  .orders { margin-left: 0; }
+}
+
+@media print {
+  .day { break-inside: avoid; }
+}

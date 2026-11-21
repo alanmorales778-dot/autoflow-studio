@@ -175,7 +175,7 @@ export default async function Agenda({ searchParams }) {
               {shopping.total ? ` (unos ${money(shopping.total)})` : ''}. Revisá qué te falta.
             </div>
           </div>
-          <Link className="btn small" href={`/app/produccion?desde=${today}&hasta=${addDays(today, 2)}`}>Ver lista de compras</Link>
+          <Link className="btn small" href={`/app/produccion?desde=${today}&hasta=${addDays(today, 2)}&ver=compras`}>Ver lista de compras</Link>
         </div>
       )}
 
