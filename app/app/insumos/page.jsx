@@ -24,6 +24,7 @@ export default async function Insumos({ searchParams }) {
       <div className="row between">
         <h1 style={{ margin: 0 }}>{T.insumos}</h1>
         <div className="row">
+          {!fromDrive && !sp.nuevo && <Link className="btn small" href="/app/insumos?nuevo=1#nuevo">+ Agregar {T.insumo.toLowerCase()}</Link>}
           {bakery.sheet_insumos_id && <a className="btn secondary small" href={sheetUrl(bakery.sheet_insumos_id)} target="_blank" rel="noreferrer">Abrir planilla de {T.insumos.toLowerCase()} ↗</a>}
           {bakery.sheet_insumos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/insumos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
@@ -36,8 +37,8 @@ export default async function Insumos({ searchParams }) {
 
       <ImportPreview bakery={bakery} kind="insumos" id={sp.vista} />
 
-      {!fromDrive && (
-        <details className="card fold" id="nuevo" open={!ingredients || ingredients.length === 0 || !!sp.nuevo}>
+      {!fromDrive && (!ingredients || ingredients.length === 0 || !!sp.nuevo) && (
+        <details className="card fold" id="nuevo" open>
           <summary><h2>Agregar {T.insumo.toLowerCase()}</h2></summary>
           <form action={saveIngredient} style={{ marginTop: 12 }}>
             <IngredientFields T={T} />

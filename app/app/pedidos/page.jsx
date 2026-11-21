@@ -115,7 +115,8 @@ export default async function Pedidos({ searchParams }) {
         {!showNew && <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>}
       </div>
 
-      <details className="card fold" id="nuevo" open={showNew}>
+      {showNew && (
+      <details className="card fold" id="nuevo" open>
         <summary><h2>Cargar {T.order} a mano</h2></summary>
         <p className="muted" style={{ marginTop: 8 }}>Para lo que te llega por teléfono, Instagram o en persona. Ocupa cupo y stock igual que lo que entra por tu link.</p>
         {!products || products.length === 0 ? (
@@ -154,6 +155,7 @@ export default async function Pedidos({ searchParams }) {
           </form>
         )}
       </details>
+      )}
 
       <div className="filters" role="navigation" aria-label="Filtrar">
         {FILTERS.map(([k, label]) => (

@@ -39,6 +39,7 @@ export default async function Configuracion({ searchParams }) {
         <a href="#cupos">Cupos y días</a>
         <a href="#mercadopago">Cobros</a>
         <a href="#avisos">Avisos</a>
+        <a href="#descargas">Descargas</a>
         <a href="#mas">Más opciones</a>
       </nav>
 
@@ -190,6 +191,18 @@ export default async function Configuracion({ searchParams }) {
         <h2>Avisos en el celular</h2>
         <p className="muted" style={{ marginTop: 0 }}>Te avisamos al instante aunque tengas la app cerrada. Activalo en cada celular o computadora donde lo quieras.</p>
         <PushSettings vapidKey={vapidPublicKey()} prefs={prefsOf(bakery)} devices={pushDevices || 0} labels={{ orderCap: t.orderCap }} />
+      </div>
+
+      <div className="card" id="descargas">
+        <h2>Descargar mis datos</h2>
+        <p className="muted" style={{ marginTop: 0 }}>Bajá una copia en Excel cuando quieras. Sirve de respaldo o para pasarle a tu contador.</p>
+        <div className="dl-grid">
+          <a className="dl" href="/api/export/pedidos" download><strong>{t.orders}</strong><span>Todos, con cliente, fecha, seña y saldo</span></a>
+          <a className="dl" href="/api/export/clientes" download><strong>Clientes</strong><span>Contacto, compras y total gastado</span></a>
+          <a className="dl" href="/api/export/productos" download><strong>{t.items}</strong><span>Precios, stock y costos</span></a>
+          <a className="dl" href="/api/export/insumos" download><strong>{t.insumos}</strong><span>Precios y proveedores</span></a>
+          <a className="dl" href="/api/export/ganancias" download><strong>Ganancias del mes</strong><span>Ventas, costo y ganancia por {t.item}</span></a>
+        </div>
       </div>
 
       <h2 id="mas" style={{ margin: '28px 0 10px', fontSize: 17, color: 'var(--muted)' }}>Más opciones</h2>

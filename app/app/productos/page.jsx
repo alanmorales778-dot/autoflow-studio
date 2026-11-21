@@ -38,8 +38,8 @@ export default async function Productos({ searchParams }) {
       <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Tocá «Editar» en cada uno para cambiar precio, foto, {T.receta.toLowerCase()} u opciones.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (<Link href="/app/configuracion">cambiar</Link>).</p>
       {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada {T.item} y si estás ganando tu margen.</Locked>}
 
-      {!fromDrive && (
-        <details className="card fold" id="nuevo" open={!products || products.length === 0 || !!sp.nuevo}>
+      {!fromDrive && (!products || products.length === 0 || !!sp.nuevo) && (
+        <details className="card fold" id="nuevo" open>
           <summary><h2>Agregar {T.item}</h2></summary>
           <form action={createProduct} style={{ marginTop: 12 }}>
             <div className="grid grid-3" style={{ gap: 8 }}>

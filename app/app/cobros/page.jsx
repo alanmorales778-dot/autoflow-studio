@@ -45,6 +45,20 @@ export default async function Cobros({ searchParams }) {
     supabase.from('orders').select(cols).eq('bakery_id', bakery.id).in('status', ['confirmado', 'entregado']).is('balance_paid_at', null).order('date').limit(500),
   ]);
 
+  // Comparación: el mes pasado completo y, si estamos en el mes actual, «a esta altura» del mes pasado.
+  const prevYm = shiftMonth(ym, -1);
+  const prevB = monthBounds(prevYm);
+  const cut = isCurrent ? new Date(new Date(prevB.start).getTime() + (Date.now() - new Date(start).getTime())).toISOString() : prevB.end;
+  const [{ data: pDep }, { data: pBal }] = await Promise.all([
+    supabase.from('orders').select('paid_at,deposit_amount').eq('bakery_id', bakery.id).gte('paid_at', prevB.start).lt('paid_at', prevB.end).gt('deposit_amount', 0),
+    supabase.from('orders').select('paid_at,balance_paid_at,total,deposit_amount').eq('bakery_id', bakery.id).gte('balance_paid_at', prevB.start).lt('balance_paid_at', prevB.end),
+  ]);
+  const prevAt = (limit) => sum((pDep || []).filter((o) => o.paid_at < limit), (o) => Number(o.deposit_amount))
+    + sum((pBal || []).filter((o) => o.balance_paid_at < limit), (o) => Number(o.total) - (o.paid_at ? Number(o.deposit_amount) : 0));
+  const prevFull = prevAt('9999');
+  const prevSame = isCurrent ? prevAt(cut) : prevFull;
+  const prevName = MONTHS[Number(prevYm.slice(5)) - 1];
+
   const dep = deposits || [];
   const bal = balances || [];
   const depMp = dep.filter((o) => o.mp_payment_id);
@@ -78,12 +92,24 @@ export default async function Cobros({ searchParams }) {
           <small className="muted">Cobrado en el mes</small>
           <div className="price">{money(depTotal + balTotal)}</div>
           <small className="muted">{money(depTotal)} en señas · {money(balTotal)} en saldos</small>
+          {prevSame > 0 && (() => {
+            const d = Math.round(((depTotal + balTotal - prevSame) / prevSame) * 100);
+            return <small className={`delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}`}>{d === 0 ? '=' : d > 0 ? '↑' : '↓'} {Math.abs(d)} % {d >= 0 ? 'más' : 'menos'} que {isCurrent ? `a esta altura de ${prevName}` : `en ${prevName}`}</small>;
+          })()}
         </div>
-        <div className="card kpi">
-          <small className="muted">Señas cobradas solas con Mercado Pago</small>
-          <div className="price">{money(depMpTotal)}</div>
-          <small className="muted">{depMp.length} {depMp.length === 1 ? T.order : T.orders.toLowerCase()} · tardaron {hoursLabel(avgWait)} en pagar en promedio</small>
-        </div>
+        {bakery.mp_access_token_enc ? (
+          <div className="card kpi">
+            <small className="muted">Señas cobradas solas con Mercado Pago</small>
+            <div className="price">{money(depMpTotal)}</div>
+            <small className="muted">{depMp.length} {depMp.length === 1 ? T.order : T.orders.toLowerCase()} · tardaron {hoursLabel(avgWait)} en pagar en promedio</small>
+          </div>
+        ) : (
+          <div className="card kpi">
+            <small className="muted" style={{ textTransform: 'none' }}>Cobrado en {prevName}</small>
+            <div className="price" style={{ color: 'var(--ink-2)' }}>{money(prevFull)}</div>
+            <small className="muted">el mes completo</small>
+          </div>
+        )}
         <div className="card kpi">
           <small className="muted">Te deben hoy</small>
           <div className="price" style={overdue.length ? { color: 'var(--bad)' } : undefined}>{money(sum(overdue, (o) => o.due))}</div>
