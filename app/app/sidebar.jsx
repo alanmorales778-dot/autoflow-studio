@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -79,5 +79,73 @@ export default function Sidebar({ terms }) {
         </div>
       ))}
     </nav>
+  );
+}
+
+// Celular: barra de abajo con lo de todos los días y «Más» para el resto (antes era una tira con 10 botones).
+export function BottomNav({ terms, catalogUrl, signOutAction }) {
+  const path = usePathname();
+  const [more, setMore] = useState(false);
+  useEffect(() => { setMore(false); }, [path]);
+  useEffect(() => {
+    document.body.style.overflow = more ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [more]);
+
+  const main = [
+    ['/app', 'Agenda', 'agenda', (p) => p === '/app'],
+    ['/app/pedidos', terms.orders, 'pedidos', (p) => p.startsWith('/app/pedidos')],
+    null,
+    ['/app/produccion?ver=compras', 'Compras', 'compras', (p) => p.startsWith('/app/produccion')],
+  ];
+  const rest = groups(terms).flatMap(([, links]) => links).filter(([href]) => !['/app', '/app/pedidos', '/app/produccion'].includes(href));
+  const moreOn = rest.some(([href, , , also = []]) => [href, ...also].some((h) => path.startsWith(h))) || path.startsWith('/app/buscar');
+
+  return (
+    <>
+      <nav className="bottom-nav no-print" aria-label="Secciones principales">
+        {main.map((it) => (it === null ? (
+          <Link key="nuevo" href="/app/pedidos?nuevo=1#nuevo" className="bn-add" aria-label={`Cargar ${terms.order} nuevo`}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          </Link>
+        ) : (
+          <Link key={it[0]} href={it[0]} className={`bn-item ${it[3](path) ? 'on' : ''}`} aria-current={it[3](path) ? 'page' : undefined}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={it[2] === 'compras' ? 'M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2M10 20.5h.01M17 20.5h.01' : I[it[2]]} /></svg>
+            <span>{it[1]}</span>
+          </Link>
+        )))}
+        <button type="button" className={`bn-item ${more || moreOn ? 'on' : ''}`} onClick={() => setMore(true)} aria-expanded={more}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          <span>Más</span>
+        </button>
+      </nav>
+      {more && (
+        <div className="sheet-backdrop" onClick={() => setMore(false)}>
+          <div className="sheet more-sheet" role="dialog" aria-label="Más secciones" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-grip" aria-hidden="true" />
+            <Link href="/app/buscar" className="more-search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" /></svg>
+              Buscar {terms.orders.toLowerCase()}, clientes o {terms.items.toLowerCase()}…
+            </Link>
+            <div className="more-grid">
+              {[['/app/produccion', terms.prodTitle, 'produccion'], ...rest].map(([href, label, icon, also = []]) => {
+                const on = [href, ...also].some((h) => path.startsWith(h)) && !(href === '/app/produccion' && false);
+                return (
+                  <Link key={href} href={href} className={`more-tile ${on ? 'on' : ''}`}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={I[icon]} /></svg>
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="more-links">
+              <a href={catalogUrl} target="_blank" rel="noreferrer">Ver mi catálogo ↗</a>
+              <Link href="/cocina">{terms.workMode}</Link>
+              <form action={signOutAction}><button type="submit">Salir</button></form>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

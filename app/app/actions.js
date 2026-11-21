@@ -127,9 +127,9 @@ export async function saveSettings(fd) {
 export async function saveNotifications(fd) {
   const { supabase, bakery } = await requireBakery();
   const email = str(fd, 'notify_email').toLowerCase();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) back('/app/configuracion#avisos', { error: 'Revisá el email de los avisos.' });
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) back('/app/configuracion#avisos-mail', { error: 'Revisá el email de los avisos.' });
   const { error } = await supabase.from('bakeries').update({ notify_orders: fd.get('notify_orders') === 'on', notify_email: email || null }).eq('id', bakery.id);
-  if (error) back('/app/configuracion#avisos', { error: error.message });
+  if (error) back('/app/configuracion#avisos-mail', { error: error.message });
   revalidatePath('/app/configuracion');
   back('/app/configuracion', { ok: 'Avisos guardados.' });
 }

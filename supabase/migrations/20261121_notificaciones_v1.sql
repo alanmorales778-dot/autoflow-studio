@@ -1,0 +1,1 @@
+-- Ver migración aplicada en Supabase: notificaciones_v1 (notifications, push_subscriptions, bakeries.push_prefs, bakeries.last_digest_date)

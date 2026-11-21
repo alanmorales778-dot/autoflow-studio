@@ -11,12 +11,16 @@ import { calendarUrl } from '@/lib/ics';
 import CopyField from './copy-field';
 import HashOpener from '../hash-opener';
 import PhotoPicker from '../photo-picker';
+import PushSettings from '../push-settings';
+import { vapidPublicKey } from '@/lib/webpush';
+import { prefsOf } from '@/lib/notifications';
 import Link from 'next/link';
 import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
 
 export default async function Configuracion({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access, user } = await requireBakery();
+  const { count: pushDevices } = await supabase.from('push_subscriptions').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id);
   const [{ data: rules }, { data: blocked }, { data: cats }] = await Promise.all([
     supabase.from('capacity_rules').select('*').eq('bakery_id', bakery.id).order('category').order('weekday'),
     supabase.from('blocked_dates').select('*').eq('bakery_id', bakery.id).gte('date', todayAR()).order('date'),
@@ -34,6 +38,7 @@ export default async function Configuracion({ searchParams }) {
         <a href="#negocio">Tu negocio</a>
         <a href="#cupos">Cupos y días</a>
         <a href="#mercadopago">Cobros</a>
+        <a href="#avisos">Avisos</a>
         <a href="#mas">Más opciones</a>
       </nav>
 
@@ -176,6 +181,12 @@ export default async function Configuracion({ searchParams }) {
         </form>
       </div>
 
+      <div className="card" id="avisos">
+        <h2>Avisos en el celular</h2>
+        <p className="muted" style={{ marginTop: 0 }}>Te avisamos al instante aunque tengas la app cerrada. Activalo en cada celular o computadora donde lo quieras.</p>
+        <PushSettings vapidKey={vapidPublicKey()} prefs={prefsOf(bakery)} devices={pushDevices || 0} labels={{ orderCap: t.orderCap }} />
+      </div>
+
       <h2 id="mas" style={{ margin: '28px 0 10px', fontSize: 17, color: 'var(--muted)' }}>Más opciones</h2>
       {/* Calendario */}
       <details className="card fold" id="calendario">
@@ -206,7 +217,7 @@ export default async function Configuracion({ searchParams }) {
 
       {/* Avisos: solo se muestra cuando el envío de mails está configurado en el servidor */}
       {mailEnabled() && (
-      <details className="card fold" id="avisos">
+      <details className="card fold" id="avisos-mail">
         <summary><h2>Avisos por mail</h2></summary>
         <p className="muted">Te mandamos un mail cuando entra algo desde tu link o WhatsApp, y cuando se cobra una seña por Mercado Pago.</p>
         <form action={saveNotifications} className="grid grid-2" style={{ alignItems: 'end' }}>

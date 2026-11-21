@@ -7,6 +7,10 @@ const FONTS = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;7
 export const metadata = {
   title: 'AutoFlow — Pedidos, turnos, señas y costos para negocios por encargo',
   description: 'Link de pedidos y turnos con cupos por día, señas automáticas con Mercado Pago, costos que se actualizan desde tu Excel o Google Drive y bot de WhatsApp.',
+  applicationName: 'AutoFlow',
+  appleWebApp: { capable: true, title: 'AutoFlow', statusBarStyle: 'default' },
+  icons: { icon: [{ url: '/icon-192.png', sizes: '192x192' }], apple: '/apple-touch-icon.png' },
+  formatDetection: { telephone: false },
 };
 
 export const viewport = { themeColor: '#faf7f2' };

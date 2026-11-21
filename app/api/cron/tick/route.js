@@ -5,6 +5,7 @@ import { syncBakery } from '@/lib/sheets';
 import { safeEqual } from '@/lib/crypto';
 import { generateRecurringOrders, refreshPendingSubscriptions } from '@/lib/recurring';
 import { reportError, heartbeat } from '@/lib/alerts';
+import { sendMorningDigests } from '@/lib/digest';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,14 @@ async function run(request) {
     await reportError('cron:recurrentes', e);
   }
 
+  let digests = 0;
+  try {
+    digests = await sendMorningDigests(admin);
+  } catch (e) {
+    failures.push('resumen');
+    await reportError('cron:resumen', e);
+  }
+
   const staleBefore = new Date(Date.now() - 9 * 60000).toISOString();
   const { data: bakeries } = await admin
     .from('bakeries')
@@ -55,8 +64,8 @@ async function run(request) {
       await reportError('cron:sync-drive', e, { bakeryId: b.id });
     }
   }
-  await heartbeat('cron', { expired, recurring, synced: results.length, failures });
-  return NextResponse.json({ ok: failures.length === 0, expired, recurring, synced: results.length, failures, results });
+  await heartbeat('cron', { expired, recurring, digests, synced: results.length, failures });
+  return NextResponse.json({ ok: failures.length === 0, expired, recurring, digests, synced: results.length, failures, results });
 }
 
 export const GET = run;
