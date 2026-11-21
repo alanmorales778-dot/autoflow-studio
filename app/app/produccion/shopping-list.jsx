@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { money } from '@/lib/format';
-import { CATEGORIES, sameName, suggestionToItem } from '@/lib/shopping';
+import { categoriesFor, categoryOf, sameName, suggestionToItem } from '@/lib/shopping';
 import { addShoppingItems, deleteShoppingItems, updateShoppingItem } from './shopping-actions';
 import QuickAdd from './quick-add';
 import ShoppingRow from './shopping-row';
@@ -49,6 +49,7 @@ function writeStore(key, value) {
 }
 
 export default function ShoppingList({ initialItems, mode, loadError, bakeryId, suggestions, suggestionsLocked, labels }) {
+  const cats = useMemo(() => categoriesFor(labels.shopCats), [labels.shopCats]);
   const [items, dispatch] = useReducer(reducer, initialItems);
   const [settling, setSettling] = useState(() => new Set());
   const [openId, setOpenId] = useState(null);
@@ -154,7 +155,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
 
   // Pendientes agrupados por pasillo (los recién tildados siguen visibles un instante, tachados)
   const showing = items.filter((i) => !i.bought || settling.has(i.id)).sort(byNewest);
-  const groups = CATEGORIES.map((c) => ({ ...c, items: showing.filter((i) => i.category === c.key) })).filter((g) => g.items.length);
+  const groups = cats.map((c) => ({ ...c, items: showing.filter((i) => categoryOf(i, cats) === c.key) })).filter((g) => g.items.length);
   const singleGroup = groups.length === 1;
 
   const freshSuggestions = (suggestions || []).filter((r) => !pendingAll.some((i) => sameName(i.name, r.name)));
@@ -191,25 +192,25 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
       </div>
       {loadError && <div className="alert warn">No pudimos traer tu lista guardada ({loadError}). Lo que cargues ahora se guarda igual.</div>}
 
-      <QuickAdd onAdd={(it) => addItems([it])} />
+      <QuickAdd onAdd={(it) => addItems([it])} cats={cats} example={labels.shopEx} />
 
       {/* Sugeridos por los pedidos: una línea que se abre */}
       {suggestionsLocked ? (
         <p className={`${s.suggestBar} ${s.suggestLocked} no-print`}>
-          Con el módulo de Costos, AutoFlow te sugiere qué comprar según tus pedidos. <a href="/app/plan">Ver planes →</a>
+          Con el módulo de Costos, AutoFlow te sugiere qué comprar según tus {labels.orders || 'pedidos'}. <a href="/app/plan">Ver planes →</a>
         </p>
       ) : freshSuggestions.length > 0 && (
         <div className={`${s.suggest} no-print`}>
           <div className={s.suggestBar}>
             <button type="button" className={s.suggestToggle} aria-expanded={suggestOpen} onClick={() => setSuggestOpen((v) => !v)}>
               <svg className={s.chev} viewBox="0 0 20 20" aria-hidden="true"><path d="M7 8l3 3 3-3" /></svg>
-              {freshSuggestions.length} {freshSuggestions.length === 1 ? 'sugerido' : 'sugeridos'} por tus pedidos
+              {freshSuggestions.length} {freshSuggestions.length === 1 ? 'sugerido' : 'sugeridos'} por tus {labels.orders || 'pedidos'}
             </button>
             <button
               type="button"
               className={`${s.textBtn} ${s.textBtnBrand} ${s.press}`}
               onClick={() => {
-                addItems(freshSuggestions.map((r) => suggestionToItem(r, newId())));
+                addItems(freshSuggestions.map((r) => suggestionToItem(r, newId(), cats)));
                 showToast(`Se ${freshSuggestions.length === 1 ? 'agregó 1 ítem' : `agregaron ${freshSuggestions.length} ítems`}`);
                 setSuggestOpen(false);
               }}
@@ -225,7 +226,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
                     <span className={s.suggestName}>{r.name}</span>
                     <span className={s.note}>{r.packLabel || `necesitás ${r.needed}`}{r.estCost !== null ? ` · ${money(r.estCost)}` : ''}{!r.known && ` · no está en tus ${labels.insumos.toLowerCase()}`}</span>
                   </div>
-                  <button type="button" className={`${s.addMini} ${s.press}`} aria-label={`Agregar ${r.name}`} onClick={() => addItems([suggestionToItem(r, newId())])}>
+                  <button type="button" className={`${s.addMini} ${s.press}`} aria-label={`Agregar ${r.name}`} onClick={() => addItems([suggestionToItem(r, newId(), cats)])}>
                     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 5v10M5 10h10" /></svg>
                   </button>
                 </li>
@@ -239,13 +240,13 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
       {items.length === 0 ? (
         <div className={s.empty}>
           <p><strong>Todavía no hay nada para comprar.</strong></p>
-          <p>Escribí arriba lo que necesitás, por ejemplo <em>Harina 0000 5 kg $6500</em>, y apretá Enter.</p>
+          <p>Escribí arriba lo que necesitás, por ejemplo <em>{labels.shopEx || 'Harina 5 kg $6500'}</em>, y apretá Enter.</p>
         </div>
       ) : showing.length === 0 ? (
         <div className={s.allDone}><span className={s.allDoneIcon} aria-hidden="true">✓</span>¡Compraste todo!</div>
       ) : (
         groups.map((g) => (
-          <div key={g.key} className={s.group} data-cat={g.key}>
+          <div key={g.key} className={s.group} data-ci={g.ci}>
             {!singleGroup && (
               <div className={s.groupHead}>
                 <span className={s.dot} aria-hidden="true" />
@@ -254,7 +255,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
               </div>
             )}
             <ul className={s.list}>
-              {g.items.map((i) => <ShoppingRow key={i.id} item={i} settling={settling.has(i.id)} open={openId === i.id} {...rowProps} />)}
+              {g.items.map((i) => <ShoppingRow key={i.id} cats={cats} item={i} settling={settling.has(i.id)} open={openId === i.id} {...rowProps} />)}
             </ul>
           </div>
         ))
@@ -282,7 +283,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
           </div>
           {boughtOpen && (
             <ul className={`${s.list} ${s.boughtList}`}>
-              {boughtAll.map((i) => <ShoppingRow key={i.id} item={i} settling={false} open={openId === i.id} {...rowProps} />)}
+              {boughtAll.map((i) => <ShoppingRow key={i.id} cats={cats} item={i} settling={false} open={openId === i.id} {...rowProps} />)}
             </ul>
           )}
         </div>

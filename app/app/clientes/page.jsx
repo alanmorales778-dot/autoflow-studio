@@ -1,4 +1,5 @@
 import { requireBakery } from '@/lib/session';
+import { rubroOf } from '@/lib/rubros';
 import { updateCustomer } from '../actions';
 import { normName } from '@/lib/format';
 import { Flash } from '../ui';
@@ -9,6 +10,7 @@ import { appUrl } from '@/lib/env';
 export default async function Clientes({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery } = await requireBakery();
+  const T = rubroOf(bakery);
   const today = todayAR();
   const catalog = `${appUrl()}/c/${bakery.slug}`;
   const [{ data: customers }, { data: orders }] = await Promise.all([
@@ -56,18 +58,18 @@ export default async function Clientes({ searchParams }) {
       <div className="page-head">
         <div>
           <h1>Clientes</h1>
-          <p>Se arma solo con los pedidos. Tocá «Editar» para corregir un nombre o teléfono.</p>
+          <p>Se arma solo con cada {T.order} que entra. Tocá «Editar» para corregir un nombre o teléfono.</p>
         </div>
       </div>
 
       {occasions.length > 0 && (
         <div className="card todo">
-          <h2>Para escribirles: hace un año pidieron para esta fecha</h2>
+          <h2>Para escribirles: hace un año te compraron para esta fecha</h2>
           <ul>
             {occasions.map((o) => {
               const name = String(o.customer_name).split(' ')[0];
               const anniversary = addDays(o.date, 365);
-              const text = `¡Hola ${name}! El año pasado te hicimos ${o.product_name}${o.occasion ? ` para ${o.occasion}` : ''} (${dateLabel(o.date)}). ¿Lo festejamos de nuevo este año? 🎂 Podés pedir acá: ${catalog}`;
+              const text = `¡Hola ${name}! El año pasado te hicimos ${o.product_name}${o.occasion ? ` para ${o.occasion}` : ''} (${dateLabel(o.date)}). ${T.key === 'cocina' ? '¿Lo festejamos de nuevo este año? 🎂' : '¿Lo repetimos este año?'} Podés pedir acá: ${catalog}`;
               const link = waMeLink(o.customer_phone, text);
               return (
                 <li key={o.id} className="todo-info">
@@ -108,7 +110,7 @@ export default async function Clientes({ searchParams }) {
                     </div>
                     <div className="money-col">
                       <div className="item-title">{money(c.spent)}</div>
-                      <div className="item-sub">{c.count} {c.count === 1 ? 'pedido' : 'pedidos'}</div>
+                      <div className="item-sub">{c.count} {c.count === 1 ? T.order : T.orders.toLowerCase()}</div>
                     </div>
                   </div>
                   {(c.last || c.notes) && (

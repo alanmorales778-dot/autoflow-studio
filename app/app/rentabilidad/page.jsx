@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
+import { rubroOf } from '@/lib/rubros';
 import { Locked } from '../ui';
+import NumerosTabs from '../numeros-tabs';
 import { todayAR, money, pct } from '@/lib/format';
 import { liveCosts } from '@/lib/sheets';
 
@@ -22,13 +24,15 @@ function shiftMonth(ym, n) {
 export default async function Rentabilidad({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery, access } = await requireBakery();
+  const T = rubroOf(bakery);
   const ym = /^\d{4}-\d{2}$/.test(sp.mes || '') ? sp.mes : todayAR().slice(0, 7);
   const { from, to, label } = monthRange(ym);
 
   if (!access.costs) {
     return (
       <>
-        <h1>Rentabilidad</h1>
+        <h1>Costos y ganancias</h1>
+        <NumerosTabs active="ganancia" />
         <Locked title="Rentabilidad por producto">Con el módulo de Costos ves cuánto ganaste con cada producto en el mes.</Locked>
       </>
     );
@@ -62,14 +66,16 @@ export default async function Rentabilidad({ searchParams }) {
 
   return (
     <>
-      <div className="row between">
-        <h1 style={{ margin: 0 }}>Rentabilidad · {label}</h1>
-        <div className="row">
-          <Link className="btn secondary small" href={`/app/rentabilidad?mes=${shiftMonth(ym, -1)}`}>← Mes anterior</Link>
-          <Link className="btn secondary small" href={`/app/rentabilidad?mes=${shiftMonth(ym, 1)}`}>Mes siguiente →</Link>
+      <h1>Costos y ganancias</h1>
+      <NumerosTabs active="ganancia" />
+      <div className="row between" style={{ marginBottom: 4 }}>
+        <h2 style={{ margin: 0, textTransform: 'capitalize' }}>{label}</h2>
+        <div className="row" style={{ gap: 6 }}>
+          <Link className="btn secondary small" href={`/app/rentabilidad?mes=${shiftMonth(ym, -1)}`} aria-label="Mes anterior">←</Link>
+          <Link className="btn secondary small" href={`/app/rentabilidad?mes=${shiftMonth(ym, 1)}`} aria-label="Mes siguiente">→</Link>
         </div>
       </div>
-      <p className="muted">Pedidos confirmados y entregados del mes. El costo usa el costo actual de cada receta (con indirectos); los adicionales de personalización se cuentan como ingreso.</p>
+      <p className="muted">Confirmados y entregados del mes. El costo usa los precios de hoy de tus {T.insumos.toLowerCase()} (con indirectos); los adicionales de personalización se cuentan como ingreso.</p>
       <div className="grid grid-3">
         <div className="card"><small className="muted">Ventas</small><div className="price">{money(revenue)}</div></div>
         <div className="card"><small className="muted">Ganancia estimada</small><div className="price">{money(profit)}</div>{knownRevenue < revenue && <small className="muted">sin contar los que no tienen costo calculado</small>}</div>
@@ -87,7 +93,7 @@ export default async function Rentabilidad({ searchParams }) {
                   <td>{r.name}</td>
                   <td>{r.units}</td>
                   <td>{money(r.revenue)}</td>
-                  <td>{r.costKnown ? money(r.cost) : r.id ? <Link href={`/app/productos/${r.id}`}><small>{reasonById.get(r.id) === 'Sin receta cargada' || !reasonById.has(r.id) ? 'sin receta' : 'receta incompleta'}</small></Link> : <small className="muted">producto borrado</small>}</td>
+                  <td>{r.costKnown ? money(r.cost) : r.id ? <Link href={`/app/productos/${r.id}`}><small>{reasonById.get(r.id) === 'Sin receta cargada' || !reasonById.has(r.id) ? `sin ${T.receta.toLowerCase()}` : 'ficha incompleta'}</small></Link> : <small className="muted">producto borrado</small>}</td>
                   <td>{r.profit !== null ? money(r.profit) : '—'}</td>
                   <td>{r.margin !== null ? <span className={`badge ${r.margin < target ? 'bad' : 'ok'}`}>{pct(r.margin)}</span> : '—'}</td>
                 </tr>

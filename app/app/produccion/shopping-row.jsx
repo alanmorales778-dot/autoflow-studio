@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { money, num, parseNum } from '@/lib/format';
-import { CATEGORIES, parseQty, qtyLabel } from '@/lib/shopping';
+import { categoryOf, parseQty, qtyLabel } from '@/lib/shopping';
 import s from './shopping.module.css';
 
 const qtyText = (item) => (item.qty === null || item.qty === undefined ? '' : `${num(item.qty, 2)}${item.unit ? ` ${item.unit}` : ''}`);
 const costText = (item) => (item.est_cost === null || item.est_cost === undefined ? '' : num(item.est_cost, 2));
 
 // Un ítem de la lista. Tildar = comprado. Tocar el texto = se abre para editar todo en el lugar.
-export default function ShoppingRow({ item, settling, open, onOpen, onClose, onToggle, onSave, onDelete }) {
+export default function ShoppingRow({ item, cats, settling, open, onOpen, onClose, onToggle, onSave, onDelete }) {
   const done = item.bought || settling;
   const details = [qtyLabel(item.qty, item.unit), item.est_cost !== null && item.est_cost !== undefined ? money(item.est_cost) : null].filter(Boolean).join(' · ');
 
   return (
-    <li className={`${s.row} ${done ? s.rowDone : ''} ${settling ? s.rowSettling : ''} ${open ? s.rowOpen : ''}`} data-cat={item.category}>
+    <li className={`${s.row} ${done ? s.rowDone : ''} ${settling ? s.rowSettling : ''} ${open ? s.rowOpen : ''}`} data-ci={cats.find((c) => c.key === categoryOf(item, cats))?.ci}>
       <div className={s.rowLine}>
         <button
           type="button"
@@ -34,16 +34,16 @@ export default function ShoppingRow({ item, settling, open, onOpen, onClose, onT
           {item.note && <span className={s.note}>{item.note}</span>}
         </button>
       </div>
-      {open && <RowEditor item={item} onSave={onSave} onClose={onClose} onDelete={onDelete} />}
+      {open && <RowEditor item={item} cats={cats} onSave={onSave} onClose={onClose} onDelete={onDelete} />}
     </li>
   );
 }
 
-function RowEditor({ item, onSave, onClose, onDelete }) {
+function RowEditor({ item, cats, onSave, onClose, onDelete }) {
   const [name, setName] = useState(item.name);
   const [qty, setQty] = useState(qtyText(item));
   const [cost, setCost] = useState(costText(item));
-  const [category, setCategory] = useState(item.category);
+  const [category, setCategory] = useState(categoryOf(item, cats));
   const [error, setError] = useState('');
   const nameRef = useRef(null);
 
@@ -95,8 +95,8 @@ function RowEditor({ item, onSave, onClose, onDelete }) {
       <div className={s.field}>
         <span>Pasillo</span>
         <div className={s.pills} role="radiogroup" aria-label="Pasillo">
-          {CATEGORIES.map((c) => (
-            <button key={c.key} type="button" role="radio" aria-checked={category === c.key} data-cat={c.key} className={`${s.pill} ${s.press} ${category === c.key ? s.pillOn : ''}`} onClick={() => setCategory(c.key)}>
+          {cats.map((c) => (
+            <button key={c.key} type="button" role="radio" aria-checked={category === c.key} data-ci={c.ci} className={`${s.pill} ${s.press} ${category === c.key ? s.pillOn : ''}`} onClick={() => setCategory(c.key)}>
               {c.label}
             </button>
           ))}

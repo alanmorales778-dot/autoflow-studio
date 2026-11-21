@@ -9,6 +9,8 @@ import { sheetUrl } from '@/lib/google';
 import { appUrl, has } from '@/lib/env';
 import { calendarUrl } from '@/lib/ics';
 import CopyField from './copy-field';
+import HashOpener from '../hash-opener';
+import Link from 'next/link';
 import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
 
 export default async function Configuracion({ searchParams }) {
@@ -24,22 +26,29 @@ export default async function Configuracion({ searchParams }) {
 
   return (
     <>
-      <h1>Configuración</h1>
+      <HashOpener />
+      <h1>Ajustes</h1>
       <Flash sp={sp} />
+      <nav className="tabs-bar no-print" aria-label="Ir a">
+        <a href="#negocio">Tu negocio</a>
+        <a href="#cupos">Cupos y días</a>
+        <a href="#mercadopago">Cobros</a>
+        <a href="#mas">Más opciones</a>
+      </nav>
 
       {/* Negocio */}
       <div className="card" id="negocio">
         <h2>Tu negocio</h2>
         <form action={saveSettings}>
           <div className="grid grid-3">
-            <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia nombres, datos del pedido y ejemplos. No borra nada.</div></div>
+            <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia los nombres de la app y los datos que pide tu link. No borra nada.</div></div>
             <div className="field"><label>Nombre</label><input name="name" defaultValue={bakery.name} required /></div>
             <div className="field"><label>Link (después de /c/)</label><input name="slug" defaultValue={bakery.slug} required /></div>
             <div className="field"><label>WhatsApp de contacto</label><input name="whatsapp_contact" defaultValue={bakery.whatsapp_contact || ''} /></div>
             <div className="field"><label>Dirección del local o de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
             <div className="field"><label>Seña (% del total)</label><input name="deposit_percent" type="number" min="0" max="100" defaultValue={bakery.deposit_percent} /></div>
             <div className="field"><label>Minutos para pagar la seña (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
-            <div className="field"><label>Horas que se guarda el cupo sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada en ese tiempo, el pedido vence y el cupo se libera. 0 = no vence.</div></div>
+            <div className="field"><label>Horas que se guarda el cupo sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada en ese tiempo, {t.order === 'reserva' || t.order === 'turno' ? 'se libera el lugar' : 'el cupo se libera'}. 0 = no vence.</div></div>
             <div className="field"><label>Días mínimos de anticipación</label><input name="min_days_ahead" type="number" min="0" defaultValue={bakery.min_days_ahead} /></div>
             <div className="field"><label>Hasta cuántos días adelante</label><input name="max_days_ahead" type="number" min="1" defaultValue={bakery.max_days_ahead} /></div>
             <div className="field"><label>Margen objetivo (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
@@ -52,26 +61,7 @@ export default async function Configuracion({ searchParams }) {
           </div>
           <button className="btn">Guardar</button>
         </form>
-        <p className="muted" style={{ marginTop: 12, fontSize: 13 }}><a href="/nueva-clave">Cambiar mi contraseña</a></p>
       </div>
-
-      {/* Avisos: solo se muestra cuando el envío de mails está configurado en el servidor */}
-      {mailEnabled() && (
-      <div className="card" id="avisos">
-        <h2>Avisos de pedidos</h2>
-        <p className="muted">Te mandamos un mail cuando entra un pedido desde tu link o WhatsApp, y cuando se cobra una seña por Mercado Pago.</p>
-        <form action={saveNotifications} className="grid grid-2" style={{ alignItems: 'end' }}>
-          <div className="field" style={{ margin: 0 }}>
-            <label htmlFor="notify_email">Mandar los avisos a</label>
-            <input id="notify_email" name="notify_email" type="email" defaultValue={bakery.notify_email || ''} placeholder={`${user.email} (el de tu cuenta)`} />
-          </div>
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <label className="inline-label" style={{ margin: 0 }}><input type="checkbox" name="notify_orders" defaultChecked={bakery.notify_orders !== false} /> Avisarme cada pedido nuevo</label>
-            <button className="btn secondary">Guardar avisos</button>
-          </div>
-        </form>
-      </div>
-      )}
 
       {/* Cupos */}
       <div className="card" id="cupos">
@@ -116,7 +106,7 @@ export default async function Configuracion({ searchParams }) {
 
       {/* Fechas bloqueadas */}
       <div className="card">
-        <h2>Días sin pedidos</h2>
+        <h2>Días sin {t.orders.toLowerCase()}</h2>
         <p className="muted">Feriados, vacaciones o días que ya tenés completos.</p>
         <div className="row" style={{ marginBottom: 12 }}>
           {(blocked || []).map((b) => (
@@ -133,10 +123,37 @@ export default async function Configuracion({ searchParams }) {
         </form>
       </div>
 
+      {/* Mercado Pago */}
+      <div className="card" id="mercadopago">
+        <h2>Mercado Pago (cobro de señas)</h2>
+        {bakery.mp_access_token_enc ? (
+          <div className="row">
+            <span className="badge ok">Conectado</span>
+            <form action={removeMpToken}><button className="btn danger small">Desconectar</button></form>
+          </div>
+        ) : (
+          <p className="muted">Sin conectar: quedan «esperando seña» y la coordinás a mano.</p>
+        )}
+        <details style={{ margin: '12px 0' }}>
+          <summary>¿Dónde consigo el Access Token?</summary>
+          <ol>
+            <li>Entrá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer">Mercado Pago Developers → Tus integraciones</a> con tu cuenta de vendedor.</li>
+            <li>Creá una aplicación (tipo «Pagos online», producto «Checkout Pro»).</li>
+            <li>En «Credenciales de producción» copiá el <strong>Access Token</strong> (empieza con APP_USR-).</li>
+          </ol>
+          <p className="muted">La plata de las señas entra directo a tu cuenta de Mercado Pago.</p>
+        </details>
+        <form action={saveMpToken} className="row">
+          <input name="mp_token" type="password" placeholder="APP_USR-…" autoComplete="off" style={{ maxWidth: 420 }} />
+          <button className="btn">{bakery.mp_access_token_enc ? 'Reemplazar token' : 'Conectar'}</button>
+        </form>
+      </div>
+
+      <h2 id="mas" style={{ margin: '28px 0 10px', fontSize: 17, color: 'var(--muted)' }}>Más opciones</h2>
       {/* Calendario */}
-      <div className="card" id="calendario">
-        <h2>Ver pedidos en tu calendario</h2>
-        <p className="muted">Sumá tus pedidos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en AutoFlow.</p>
+      <details className="card fold" id="calendario">
+        <summary><h2>Ver tus {t.orders.toLowerCase()} en el calendario</h2></summary>
+        <p className="muted">Sumalos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en AutoFlow.</p>
         {bakery.calendar_token ? (
           <>
             <CopyField value={calendarUrl(bakery.calendar_token)} />
@@ -149,7 +166,7 @@ export default async function Configuracion({ searchParams }) {
               </ol>
               <p className="muted">⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, {t.note1.label.toLowerCase()}, {t.note2.label.toLowerCase()} y el saldo a cobrar.</p>
             </details>
-            <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus pedidos. Si lo compartiste por error, regeneralo.</p>
+            <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus {t.orders.toLowerCase()}. Si lo compartiste por error, regeneralo.</p>
             <div className="row">
               <form action={rotateCalendarToken}><button className="btn secondary small">Regenerar enlace</button></form>
               <form action={disableCalendar}><button className="btn danger small">Desactivar</button></form>
@@ -158,12 +175,30 @@ export default async function Configuracion({ searchParams }) {
         ) : (
           <form action={rotateCalendarToken}><button className="btn">Crear enlace de calendario</button></form>
         )}
-      </div>
+      </details>
+
+      {/* Avisos: solo se muestra cuando el envío de mails está configurado en el servidor */}
+      {mailEnabled() && (
+      <details className="card fold" id="avisos">
+        <summary><h2>Avisos por mail</h2></summary>
+        <p className="muted">Te mandamos un mail cuando entra algo desde tu link o WhatsApp, y cuando se cobra una seña por Mercado Pago.</p>
+        <form action={saveNotifications} className="grid grid-2" style={{ alignItems: 'end' }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="notify_email">Mandar los avisos a</label>
+            <input id="notify_email" name="notify_email" type="email" defaultValue={bakery.notify_email || ''} placeholder={`${user.email} (el de tu cuenta)`} />
+          </div>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <label className="inline-label" style={{ margin: 0 }}><input type="checkbox" name="notify_orders" defaultChecked={bakery.notify_orders !== false} /> Avisarme cada {t.order} nuevo</label>
+            <button className="btn secondary">Guardar avisos</button>
+          </div>
+        </form>
+      </details>
+      )}
 
       {/* Google Drive: solo si la conexión con Google está configurada en el servidor */}
       {has.google() && (
-      <div className="card" id="drive">
-        <h2>Google Drive (productos, stock e insumos)</h2>
+      <details className="card fold" id="drive">
+        <summary><h2>Google Drive (productos, stock e insumos)</h2></summary>
         <p className="muted">Opcional. Si preferís, podés cargar todo subiendo un Excel o CSV desde <a href="/app/productos">Productos</a> e <a href="/app/insumos">Insumos</a>. Con Drive conectado, los cambios en tus planillas se toman solos cada 10 minutos.</p>
         {bakery.google_refresh_token_enc ? (
           <>
@@ -182,38 +217,12 @@ export default async function Configuracion({ searchParams }) {
             <a className="btn" href="/api/google/connect">Conectar Google Drive</a>
           </>
         )}
-      </div>
+      </details>
       )}
 
-      {/* Mercado Pago */}
-      <div className="card" id="mercadopago">
-        <h2>Mercado Pago (cobro de señas)</h2>
-        {bakery.mp_access_token_enc ? (
-          <div className="row">
-            <span className="badge ok">Conectado</span>
-            <form action={removeMpToken}><button className="btn danger small">Desconectar</button></form>
-          </div>
-        ) : (
-          <p className="muted">Sin conectar: los pedidos quedan «esperando seña» y la coordinás a mano.</p>
-        )}
-        <details style={{ margin: '12px 0' }}>
-          <summary>¿Dónde consigo el Access Token?</summary>
-          <ol>
-            <li>Entrá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer">Mercado Pago Developers → Tus integraciones</a> con tu cuenta de vendedor.</li>
-            <li>Creá una aplicación (tipo «Pagos online», producto «Checkout Pro»).</li>
-            <li>En «Credenciales de producción» copiá el <strong>Access Token</strong> (empieza con APP_USR-).</li>
-          </ol>
-          <p className="muted">La plata de las señas entra directo a tu cuenta de Mercado Pago.</p>
-        </details>
-        <form action={saveMpToken} className="row">
-          <input name="mp_token" type="password" placeholder="APP_USR-…" autoComplete="off" style={{ maxWidth: 420 }} />
-          <button className="btn">{bakery.mp_access_token_enc ? 'Reemplazar token' : 'Conectar'}</button>
-        </form>
-      </div>
-
       {/* WhatsApp */}
-      <div className="card" id="whatsapp">
-        <h2>Bot de WhatsApp</h2>
+      <details className="card fold" id="whatsapp">
+        <summary><h2>Bot de WhatsApp</h2></summary>
         {!access.whatsapp && <Locked title="Módulo Bot de WhatsApp">Activalo para que tus clientes pidan solos por WhatsApp.</Locked>}
         <p className="muted">Usa la API oficial de WhatsApp (Meta). Necesitás un número que no esté usando la app común de WhatsApp.</p>
         <details style={{ margin: '12px 0' }}>
@@ -234,7 +243,10 @@ export default async function Configuracion({ searchParams }) {
           </div>
           <button className="btn">Guardar WhatsApp</button>
         </form>
-      </div>
+      </details>
+      <p className="muted" style={{ fontSize: 13, marginTop: 20 }}>
+        <Link href="/app/actividad">Ver la actividad de tu cuenta</Link> · <a href="/nueva-clave">Cambiar mi contraseña</a>
+      </p>
     </>
   );
 }

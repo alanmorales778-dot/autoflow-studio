@@ -20,10 +20,26 @@ const I = {
   plan: 'M20 12V8H6a2 2 0 0 1 0-4h12v4M4 6v12a2 2 0 0 0 2 2h14v-4M18 12a2 2 0 0 0 0 4h4v-4z',
 };
 
+// Menú corto: lo de todos los días arriba; lo que se toca de vez en cuando, abajo.
+// [ruta, texto, ícono, otras rutas que también lo marcan como activo]
 const groups = (t) => [
-  ['Operación', [['/app', 'Agenda', 'agenda'], ['/app/pedidos', 'Pedidos', 'pedidos'], ['/app/cobros', 'Cobros', 'cobros'], ['/app/produccion', 'Producción y compras', 'produccion'], ['/app/clientes', 'Clientes', 'clientes'], ['/app/suscripciones', 'Recurrentes', 'recurrentes']]],
-  ['Catálogo y costos', [['/app/productos', t.items, 'productos'], ['/app/insumos', t.insumos, 'insumos'], ['/app/costos', 'Costos e inflación', 'costos'], ['/app/rentabilidad', 'Rentabilidad', 'rentabilidad']]],
-  ['Cuenta', [['/app/actividad', 'Actividad', 'actividad'], ['/app/configuracion', 'Ajustes', 'ajustes'], ['/app/plan', 'Plan', 'plan']]],
+  ['Día a día', [
+    ['/app', 'Agenda', 'agenda'],
+    ['/app/pedidos', t.orders, 'pedidos'],
+    ['/app/cobros', 'Cobros', 'cobros'],
+    ['/app/produccion', t.prodTitle, 'produccion'],
+    ['/app/clientes', 'Clientes', 'clientes'],
+    ...(t.recurring ? [['/app/suscripciones', 'Recurrentes', 'recurrentes']] : []),
+  ]],
+  ['Tu negocio', [
+    ['/app/productos', t.items, 'productos'],
+    ['/app/insumos', t.insumos, 'insumos'],
+    ['/app/rentabilidad', 'Costos y ganancias', 'rentabilidad', ['/app/costos']],
+  ]],
+  ['Cuenta', [
+    ['/app/configuracion', 'Ajustes', 'ajustes', ['/app/actividad']],
+    ['/app/plan', 'Plan', 'plan'],
+  ]],
 ];
 
 const KEYS = { a: '/app', p: '/app/pedidos', n: '/app/pedidos?nuevo=1#nuevo', c: '/cocina', b: '/app/cobros', r: '/app/costos' };
@@ -51,8 +67,8 @@ export default function Sidebar({ terms }) {
       {groups(terms).map(([title, links]) => (
         <div key={title} style={{ display: 'contents' }}>
           <div className="side-group">{title}</div>
-          {links.map(([href, label, icon]) => {
-            const on = href === '/app' ? path === '/app' : path.startsWith(href);
+          {links.map(([href, label, icon, also = []]) => {
+            const on = href === '/app' ? path === '/app' : [href, ...also].some((h) => path.startsWith(h));
             return (
               <Link key={href} href={href} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={I[icon]} /></svg>
@@ -62,7 +78,7 @@ export default function Sidebar({ terms }) {
           })}
         </div>
       ))}
-      <p className="kbd-hint">Atajos: <kbd>A</kbd> agenda · <kbd>P</kbd> pedidos · <kbd>N</kbd> pedido nuevo · <kbd>B</kbd> cobros · <kbd>R</kbd> costos · <kbd>C</kbd> {terms.workMode.toLowerCase()}</p>
+      <p className="kbd-hint">Atajos: <kbd>A</kbd> agenda · <kbd>P</kbd> {terms.orders.toLowerCase()} · <kbd>N</kbd> {terms.order} nuevo · <kbd>B</kbd> cobros · <kbd>R</kbd> costos · <kbd>C</kbd> {terms.workMode.toLowerCase()}</p>
     </nav>
   );
 }

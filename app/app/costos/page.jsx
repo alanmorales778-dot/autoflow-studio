@@ -2,6 +2,7 @@ import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { Flash, Locked } from '../ui';
+import NumerosTabs from '../numeros-tabs';
 import { normName } from '@/lib/format';
 import { costBreakdown } from '@/lib/costs';
 import Simulator from './simulator';
@@ -15,7 +16,8 @@ export default async function Costos({ searchParams }) {
   if (!access.costs) {
     return (
       <>
-        <div className="page-head"><div><h1>Costos e inflación</h1></div></div>
+        <div className="page-head"><div><h1>Costos y ganancias</h1></div></div>
+        <NumerosTabs active="costos" />
         <Locked title="Simulador de inflación">Con el módulo de Costos simulás subas de insumos y ves qué productos dejan de ser negocio antes de que pase.</Locked>
       </>
     );
@@ -46,10 +48,11 @@ export default async function Costos({ searchParams }) {
   return (
     <>
       <Flash sp={sp} />
+      <h1>Costos y ganancias</h1>
+      <NumerosTabs active="costos" />
       <div className="page-head">
         <div>
-          <h1>Costos e inflación</h1>
-          <p>Simulá una suba de {T.insumos.toLowerCase()} y mirá qué {T.items.toLowerCase()} dejan de ser negocio antes de que pase. Nada cambia hasta que aplicás.</p>
+          <p style={{ marginTop: 0 }}>Simulá una suba de {T.insumos.toLowerCase()} y mirá qué {T.items.toLowerCase()} dejan de ser negocio antes de que pase. Nada cambia hasta que aplicás.</p>
         </div>
         <Link href="/app/insumos" className="btn secondary small">Actualizar precios de {T.insumos.toLowerCase()}</Link>
       </div>

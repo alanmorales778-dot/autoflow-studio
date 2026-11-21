@@ -7,7 +7,7 @@ create table if not exists public.shopping_items (
   name        text not null check (char_length(name) between 1 and 80),
   qty         numeric check (qty is null or (qty >= 0 and qty <= 1000000)),
   unit        text not null default '' check (char_length(unit) <= 12),
-  category    text not null default 'otros' check (category in ('secos', 'frescos', 'carnes', 'packaging', 'otros')),
+  category    text not null default 'otros' check (char_length(category) between 1 and 20),
   est_cost    numeric check (est_cost is null or (est_cost >= 0 and est_cost <= 1000000000)),
   note        text not null default '' check (char_length(note) <= 140),
   source      text not null default 'manual' check (source in ('manual', 'pedidos')),

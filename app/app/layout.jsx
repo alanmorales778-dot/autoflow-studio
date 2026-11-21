@@ -13,6 +13,7 @@ function initials(name) {
 
 export default async function AppLayout({ children }) {
   const { bakery, access, user } = await getContext();
+  const T = bakery ? rubroOf(bakery) : null;
   const daysLeft = access.trial ? Math.max(0, Math.ceil((new Date(access.trialEnds) - new Date()) / 86400000)) : null;
 
   if (!bakery) {
@@ -47,7 +48,7 @@ export default async function AppLayout({ children }) {
             </a>
             <Link className="btn dark small" href="/cocina">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 13.9A4 4 0 0 1 7.5 6a5 5 0 0 1 9 0A4 4 0 0 1 18 13.9V21H6z" /><path d="M6 17h12" /></svg>
-              {rubroOf(bakery).workMode}
+              {T.workMode}
             </Link>
             <span className="avatar" aria-hidden="true">{initials(bakery.name)}</span>
             <form action={signOut}><button className="btn secondary small">Salir</button></form>
@@ -55,7 +56,7 @@ export default async function AppLayout({ children }) {
         </div>
       </header>
       <div className="shell">
-        <Sidebar terms={{ items: rubroOf(bakery).items, insumos: rubroOf(bakery).insumos, workMode: rubroOf(bakery).workMode }} />
+        <Sidebar terms={{ items: T.items, insumos: T.insumos, workMode: T.workMode, orders: T.orders, order: T.order, prodTitle: T.prodTitle, recurring: access.recurring }} />
         <main className="content fade-in">
           {!access.base && (
             <div className="alert bad">Tu prueba terminó o la suscripción no está activa: tu catálogo y el bot no toman pedidos nuevos. <Link href="/app/plan">Activar plan</Link></div>
@@ -63,9 +64,9 @@ export default async function AppLayout({ children }) {
           {children}
         </main>
       </div>
-      <Link href="/app/pedidos?nuevo=1#nuevo" className="fab no-print" aria-label="Cargar pedido nuevo">
+      <Link href="/app/pedidos?nuevo=1#nuevo" className="fab no-print" aria-label={`Cargar ${T.order} nuevo`}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-        Pedido
+        {T.orderCap}
       </Link>
     </>
   );

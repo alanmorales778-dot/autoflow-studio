@@ -34,7 +34,7 @@ export default async function Productos({ searchParams }) {
           {bakery.sheet_productos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
       </div>
-      <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Tocá «Editar» en cada uno para cambiar precio, foto, receta u opciones.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (<Link href="/app/configuracion">cambiar</Link>).</p>
+      <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Tocá «Editar» en cada uno para cambiar precio, foto, {T.receta.toLowerCase()} u opciones.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (<Link href="/app/configuracion">cambiar</Link>).</p>
       {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada {T.item} y si estás ganando tu margen.</Locked>}
 
       <div className="card">
@@ -60,7 +60,7 @@ export default async function Productos({ searchParams }) {
                       <span>Costo {p.cost !== null && p.cost !== undefined ? money(p.cost) : '—'}</span>
                       {p.min_price ? <span>Mínimo {money(p.min_price)}</span> : null}
                       {margin !== null && <span className={`badge ${below ? 'bad' : 'ok'}`}>Margen {pct(margin)}</span>}
-                      {p.cost_error && <span style={{ color: p.cost_error === 'Sin receta cargada' ? 'var(--muted)' : 'var(--bad)' }}>{p.cost_error}</span>}
+                      {p.cost_error && <span style={{ color: p.cost_error === 'Sin receta cargada' ? 'var(--muted)' : 'var(--bad)' }}>{p.cost_error === 'Sin receta cargada' ? `Sin ${T.receta.toLowerCase()} cargada` : p.cost_error}</span>}
                     </div>
                   )}
                   <div className="item-actions">

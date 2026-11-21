@@ -67,13 +67,13 @@ export default async function Produccion({ searchParams }) {
     <>
       <Flash sp={sp} />
       <div className={p.header}>
-        <h1 className={p.title}>Producción y compras</h1>
+        <h1 className={p.title}>{T.prodTitle}</h1>
         <PrintButton label="Imprimir" />
       </div>
 
       <nav className={`${p.tabs} no-print`} aria-label="Secciones">
         <Link href={href({ ver: 'cocinar' })} className={`${p.tab} ${tab === 'cocinar' ? p.tabOn : ''}`} aria-current={tab === 'cocinar' ? 'page' : undefined}>
-          Qué preparar <span className={p.badge}>{orders.length}</span>
+          {T.prepTab} <span className={p.badge}>{orders.length}</span>
         </Link>
         <Link href={href({ ver: 'compras' })} className={`${p.tab} ${tab === 'compras' ? p.tabOn : ''}`} aria-current={tab === 'compras' ? 'page' : undefined}>
           Qué comprar {pendingCount > 0 && <span className={p.badge}>{pendingCount}</span>}
@@ -100,8 +100,8 @@ export default async function Produccion({ searchParams }) {
 
           <p className={p.summary}>
             {orders.length === 0
-              ? <>No hay pedidos para preparar {rangeText}.</>
-              : <><strong>{orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'}</strong> ({totalUnits} {totalUnits === 1 ? 'unidad' : 'unidades'}) {rangeText}.</>}
+              ? <>No hay {T.orders.toLowerCase()} {rangeText}.</>
+              : <><strong>{orders.length} {orders.length === 1 ? T.order : T.orders.toLowerCase()}</strong> ({totalUnits} {totalUnits === 1 ? 'unidad' : 'unidades'}) {rangeText}.</>}
             <span className={p.hint}> Cuenta los confirmados y los que esperan seña.</span>
           </p>
 
@@ -155,7 +155,7 @@ export default async function Produccion({ searchParams }) {
             bakeryId={bakery.id}
             suggestions={list ? list.rows : null}
             suggestionsLocked={!access.costs}
-            labels={{ insumo: T.insumo, insumos: T.insumos }}
+            labels={{ insumo: T.insumo, insumos: T.insumos, shopCats: T.shopCats, shopEx: T.shopEx, orders: T.orders.toLowerCase() }}
           />
           {list && orders.length > 0 && list.rows.length === 0 && (
             <p className={`${p.note} no-print`}>Para que AutoFlow te sugiera qué comprar, cargá qué lleva cada uno de tus {T.items.toLowerCase()}.</p>
@@ -164,7 +164,7 @@ export default async function Produccion({ searchParams }) {
           {list && list.warnings.map((w) => <p key={w} className={`${p.note} no-print`}>{w}</p>)}
           {list && (
             <p className={`${p.note} no-print`}>
-              Las sugerencias salen de los pedidos {rangeText}. <Link href={href({ ver: 'cocinar' })}>Cambiar fechas</Link>
+              Las sugerencias salen de los {T.orders.toLowerCase()} {rangeText}. <Link href={href({ ver: 'cocinar' })}>Cambiar fechas</Link>
             </p>
           )}
         </div>

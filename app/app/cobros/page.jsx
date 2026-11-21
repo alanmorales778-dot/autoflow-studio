@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
+import { rubroOf } from '@/lib/rubros';
 import { markBalance } from '../actions';
 import { Flash } from '../ui';
 import { todayAR, money, dateLabel } from '@/lib/format';
@@ -30,6 +31,7 @@ function hoursLabel(h) {
 export default async function Cobros({ searchParams }) {
   const sp = await searchParams;
   const { supabase, bakery } = await requireBakery();
+  const T = rubroOf(bakery);
   const today = todayAR();
   const ym = /^\d{4}-\d{2}$/.test(sp.mes || '') ? sp.mes : today.slice(0, 7);
   const { start, end, label } = monthBounds(ym);
@@ -61,14 +63,15 @@ export default async function Cobros({ searchParams }) {
   return (
     <>
       <Flash sp={sp} />
-      <div className="row between">
-        <h1 style={{ margin: 0 }}>Cobros · {label}</h1>
-        <div className="row">
-          <Link className="btn secondary small" href={`/app/cobros?mes=${shiftMonth(ym, -1)}`}>← Mes anterior</Link>
-          {!isCurrent && <Link className="btn secondary small" href={`/app/cobros?mes=${shiftMonth(ym, 1)}`}>Mes siguiente →</Link>}
+      <h1>Cobros</h1>
+      <div className="row between" style={{ marginBottom: 4 }}>
+        <h2 style={{ margin: 0, textTransform: 'capitalize' }}>{label}</h2>
+        <div className="row" style={{ gap: 6 }}>
+          <Link className="btn secondary small" href={`/app/cobros?mes=${shiftMonth(ym, -1)}`} aria-label="Mes anterior">←</Link>
+          {!isCurrent && <Link className="btn secondary small" href={`/app/cobros?mes=${shiftMonth(ym, 1)}`} aria-label="Mes siguiente">→</Link>}
         </div>
       </div>
-      <p className="muted">Lo que entró por señas y saldos en el mes, y lo que todavía te deben.</p>
+      <p className="muted">Lo que entró en el mes y lo que todavía te deben.</p>
 
       <div className="grid grid-3">
         <div className="card kpi">
@@ -79,71 +82,71 @@ export default async function Cobros({ searchParams }) {
         <div className="card kpi">
           <small className="muted">Señas cobradas solas con Mercado Pago</small>
           <div className="price">{money(depMpTotal)}</div>
-          <small className="muted">{depMp.length} {depMp.length === 1 ? 'pedido' : 'pedidos'} · tardaron {hoursLabel(avgWait)} en pagar en promedio</small>
+          <small className="muted">{depMp.length} {depMp.length === 1 ? T.order : T.orders.toLowerCase()} · tardaron {hoursLabel(avgWait)} en pagar en promedio</small>
         </div>
         <div className="card kpi">
           <small className="muted">Te deben hoy</small>
           <div className="price" style={overdue.length ? { color: 'var(--bad)' } : undefined}>{money(sum(overdue, (o) => o.due))}</div>
-          <small className="muted">{overdue.length} {overdue.length === 1 ? 'pedido ya pasó' : 'pedidos ya pasaron'} de fecha sin saldo cobrado · {money(sum(upcoming, (o) => o.due))} a cobrar en próximas entregas</small>
+          <small className="muted">{overdue.length} {overdue.length === 1 ? `${T.order} ya pasó` : `${T.orders.toLowerCase()} ya pasaron`} sin saldo cobrado · {money(sum(upcoming, (o) => o.due))} a cobrar en próximas entregas</small>
         </div>
       </div>
 
       {expiredList.length > 0 && (
         <div className="alert info">
-          <strong>{expiredList.length} {expiredList.length === 1 ? 'pedido no pagó' : 'pedidos no pagaron'} la seña a tiempo</strong> ({money(sum(expiredList, (o) => Number(o.total)))} en total) y el cupo se liberó solo para otros clientes.
+          <strong>{expiredList.length === 1 ? `1 ${T.order} no pagó` : `${expiredList.length} ${T.orders.toLowerCase()} no pagaron`} la seña a tiempo</strong> ({money(sum(expiredList, (o) => Number(o.total)))} en total) y el cupo se liberó solo para otros clientes.
         </div>
       )}
 
-      <div className="card table-wrap">
-        <h2>Saldos vencidos</h2>
+      <div className="card">
+        <h2>Te deben</h2>
         {overdue.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Nadie te debe de pedidos anteriores. 🎉</p>
+          <p className="muted" style={{ margin: 0 }}>Nadie te debe de {T.orders.toLowerCase()} anteriores. 🎉</p>
         ) : (
-          <table>
-            <thead><tr><th>Cliente</th><th>Pedido</th><th>Fecha</th><th>Debe</th><th></th></tr></thead>
-            <tbody>
-              {overdue.map((o) => {
-                const link = o.customer_phone ? reminderLink(bakery, o) : null;
-                return (
-                  <tr key={o.id}>
-                    <td><strong>{o.customer_name}</strong>{o.customer_phone && <><br /><small>{o.customer_phone}</small></>}</td>
-                    <td>{o.quantity} × {o.product_name}</td>
-                    <td>{dateLabel(o.date)}</td>
-                    <td><strong>{money(o.due)}</strong></td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      {link && <a className="btn small" href={link} target="_blank" rel="noreferrer">Recordar</a>}{' '}
-                      <form action={markBalance} style={{ display: 'inline' }}>
-                        <input type="hidden" name="id" value={o.id} />
-                        <input type="hidden" name="back" value={`/app/cobros?mes=${ym}`} />
-                        <button className="btn secondary small">Ya cobré</button>
-                      </form>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <ul className="items">
+            {overdue.map((o) => {
+              const link = o.customer_phone ? reminderLink(bakery, o) : null;
+              return (
+                <li key={o.id} className="item">
+                  <div className="item-head">
+                    <div>
+                      <div className="item-title">{o.customer_name}</div>
+                      <div className="item-sub">{o.quantity} × {o.product_name} · {dateLabel(o.date)}{o.customer_phone ? ` · ${o.customer_phone}` : ''}</div>
+                    </div>
+                    <div className="item-title money-col" style={{ color: 'var(--bad)' }}>{money(o.due)}</div>
+                  </div>
+                  <div className="item-actions">
+                    {link && <a className="btn small" href={link} target="_blank" rel="noreferrer">Recordar por WhatsApp</a>}
+                    <form action={markBalance}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <input type="hidden" name="back" value={`/app/cobros?mes=${ym}`} />
+                      <button className="btn secondary small">Ya cobré</button>
+                    </form>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
       {upcoming.length > 0 && (
-        <div className="card table-wrap">
-          <h2>Saldos de próximas entregas</h2>
-          <table>
-            <thead><tr><th>Cliente</th><th>Pedido</th><th>Entrega</th><th>Saldo</th></tr></thead>
-            <tbody>
-              {upcoming.slice(0, 30).map((o) => (
-                <tr key={o.id}>
-                  <td>{o.customer_name}</td>
-                  <td>{o.quantity} × {o.product_name}</td>
-                  <td>{dateLabel(o.date)}{o.slot ? ` · ${o.slot}` : ''}</td>
-                  <td>{money(o.due)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {upcoming.length > 30 && <p className="muted">y {upcoming.length - 30} más.</p>}
-        </div>
+        <details className="card fold">
+          <summary><h2>A cobrar en las próximas entregas ({upcoming.length})</h2></summary>
+          <ul className="items" style={{ marginTop: 8 }}>
+            {upcoming.slice(0, 50).map((o) => (
+              <li key={o.id} className="item">
+                <div className="item-head">
+                  <div>
+                    <div className="item-title">{o.customer_name}</div>
+                    <div className="item-sub">{o.quantity} × {o.product_name} · {dateLabel(o.date)}{o.slot ? ` · ${o.slot}` : ''}</div>
+                  </div>
+                  <div className="item-title money-col">{money(o.due)}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {upcoming.length > 50 && <p className="muted">y {upcoming.length - 50} más.</p>}
+        </details>
       )}
     </>
   );

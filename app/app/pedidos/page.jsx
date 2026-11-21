@@ -16,7 +16,7 @@ const FILTERS = [
   ['entregado', 'Entregados'],
   ['cancelado,vencido', 'Cancelados'],
 ];
-const CHANNEL = { whatsapp: 'WhatsApp', manual: 'Cargado a mano', suscripcion: 'Recurrente', web: 'Link de pedidos' };
+const CHANNEL = { whatsapp: 'WhatsApp', manual: 'Cargado a mano', suscripcion: 'Recurrente', web: 'Tu link' };
 
 function Action({ id, status, label, cls = 'secondary', confirm, back }) {
   return (
@@ -67,7 +67,7 @@ function EditOrder({ o, bakery, T, open, back }) {
       </form>
       <div className="fold-actions">
         <span className="muted" style={{ fontSize: 13 }}>¿El cliente ya no lo quiere?</span>
-        <Action id={o.id} status="cancelado" label="Cancelar pedido" cls="danger" back={back} confirm={`¿Cancelar el pedido de ${o.customer_name} (${o.quantity} × ${o.product_name}, ${dateLabel(o.date)})?${o.paid_at ? ' Ya pagó la seña: acordá con el cliente la devolución.' : ''} Se libera el cupo.`} />
+        <Action id={o.id} status="cancelado" label={`Cancelar ${T.order}`} cls="danger" back={back} confirm={`¿Cancelar ${T.order === 'turno' ? 'el turno' : T.order === 'reserva' ? 'la reserva' : 'el ' + T.order} de ${o.customer_name} (${o.quantity} × ${o.product_name}, ${dateLabel(o.date)})?${o.paid_at ? ' Ya pagó la seña: acordá con el cliente la devolución.' : ''} Se libera el cupo.`} />
       </div>
     </details>
   );
@@ -98,13 +98,13 @@ export default async function Pedidos({ searchParams }) {
     <>
       <Flash sp={sp} />
       <div className="page-head">
-        <h1>Pedidos</h1>
-        {!showNew && <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar pedido</Link>}
+        <h1>{T.orders}</h1>
+        {!showNew && <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>}
       </div>
 
       <details className="card fold" id="nuevo" open={showNew}>
-        <summary><h2>Cargar pedido a mano</h2></summary>
-        <p className="muted" style={{ marginTop: 8 }}>Para pedidos por teléfono, Instagram o en persona. Ocupa cupo y stock igual que los pedidos online.</p>
+        <summary><h2>Cargar {T.order} a mano</h2></summary>
+        <p className="muted" style={{ marginTop: 8 }}>Para lo que te llega por teléfono, Instagram o en persona. Ocupa cupo y stock igual que lo que entra por tu link.</p>
         {!products || products.length === 0 ? (
           <p>Primero cargá tus productos en <Link href="/app/productos">Productos</Link>.</p>
         ) : (
@@ -137,25 +137,25 @@ export default async function Pedidos({ searchParams }) {
               <label className="inline-label"><input type="checkbox" name="deposit_paid" /> La seña ya está cobrada</label>
               <label className="inline-label"><input type="checkbox" name="force" /> Cargar aunque no haya cupo o stock</label>
             </div>
-            <button className="btn">Guardar pedido</button>
+            <button className="btn">Guardar {T.order}</button>
           </form>
         )}
       </details>
 
-      <div className="filters" role="navigation" aria-label="Filtrar pedidos">
+      <div className="filters" role="navigation" aria-label="Filtrar">
         {FILTERS.map(([k, label]) => (
           <Link key={k} href={`/app/pedidos?${new URLSearchParams({ ...(k !== 'activos' ? { f: k } : {}), ...(search ? { q: search } : {}) })}`} className={`chip ${filter === k ? 'on' : ''}`} aria-current={filter === k ? 'page' : undefined}>{label}</Link>
         ))}
       </div>
       <form method="get" className="row" style={{ marginBottom: 12, gap: 8, flexWrap: 'nowrap' }}>
         {filter !== 'activos' && <input type="hidden" name="f" value={filter} />}
-        <input type="search" name="q" defaultValue={search} placeholder="Buscar por cliente, teléfono o producto" aria-label="Buscar pedidos" />
+        <input type="search" name="q" defaultValue={search} placeholder="Buscar por cliente, teléfono o producto" aria-label="Buscar" />
         <button className="btn secondary">Buscar</button>
       </form>
 
       <div className="card">
         {orders.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>{search ? `No hay pedidos que coincidan con «${search}».` : 'No hay pedidos en esta vista.'}</p>
+          <p className="muted" style={{ margin: 0 }}>{search ? `Nada coincide con «${search}».` : `No hay ${T.orders.toLowerCase()} en esta vista.`}</p>
         ) : (
           <ul className="items">
             {orders.map((o) => {

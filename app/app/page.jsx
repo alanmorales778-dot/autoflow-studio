@@ -119,11 +119,11 @@ export default async function Agenda({ searchParams }) {
   // Todo lo que hay que mirar, en una sola lista (antes eran varios avisos sueltos)
   const todo = [];
   if (bakery.last_sync_error) todo.push({ tone: 'bad', text: <>Problema con tus planillas: {bakery.last_sync_error}</>, href: '/app/configuracion#drive', cta: 'Revisar' });
-  if (owed.length > 0) todo.push({ tone: 'warn', text: <>Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? 'pedido que ya pasó' : 'pedidos que ya pasaron'}.</>, href: '/app/cobros', cta: 'Cobrar' });
-  if (underMin.length > 0) todo.push({ tone: 'bad', text: <><strong>{underMin.length} {underMin.length === 1 ? 'producto está' : 'productos están'} por debajo de tu margen</strong>: {underMin.slice(0, 3).map((p) => p.name).join(', ')}{underMin.length > 3 ? '…' : ''}</>, href: '/app/productos', cta: 'Ver precios' });
-  if (!bakery.pickup_address && active.some((o) => o.fulfillment === 'retiro')) todo.push({ tone: 'warn', text: <>Tenés pedidos para <strong>retirar</strong> y falta tu dirección de retiro.</>, href: '/app/configuracion', cta: 'Cargar' });
+  if (owed.length > 0) todo.push({ tone: 'warn', text: <>Te deben <strong>{money(owed.reduce((a, b) => a + b, 0))}</strong> de {owed.length} {owed.length === 1 ? `${T.order} que ya pasó` : `${T.orders.toLowerCase()} que ya pasaron`}.</>, href: '/app/cobros', cta: 'Cobrar' });
+  if (underMin.length > 0) todo.push({ tone: 'bad', text: <><strong>{underMin.length} {underMin.length === 1 ? `${T.item} está` : `${T.items.toLowerCase()} están`} por debajo de tu margen</strong>: {underMin.slice(0, 3).map((p) => p.name).join(', ')}{underMin.length > 3 ? '…' : ''}</>, href: '/app/productos', cta: 'Ver precios' });
+  if (!bakery.pickup_address && active.some((o) => o.fulfillment === 'retiro')) todo.push({ tone: 'warn', text: <>Tenés {T.orders.toLowerCase()} «{T.retiro.toLowerCase()}» y falta tu dirección.</>, href: '/app/configuracion', cta: 'Cargar' });
   if (shopping) todo.push({ tone: 'info', text: <>Para los próximos 3 días vas a usar {shopping.rows.slice(0, 3).map((r) => r.name.toLowerCase()).join(', ')}{shopping.rows.length > 3 ? ` y ${shopping.rows.length - 3} más` : ''}{shopping.total ? ` (unos ${money(shopping.total)})` : ''}.</>, href: `/app/produccion?desde=${today}&hasta=${addDays(today, 2)}&ver=compras`, cta: 'Lista de compras' });
-  if (!showOnboarding && !bakery.sheet_productos_id && !(products || []).length) todo.push({ tone: 'warn', text: <>Todavía no cargaste tus productos.</>, href: '/app/productos', cta: 'Cargar' });
+  if (!showOnboarding && !bakery.sheet_productos_id && !(products || []).length) todo.push({ tone: 'warn', text: <>Todavía no cargaste tus {T.items.toLowerCase()}.</>, href: '/app/productos', cta: 'Cargar' });
   if (!showOnboarding && !bakery.mp_access_token_enc) todo.push({ tone: 'info', text: <>Conectá Mercado Pago para cobrar las señas solas.</>, href: '/app/configuracion#mercadopago', cta: 'Conectar' });
 
   const busyDays = days.filter((x) => x.d === today || x.dayOrders.length > 0);
@@ -138,14 +138,14 @@ export default async function Agenda({ searchParams }) {
           <p>Hoy es {dateLabel(today)} · próximos 14 días</p>
         </div>
         <div className="row">
-          <CopyLink value={catalogUrl} label="Copiar mi link de pedidos" />
-          <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar pedido</Link>
+          <CopyLink value={catalogUrl} label={`Copiar mi link de ${T.orders.toLowerCase()}`} />
+          <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>
         </div>
       </div>
 
       <div className="kpis">
         <div className="card kpi">
-          <span className="l">Pedidos para hoy</span>
+          <span className="l">{T.orders} para hoy</span>
           <span className="v">{todayOrders.length}</span>
           <small>{todayWaiting ? `${todayWaiting} esperando seña` : todayOrders.length ? 'Todos confirmados' : 'Día libre'}</small>
         </div>
@@ -266,7 +266,7 @@ export default async function Agenda({ searchParams }) {
               );
             })()}
             {dayOrders.length === 0 ? (
-              <p className="muted" style={{ margin: '6px 0 0' }}>Sin pedidos para hoy</p>
+              <p className="muted" style={{ margin: '6px 0 0' }}>Nada para hoy</p>
             ) : (
               dayOrders.map((o) => (
                 <div key={o.id} className="order-line">
@@ -298,7 +298,7 @@ export default async function Agenda({ searchParams }) {
       </div>
       {freeDays.length > 0 && (
         <p className="muted free-days">
-          Sin pedidos: {freeDays.map((x) => `${dateLabel(x.d)}${blockedSet.has(x.d) ? ' (bloqueado)' : ''}`).join(' · ')}
+          Días libres: {freeDays.map((x) => `${dateLabel(x.d)}${blockedSet.has(x.d) ? ' (bloqueado)' : ''}`).join(' · ')}
         </p>
       )}
     </>

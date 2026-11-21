@@ -553,3 +553,9 @@ details.fold:not([open]) > summary h2::after { transform: rotate(-90deg); }
 /* El panel «Editar» de una fila ocupa todo el ancho debajo de los botones */
 .item-actions details.fold[open] { flex-basis: 100%; }
 .fold-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 0 2px; }
+/* Pestañas de una sección (Costos y ganancias, Ajustes) */
+.tabs-bar { display: flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: 14px; margin: 0 0 16px; max-width: 520px; overflow-x: auto; scrollbar-width: none; }
+.tabs-bar::-webkit-scrollbar { display: none; }
+.tabs-bar a { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap; transition: background-color .18s ease-out, color .18s ease-out; }
+.tabs-bar a:hover { color: var(--ink); }
+.tabs-bar a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(31, 25, 21, .08); }
