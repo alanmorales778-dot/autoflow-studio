@@ -50,7 +50,7 @@ export default async function AppLayout({ children }) {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 13.9A4 4 0 0 1 7.5 6a5 5 0 0 1 9 0A4 4 0 0 1 18 13.9V21H6z" /><path d="M6 17h12" /></svg>
               {T.workMode}
             </Link>
-            <span className="avatar" aria-hidden="true">{initials(bakery.name)}</span>
+            <Link href="/app/configuracion#negocio" className={`avatar ${bakery.logo_url ? 'has-logo' : ''}`} title="Tu negocio">{bakery.logo_url ? <img src={bakery.logo_url} alt="" /> : initials(bakery.name)}</Link>
             <form action={signOut}><button className="btn secondary small">Salir</button></form>
           </div>
         </div>

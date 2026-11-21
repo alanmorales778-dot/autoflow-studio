@@ -1,11 +1,12 @@
 import { STATUS_LABEL } from '@/lib/format';
+import FlashToast from './flash-toast';
 
 export function Flash({ sp }) {
   if (!sp) return null;
   return (
     <>
       {sp.error && <div className="alert bad">{sp.error}</div>}
-      {sp.ok && <div className="alert ok">{sp.ok}</div>}
+      {sp.ok && <FlashToast key={sp.ok} message={sp.ok} />}
     </>
   );
 }

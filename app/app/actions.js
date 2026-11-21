@@ -30,7 +30,9 @@ function back(path, { error, ok } = {}) {
   if (error) p.set('error', String(error).slice(0, 300));
   if (ok) p.set('ok', String(ok).slice(0, 300));
   const qs = p.toString();
-  redirect(qs ? `${path}${path.includes('?') ? '&' : '?'}${qs}` : path);
+  // El mensaje va antes del #ancla: si queda después, el navegador no lo lee y no se ve el aviso.
+  const [base, hash] = String(path).split('#');
+  redirect(qs ? `${base}${base.includes('?') ? '&' : '?'}${qs}${hash ? `#${hash}` : ''}` : path);
 }
 
 const str = (fd, k) => String(fd.get(k) ?? '').trim();
@@ -523,6 +525,40 @@ export async function uploadProductPhoto(fd) {
   revalidatePath('/app', 'layout');
   revalidatePath(`/c/${bakery.slug}`);
   back(to, { ok: 'Foto actualizada: ya se ve en tu catálogo.' });
+}
+
+// Logo del negocio: va al mismo depósito de fotos, en la carpeta del negocio.
+export async function uploadLogo(fd) {
+  const { bakery } = await requireBakery();
+  const to = '/app/configuracion#negocio';
+  const admin = createAdmin();
+  const file = fd.get('foto');
+  if (!file || typeof file.arrayBuffer !== 'function' || !file.size) back(to, { error: 'Elegí una imagen.' });
+  if (file.size > 4 * 1024 * 1024) back(to, { error: 'La imagen es muy pesada (máximo 4 MB).' });
+  const type = String(file.type || '');
+  if (!/^image\/(jpeg|png|webp)$/.test(type)) back(to, { error: 'El logo tiene que ser JPG, PNG o WEBP.' });
+  const ext = type.split('/')[1].replace('jpeg', 'jpg');
+  const path = `${bakery.id}/logo-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+  const { error } = await admin.storage.from('productos').upload(path, Buffer.from(await file.arrayBuffer()), { contentType: type, upsert: false });
+  if (error) back(to, { error: 'No se pudo subir el logo. Probá de nuevo.' });
+  const url = admin.storage.from('productos').getPublicUrl(path).data.publicUrl;
+  await admin.from('bakeries').update({ logo_url: url }).eq('id', bakery.id);
+  const old = String(bakery.logo_url || '').split('/storage/v1/object/public/productos/')[1];
+  if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
+  revalidatePath('/app', 'layout');
+  revalidatePath(`/c/${bakery.slug}`);
+  back(to, { ok: 'Logo actualizado: ya se ve en tu catálogo.' });
+}
+
+export async function removeLogo() {
+  const { bakery } = await requireBakery();
+  const admin = createAdmin();
+  const old = String(bakery.logo_url || '').split('/storage/v1/object/public/productos/')[1];
+  await admin.from('bakeries').update({ logo_url: null }).eq('id', bakery.id);
+  if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
+  revalidatePath('/app', 'layout');
+  revalidatePath(`/c/${bakery.slug}`);
+  back('/app/configuracion#negocio', { ok: 'Quitamos el logo.' });
 }
 
 export async function removeProductPhoto(fd) {

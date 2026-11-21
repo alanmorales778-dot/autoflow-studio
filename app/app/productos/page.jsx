@@ -30,6 +30,7 @@ export default async function Productos({ searchParams }) {
       <div className="row between">
         <h1 style={{ margin: 0 }}>{T.items}</h1>
         <div className="row">
+          {!fromDrive && <Link className="btn small" href="/app/productos?nuevo=1#nuevo">+ Agregar {T.item}</Link>}
           {bakery.sheet_productos_id && <a className="btn secondary small" href={sheetUrl(bakery.sheet_productos_id)} target="_blank" rel="noreferrer">Abrir planilla de productos ↗</a>}
           {bakery.sheet_productos_id && <form action={syncNow}><input type="hidden" name="back" value="/app/productos" /><button className="btn small">Actualizar desde Drive</button></form>}
         </div>
@@ -37,6 +38,24 @@ export default async function Productos({ searchParams }) {
       <p className="muted">{fromDrive ? 'Tus productos, precios y stock vienen de tu planilla de Google Drive.' : <>Tocá «Editar» en cada uno para cambiar precio, foto, {T.receta.toLowerCase()} u opciones.</>} Margen objetivo: {pct(bakery.margin_percent, 0)} · indirectos {pct(bakery.overhead_percent, 0)} (<Link href="/app/configuracion">cambiar</Link>).</p>
       {!access.costs && <Locked title="Costos y precio mínimo">Activá el módulo de Costos para ver cuánto te cuesta cada {T.item} y si estás ganando tu margen.</Locked>}
 
+      {!fromDrive && (
+        <details className="card fold" id="nuevo" open={!products || products.length === 0 || !!sp.nuevo}>
+          <summary><h2>Agregar {T.item}</h2></summary>
+          <form action={createProduct} style={{ marginTop: 12 }}>
+            <div className="grid grid-3" style={{ gap: 8 }}>
+              <div className="field"><label>Nombre</label><input name="name" required placeholder="Ej: Torta de chocolate 20 cm" /></div>
+              <div className="field"><label>Precio</label><input name="price" required inputMode="decimal" placeholder="Ej: 38000" /></div>
+              <div className="field"><label>Categoría</label><input name="category" placeholder="Ej: Tortas" list="categorias" /></div>
+            </div>
+            <datalist id="categorias">{[...new Set(products.map((p) => p.category).filter(Boolean))].map((c) => <option key={c} value={c} />)}</datalist>
+            <div className="grid grid-2" style={{ gap: 8 }}>
+              <div className="field"><label>Descripción (opcional)</label><input name="description" placeholder="Qué incluye, porciones, tamaño" /></div>
+              <div className="field"><label>Stock (vacío = a pedido)</label><input name="stock" inputMode="numeric" /></div>
+            </div>
+            <button className="btn">Agregar</button>
+          </form>
+        </details>
+      )}
       <div className="card">
         {!products || products.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>Todavía no cargaste {T.items.toLowerCase()}. Agregá el primero abajo.</p>
@@ -49,7 +68,10 @@ export default async function Productos({ searchParams }) {
               return (
                 <li key={p.id} className="item">
                   <div className="item-head">
-                    <div>
+                    <Link href={`/app/productos/${p.id}#foto`} className={`thumb ${p.photo_url ? '' : 'empty'}`} aria-label={p.photo_url ? `Foto de ${p.name}` : `Agregar foto a ${p.name}`}>
+                      {p.photo_url ? <img src={p.photo_url} alt="" /> : <span>+ foto</span>}
+                    </Link>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="item-title">{p.name}</div>
                       <div className="item-sub">{[p.category, !p.visible && 'oculto en el catálogo', p.stock_loaded === null ? 'a pedido' : `${Math.max(0, p.stock_loaded - res)} disponibles (${res} reservados)`].filter(Boolean).join(' · ')}</div>
                     </div>
@@ -78,24 +100,6 @@ export default async function Productos({ searchParams }) {
           </ul>
         )}
       </div>
-      {!fromDrive && (
-        <details className="card fold" id="nuevo" open={!products || products.length === 0}>
-          <summary><h2>Agregar {T.item}</h2></summary>
-          <form action={createProduct} style={{ marginTop: 12 }}>
-            <div className="grid grid-3" style={{ gap: 8 }}>
-              <div className="field"><label>Nombre</label><input name="name" required placeholder="Ej: Torta de chocolate 20 cm" /></div>
-              <div className="field"><label>Precio</label><input name="price" required inputMode="decimal" placeholder="Ej: 38000" /></div>
-              <div className="field"><label>Categoría</label><input name="category" placeholder="Ej: Tortas" list="categorias" /></div>
-            </div>
-            <datalist id="categorias">{[...new Set(products.map((p) => p.category).filter(Boolean))].map((c) => <option key={c} value={c} />)}</datalist>
-            <div className="grid grid-2" style={{ gap: 8 }}>
-              <div className="field"><label>Descripción (opcional)</label><input name="description" placeholder="Qué incluye, porciones, tamaño" /></div>
-              <div className="field"><label>Stock (vacío = a pedido)</label><input name="stock" inputMode="numeric" /></div>
-            </div>
-            <button className="btn">Agregar</button>
-          </form>
-        </details>
-      )}
       <ImportPreview bakery={bakery} kind="productos" id={sp.vista} />
       {!sp.vista && (
         <details className="fold" style={{ marginTop: 8 }}>

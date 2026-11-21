@@ -6,6 +6,7 @@ import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettin
 import { liveCosts } from '@/lib/sheets';
 import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
+import PhotoPicker from '../../photo-picker';
 import { money, normName, pct } from '@/lib/format';
 import { RECIPE_UNITS, normUnit, currentMargin, suggestedPrice } from '@/lib/costs';
 
@@ -38,7 +39,7 @@ export default async function Receta({ params, searchParams }) {
   return (
     <>
       <Link href="/app/productos">← {T.items}</Link>
-      <h1 style={{ marginTop: 12 }}>{T.key === 'cocina' ? 'Receta' : 'Ficha'}: {product.name}</h1>
+      <h1 style={{ marginTop: 12 }}>{product.name}</h1>
       <Flash sp={sp} />
       {!access.costs && <Locked title="Módulo de Costos">Cargá qué lleva cada {T.item} y calculá su costo real.</Locked>}
 
@@ -83,24 +84,17 @@ export default async function Receta({ params, searchParams }) {
       <div className="card" id="foto">
         <h2>Foto en el catálogo</h2>
         <div className="row" style={{ alignItems: 'flex-start', gap: 20 }}>
-          {product.photo_url ? (
-            <img src={product.photo_url} alt={product.name} style={{ width: 180, aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 12, border: '1px solid var(--line)' }} />
-          ) : (
-            <div aria-hidden="true" style={{ width: 180, aspectRatio: '4 / 3', borderRadius: 12, background: 'linear-gradient(140deg, #f6e3d3, #efe3d4)', display: 'grid', placeItems: 'center', color: '#b9a593', fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800 }}>{product.name.charAt(0)}</div>
-          )}
-          <div style={{ flex: '1 1 260px' }}>
-            <p className="muted" style={{ marginTop: 0 }}>Una buena foto vende más. JPG, PNG o WEBP de hasta 5 MB; se ve mejor apaisada (4:3).</p>
-            <form action={uploadProductPhoto} className="row">
-              <input type="hidden" name="id" value={product.id} />
-              <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required style={{ maxWidth: 300 }} />
-              <button className="btn small">{product.photo_url ? 'Cambiar foto' : 'Subir foto'}</button>
-            </form>
-            {product.photo_url && (
-              <form action={removeProductPhoto} style={{ marginTop: 8 }}>
+          <div style={{ flex: '0 1 320px', minWidth: 220 }}>
+            <PhotoPicker action={uploadProductPhoto} hidden={{ id: product.id }} current={product.photo_url} placeholder={product.name.charAt(0)} label="Elegir foto" changeLabel="Cambiar foto" />
+          </div>
+          <div style={{ flex: '1 1 240px' }}>
+            <p className="muted" style={{ marginTop: 0 }}>Tocá el recuadro o arrastrá una foto. Se achica sola para que cargue rápido en el celular de tus clientes; se ve mejor apaisada.</p>
+            {product.photo_url ? (
+              <form action={removeProductPhoto}>
                 <input type="hidden" name="id" value={product.id} />
                 <button className="btn danger small">Quitar foto</button>
               </form>
-            )}
+            ) : <p className="muted" style={{ fontSize: 13 }}>Sin foto, el catálogo muestra la inicial del nombre.</p>}
           </div>
         </div>
       </div>

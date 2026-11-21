@@ -73,13 +73,18 @@ export default function Registro() {
           <p className="sub">Todos los módulos incluidos. Sin tarjeta.</p>
           <AuthTabs active="registro" />
           <form key={shake} className={shake ? 'shake' : ''} onSubmit={onSubmit} noValidate>
-            <div className="field">
-              <label htmlFor="rubro">Rubro</label>
-              <select id="rubro" value={rubro} onChange={(e) => setRubro(e.target.value)}>
-                {RUBROS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
-              </select>
-              <div className="hint">Adapta los nombres, los datos de cada pedido y los ejemplos. Lo podés cambiar después.</div>
-            </div>
+            <fieldset className="field rubro-pick">
+              <legend>¿Qué vendés?</legend>
+              <div className="rubro-opts" role="radiogroup" aria-label="Rubro">
+                {RUBROS.map((r) => (
+                  <button key={r.key} type="button" role="radio" aria-checked={rubro === r.key} className={`rubro-opt ${rubro === r.key ? 'on' : ''}`} onClick={() => setRubro(r.key)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={r.icon} /></svg>
+                    <span className="rubro-opt-t">{r.short || r.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="hint">{(RUBROS.find((r) => r.key === rubro) || RUBROS[0]).ejemplos}. Lo podés cambiar después.</div>
+            </fieldset>
             <div className="field">
               <label htmlFor="business">Nombre de tu emprendimiento</label>
               <input id="business" value={business} onChange={(e) => setBusiness(e.target.value)} onBlur={touch('biz')} placeholder={ph} autoComplete="organization" className={bizErr ? 'err' : ''} aria-invalid={bizErr || undefined} />

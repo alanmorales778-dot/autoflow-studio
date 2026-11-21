@@ -174,7 +174,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
       <div className={s.summary}>
         <p className={s.summaryText}>
           {pendingAll.length === 0 ? (
-            <strong>{items.length ? 'Todo comprado' : 'Lista vacía'}</strong>
+            <strong>{items.length ? 'Todo comprado ✓' : 'Lista de compras'}</strong>
           ) : (
             <>
               <strong className={s.num}>{pendingAll.length} por comprar</strong>

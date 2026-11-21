@@ -78,7 +78,6 @@ export default function Sidebar({ terms }) {
           })}
         </div>
       ))}
-      <p className="kbd-hint">Atajos: <kbd>A</kbd> agenda · <kbd>P</kbd> {terms.orders.toLowerCase()} · <kbd>N</kbd> {terms.order} nuevo · <kbd>B</kbd> cobros · <kbd>R</kbd> costos · <kbd>C</kbd> {terms.workMode.toLowerCase()}</p>
     </nav>
   );
 }

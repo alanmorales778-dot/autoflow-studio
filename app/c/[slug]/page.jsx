@@ -85,7 +85,7 @@ export default async function Catalogo({ params, searchParams }) {
     <>
       <header className="store-head">
         <div className="container">
-          <Link href={`/c/${slug}`} className="store-avatar" aria-label={`${bakery.name}, inicio`}>{(bakery.name || '?').trim().charAt(0).toUpperCase()}</Link>
+          <Link href={`/c/${slug}`} className={`store-avatar ${bakery.logo_url ? 'has-logo' : ''}`} aria-label={`${bakery.name}, inicio`}>{bakery.logo_url ? <img src={bakery.logo_url} alt="" /> : (bakery.name || '?').trim().charAt(0).toUpperCase()}</Link>
           <div style={{ flex: '1 1 320px' }}>
             <h1 className="disp">{bakery.name}</h1>
             <div className="store-chips">

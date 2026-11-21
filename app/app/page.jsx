@@ -286,7 +286,7 @@ export default async function Agenda({ searchParams }) {
                       <input type="hidden" name="id" value={o.id} />
                       <input type="hidden" name="status" value="entregado" />
                       <input type="hidden" name="back" value="/app" />
-                      <button className="btn secondary small">Marcar entregado</button>
+                      {d <= today && <button className="btn secondary small">Marcar entregado</button>}
                       <Link className="btn secondary small" href={`/app/pedidos?editar=${o.id}#p-${o.id}`}>Editar</Link>
                     </form>
                   )}

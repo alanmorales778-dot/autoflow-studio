@@ -1,6 +1,6 @@
 import { requireBakery } from '@/lib/session';
 import {
-  saveSettings, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow, rotateCalendarToken, disableCalendar, saveNotifications,
+  saveSettings, uploadLogo, removeLogo, addCapacity, deleteCapacity, addBlocked, deleteBlocked, saveMpToken, removeMpToken, saveWhatsapp, disconnectGoogle, syncNow, rotateCalendarToken, disableCalendar, saveNotifications,
 } from '../actions';
 import { mailEnabled } from '@/lib/notify';
 import { Flash, Locked } from '../ui';
@@ -10,6 +10,7 @@ import { appUrl, has } from '@/lib/env';
 import { calendarUrl } from '@/lib/ics';
 import CopyField from './copy-field';
 import HashOpener from '../hash-opener';
+import PhotoPicker from '../photo-picker';
 import Link from 'next/link';
 import { RUBROS, RUBRO_KEYS, rubroOf } from '@/lib/rubros';
 
@@ -39,27 +40,53 @@ export default async function Configuracion({ searchParams }) {
       {/* Negocio */}
       <div className="card" id="negocio">
         <h2>Tu negocio</h2>
-        <form action={saveSettings}>
-          <div className="grid grid-3">
-            <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia los nombres de la app y los datos que pide tu link. No borra nada.</div></div>
-            <div className="field"><label>Nombre</label><input name="name" defaultValue={bakery.name} required /></div>
-            <div className="field"><label>Link (después de /c/)</label><input name="slug" defaultValue={bakery.slug} required /></div>
-            <div className="field"><label>WhatsApp de contacto</label><input name="whatsapp_contact" defaultValue={bakery.whatsapp_contact || ''} /></div>
-            <div className="field"><label>Dirección del local o de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
-            <div className="field"><label>Seña (% del total)</label><input name="deposit_percent" type="number" min="0" max="100" defaultValue={bakery.deposit_percent} /></div>
-            <div className="field"><label>Minutos para pagar la seña (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
-            <div className="field"><label>Horas que se guarda el cupo sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada en ese tiempo, {t.order === 'reserva' || t.order === 'turno' ? 'se libera el lugar' : 'el cupo se libera'}. 0 = no vence.</div></div>
-            <div className="field"><label>Días mínimos de anticipación</label><input name="min_days_ahead" type="number" min="0" defaultValue={bakery.min_days_ahead} /></div>
-            <div className="field"><label>Hasta cuántos días adelante</label><input name="max_days_ahead" type="number" min="1" defaultValue={bakery.max_days_ahead} /></div>
-            <div className="field"><label>Margen objetivo (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
-            <div className="field"><label>Indirectos: luz, gas, alquiler, envases (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /></div>
-            <div className="field"><label>Horarios o franjas (uno por línea)</label><textarea name="slots" defaultValue={(bakery.slots || []).join('\n')} /></div>
-            <div className="field"><label>Clientes a la vez por horario</label><input name="slot_capacity" type="number" min="1" max="100" defaultValue={bakery.slot_capacity ?? ''} placeholder="Sin límite" /><div className="hint">Para turnos: cuántas personas atienden en el mismo horario. Si un servicio dura más, ocupa también los horarios siguientes. Vacío = sin límite por horario.</div></div>
-            <div className="field" style={{ display: 'flex', alignItems: 'center' }}>
-              <label className="inline-label"><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Ofrezco «{t.envio.toLowerCase()}»</label>
-            </div>
+        <div className="biz-head">
+          <PhotoPicker action={uploadLogo} current={bakery.logo_url} shape="square" maxSide={600} keepPng label="Subir logo" changeLabel="Cambiar" placeholder={(bakery.name || '?').trim().charAt(0).toUpperCase()} />
+          <div>
+            <strong>Logo</strong>
+            <p className="muted" style={{ margin: '2px 0 8px', fontSize: 13 }}>Se ve en tu catálogo y arriba en la app. Mejor cuadrado y con fondo blanco o transparente.</p>
+            {bakery.logo_url && <form action={removeLogo}><button className="btn danger small">Quitar logo</button></form>}
           </div>
-          <button className="btn">Guardar</button>
+        </div>
+        <form action={saveSettings}>
+          <fieldset className="set">
+            <legend>Datos que ven tus clientes</legend>
+            <div className="grid grid-3">
+              <div className="field"><label>Nombre</label><input name="name" defaultValue={bakery.name} required /></div>
+              <div className="field"><label>Link (después de /c/)</label><input name="slug" defaultValue={bakery.slug} required /></div>
+              <div className="field"><label>WhatsApp de contacto</label><input name="whatsapp_contact" defaultValue={bakery.whatsapp_contact || ''} inputMode="tel" placeholder="11 5555-5555" /></div>
+              <div className="field"><label>Dirección del local o de retiro</label><input name="pickup_address" defaultValue={bakery.pickup_address || ''} placeholder="Ej: Av. Siempreviva 742, Palermo" /></div>
+              <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <label className="inline-label" style={{ minHeight: 44 }}><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Ofrezco «{t.envio.toLowerCase()}»</label>
+              </div>
+              <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia los nombres de la app. No borra nada.</div></div>
+            </div>
+          </fieldset>
+          <fieldset className="set">
+            <legend>Cuándo te pueden {t.key === 'belleza' ? 'reservar' : 'pedir'}</legend>
+            <div className="grid grid-3">
+              <div className="field"><label>Horarios o franjas (uno por línea)</label><textarea name="slots" defaultValue={(bakery.slots || []).join('\n')} /></div>
+              <div className="field"><label>Días mínimos de anticipación</label><input name="min_days_ahead" type="number" min="0" defaultValue={bakery.min_days_ahead} /><div className="hint">0 = se puede para hoy.</div></div>
+              <div className="field"><label>Hasta cuántos días adelante</label><input name="max_days_ahead" type="number" min="1" defaultValue={bakery.max_days_ahead} /></div>
+              <div className="field"><label>Clientes a la vez por horario</label><input name="slot_capacity" type="number" min="1" max="100" defaultValue={bakery.slot_capacity ?? ''} placeholder="Sin límite" /><div className="hint">Para turnos: cuántas personas atienden a la vez. Vacío = sin límite.</div></div>
+            </div>
+          </fieldset>
+          <fieldset className="set">
+            <legend>Seña</legend>
+            <div className="grid grid-3">
+              <div className="field"><label>Seña (% del total)</label><input name="deposit_percent" type="number" min="0" max="100" defaultValue={bakery.deposit_percent} /><div className="hint">0 = no pedís seña.</div></div>
+              <div className="field"><label>Minutos para pagarla (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
+              <div className="field"><label>Horas que se guarda el lugar sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada, {t.order === 'reserva' || t.order === 'turno' ? 'se libera el lugar' : 'el cupo se libera'}. 0 = no vence.</div></div>
+            </div>
+          </fieldset>
+          <fieldset className="set">
+            <legend>Precios</legend>
+            <div className="grid grid-3">
+              <div className="field"><label>Margen que querés ganar (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
+              <div className="field"><label>Gastos fijos: luz, gas, alquiler (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /><div className="hint">Se suman al costo de cada {t.item}.</div></div>
+            </div>
+          </fieldset>
+          <button className="btn">Guardar cambios</button>
         </form>
       </div>
 

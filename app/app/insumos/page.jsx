@@ -37,7 +37,7 @@ export default async function Insumos({ searchParams }) {
       <ImportPreview bakery={bakery} kind="insumos" id={sp.vista} />
 
       {!fromDrive && (
-        <details className="card fold" id="nuevo" open={!ingredients || ingredients.length === 0}>
+        <details className="card fold" id="nuevo" open={!ingredients || ingredients.length === 0 || !!sp.nuevo}>
           <summary><h2>Agregar {T.insumo.toLowerCase()}</h2></summary>
           <form action={saveIngredient} style={{ marginTop: 12 }}>
             <IngredientFields T={T} />
