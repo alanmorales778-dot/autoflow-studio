@@ -65,7 +65,7 @@ const CELU = [
   { ico: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M12 18v-6', 'm9 15 3 3 3-3'], t: 'Tus datos son tuyos', p: 'Bajás pedidos, clientes, productos y ganancias en Excel cuando quieras.' },
 ];
 
-const MODO = { turno: 'Tu cliente reserva turno con día y hora', pedido: 'Tu cliente pide con fecha de entrega o retiro', reserva: 'Tu cliente reserva la fecha de su evento' };
+const MODO = { turno: 'Tu cliente reserva turno con día y hora', pedido: 'Tu cliente pide con fecha de entrega o retiro', reserva: 'Tu cliente reserva la fecha de su evento', visita: 'Tu cliente pide una visita con día, franja y foto del problema' };
 
 
 const VOCAB = [
@@ -194,7 +194,7 @@ export default function Home() {
           <h2 className="big">Un mismo sistema, adaptado a lo que hacés.</h2>
           <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y AutoFlow cambia los nombres, lo que ve tu cliente en el link, los datos que pide y la pantalla de trabajo del día.</p>
           <div className="grid grid-3 rubro-grid" style={{ marginTop: 32 }}>
-            {rubros.filter((r) => r.key !== 'otro').map((r) => (
+            {rubros.map((r) => (
               <Link key={r.key} href={`/registro?rubro=${r.key}`} className={`card rubro-card ${r.key === 'cocina' ? 'featured' : ''}`}>
                 <span className="ico"><Ico d={r.icon} /></span>
                 <div>
@@ -206,7 +206,6 @@ export default function Home() {
               </Link>
             ))}
           </div>
-          <p className="muted" style={{ marginTop: 16 }}>¿Vendés otra cosa por encargo o con turno? <Link href="/registro?rubro=otro">Empezá con «Otro rubro»</Link> y adaptalo a lo tuyo.</p>
         </section>
 
         <section id="compara" className="section container" style={{ paddingTop: 40 }}>

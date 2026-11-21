@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const { data } = await createAdmin().from('bakeries').select('name,business_type').eq('slug', slug).maybeSingle();
   const L = rubroOf(data).link;
-  return { title: data ? `${data.name} — ${L.mode === 'turno' ? 'Reservá tu turno' : L.mode === 'reserva' ? 'Reservá tu fecha' : 'Hacé tu pedido'}` : 'Catálogo' };
+  return { title: data ? `${data.name} — ${L.mode === 'turno' ? 'Reservá tu turno' : L.mode === 'reserva' ? 'Reservá tu fecha' : L.mode === 'visita' ? 'Pedí una visita' : 'Hacé tu pedido'}` : 'Catálogo' };
 }
 
 function waLink(num) {
@@ -47,6 +47,8 @@ function DeliveryFields({ bakery, noSlots = false }) {
         envioLabel={rubroOf(bakery).envio}
         deliveryEnabled={!!bakery.delivery_enabled}
         noPickupAddress={!bakery.pickup_address}
+        preferEnvio={rubroOf(bakery).link.mode === 'visita'}
+        label={rubroOf(bakery).link.mode === 'visita' ? 'Dónde' : 'Entrega'}
       />
       <div className="field"><label>Tu nombre</label><input name="customer_name" required autoComplete="name" /></div>
       <div className="field"><label>Tu WhatsApp</label><input name="customer_phone" required inputMode="tel" autoComplete="tel" placeholder="11 5555-5555" /></div>
@@ -196,7 +198,7 @@ export default async function Catalogo({ params, searchParams }) {
                       {L.photo && <div className="field"><label>{t.photoLabel || 'Foto de referencia'} (opcional)</label><PhotoField /></div>}
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
                       <div className="summary" style={{ marginBottom: 12 }}>
-                        {qty > 1 && <>{qty} unidades · </>}Precio base: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
+                        {qty > 1 && <>{qty} unidades · </>}{L.mode === 'visita' ? 'Precio de referencia' : 'Precio base'}: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
                         {depositPct > 0 && <> · Seña: {depositPct}% del total</>}
                         {depositPct > 0 && bakery.mp_access_token_enc && <div className="muted" style={{ fontSize: 13 }}>Vas a pagar la seña con Mercado Pago. Tenés {bakery.hold_minutes} minutos; si no, el cupo se libera.</div>}
                       </div>

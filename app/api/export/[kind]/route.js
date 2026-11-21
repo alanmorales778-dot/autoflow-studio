@@ -21,12 +21,13 @@ function monthBounds(ym) {
 async function pedidos(admin, bakery) {
   const T = rubroOf(bakery);
   const { data } = await admin.from('orders').select('*').eq('bakery_id', bakery.id).order('date', { ascending: false }).limit(20000);
-  const head = ['Fecha', 'Horario', 'Estado', 'Cliente', 'WhatsApp', 'Producto', 'Cantidad', 'Total', 'Seña', 'Seña pagada', 'Saldo pendiente', 'Entrega', 'Dirección', T.note1.label, T.note2.label, 'Ocasión', 'Aclaraciones', 'Canal'];
+  const head = ['Fecha', 'Horario', 'Estado', 'Cliente', 'WhatsApp', 'Producto', 'Cantidad', 'Total', 'Seña', 'Seña pagada', 'Saldo pendiente', 'Entrega', 'Dirección', T.note1.label, T.note2.label, 'Ocasión', 'Aclaraciones', 'Canal', 'Materiales'];
   const rows = (data || []).map((o) => [
     o.date, o.slot || '', STATUS_LABEL[o.status] || o.status, o.customer_name || '', o.customer_phone || '', o.product_name || '', o.quantity,
     Number(o.total) || 0, Number(o.deposit_amount) || 0, o.paid_at ? 'Sí' : 'No',
     ['confirmado', 'entregado'].includes(o.status) ? balanceDue(o) : '',
     o.fulfillment === 'envio' ? T.envio : T.retiro, o.address || '', o.dedication || '', o.allergies || '', o.occasion || '', o.notes || '', o.channel || '',
+    o.material_cost ?? '',
   ]);
   return writeXlsx(T.orders, [head, ...rows]);
 }
@@ -57,7 +58,7 @@ async function ganancias(admin, bakery, ym) {
   const T = rubroOf(bakery);
   const { from, to } = monthBounds(ym);
   const [{ data: orders }, live] = await Promise.all([
-    admin.from('orders').select('product_id,product_name,quantity,total').eq('bakery_id', bakery.id).gte('date', from).lte('date', to).in('status', ['confirmado', 'entregado']).limit(10000),
+    admin.from('orders').select('product_id,product_name,quantity,total,material_cost').eq('bakery_id', bakery.id).gte('date', from).lte('date', to).in('status', ['confirmado', 'entregado']).limit(10000),
     liveCosts(admin, bakery),
   ]);
   const costById = new Map([...live].map(([id, c]) => [id, c.cost]));
@@ -67,7 +68,7 @@ async function ganancias(admin, bakery, ym) {
     const r = rows.get(k) || { name: o.product_name, units: 0, revenue: 0, cost: 0, known: true };
     r.units += o.quantity;
     r.revenue += Number(o.total) || 0;
-    const c = o.product_id ? costById.get(o.product_id) : null;
+    const c = o.material_cost !== null && o.material_cost !== undefined ? Number(o.material_cost) / Math.max(1, o.quantity) : o.product_id ? costById.get(o.product_id) : null;
     if (c === null || c === undefined) r.known = false; else r.cost += Number(c) * o.quantity;
     rows.set(k, r);
   }

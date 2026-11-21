@@ -46,7 +46,7 @@ export async function createBakery(fd) {
   if (!name) back('/app', { error: 'Poné el nombre de tu emprendimiento.' });
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
   const rubro = rubroOf(str(fd, 'business_type'));
-  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null, ...(rubro.minDays !== undefined ? { min_days_ahead: rubro.minDays } : {}) });
+  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null, ...(rubro.delivery ? { delivery_enabled: true } : {}), ...(rubro.minDays !== undefined ? { min_days_ahead: rubro.minDays } : {}) });
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
   back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
 }
@@ -658,7 +658,13 @@ export async function updateOrder(fd) {
     back(backTo, { error: 'Este pedido ya tiene un link de pago de seña con el importe anterior. Para cambiar la cantidad, cancelalo y cargalo de nuevo.' });
   }
 
-  const unitPrice = o.unit_price !== null && o.unit_price !== undefined ? Number(o.unit_price) : Number(o.total) / Math.max(1, o.quantity);
+  // Oficios: el precio final se pone después de presupuestar, y se guarda lo gastado en materiales.
+  const finalTotal = fd.has('final_total') && str(fd, 'final_total') !== '' ? parseNum(str(fd, 'final_total')) : null;
+  if (finalTotal !== null && (!Number.isFinite(finalTotal) || finalTotal < 0 || finalTotal > 1e9)) back(backTo, { error: 'El precio final no es un número válido.' });
+  const materialCost = fd.has('material_cost') ? (str(fd, 'material_cost') === '' ? null : parseNum(str(fd, 'material_cost'))) : undefined;
+  if (materialCost !== undefined && materialCost !== null && (!Number.isFinite(materialCost) || materialCost < 0 || materialCost > 1e9)) back(backTo, { error: 'Los materiales no son un número válido.' });
+  if (finalTotal !== null && finalTotal !== Number(o.total) && o.payment_url && !o.paid_at) back(backTo, { error: 'Este trabajo ya tiene un link de pago de seña con el importe anterior. Para cambiar el precio, cancelalo y cargalo de nuevo.' });
+  const unitPrice = finalTotal !== null ? finalTotal / Math.max(1, quantity) : o.unit_price !== null && o.unit_price !== undefined ? Number(o.unit_price) : Number(o.total) / Math.max(1, o.quantity);
   const total = Math.round(unitPrice * quantity * 100) / 100;
   // La seña ya cobrada no cambia; si todavía no se cobró, se recalcula con el nuevo total.
   const deposit = o.paid_at ? Number(o.deposit_amount) : Math.round((total * Number(bakery.deposit_percent)) / 100);
@@ -676,6 +682,8 @@ export async function updateOrder(fd) {
     notes: str(fd, 'notes').slice(0, 500) || null,
     dedication: str(fd, 'dedication').slice(0, 200) || null,
     allergies: str(fd, 'allergies').slice(0, 300) || null,
+    ...(finalTotal !== null ? { unit_price: Math.round(unitPrice * 100) / 100 } : {}),
+    ...(materialCost !== undefined ? { material_cost: materialCost === null ? null : Math.round(materialCost * 100) / 100 } : {}),
   };
   // El link de Mercado Pago del saldo tenía el importe viejo: se arma de nuevo cuando haga falta.
   if (total !== Number(o.total)) patch.balance_payment_url = null;

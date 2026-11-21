@@ -53,13 +53,19 @@ export default async function Rentabilidad({ searchParams }) {
   // Traemos 6 meses de una vez: el mes elegido, el anterior para comparar y 4 más para el gráfico.
   const first = shiftMonth(ym, -5);
   const [{ data: allOrders }, live] = await Promise.all([
-    supabase.from('orders').select('date,product_id,product_name,quantity,total,status,options_total').eq('bakery_id', bakery.id).gte('date', `${first}-01`).lte('date', to).in('status', ['confirmado', 'entregado']).limit(5000),
+    supabase.from('orders').select('date,product_id,product_name,quantity,total,status,options_total,material_cost').eq('bakery_id', bakery.id).gte('date', `${first}-01`).lte('date', to).in('status', ['confirmado', 'entregado']).limit(5000),
     liveCosts(supabase, bakery),
   ]);
   // Costo con los precios de hoy: el mismo número que muestran Productos y Costos e inflación.
   const costById = new Map([...live].map(([id, c]) => [id, c.cost]));
   const reasonById = new Map([...live].map(([id, c]) => [id, c.error]));
   const orders = (allOrders || []).filter((o) => o.date >= from);
+  // Costo de un pedido: lo gastado en materiales si se cargó (oficios), si no la receta con precios de hoy.
+  const costOf = (o) => {
+    if (o.material_cost !== null && o.material_cost !== undefined) return Number(o.material_cost);
+    const c = o.product_id ? costById.get(o.product_id) : null;
+    return c === null || c === undefined ? null : Number(c) * o.quantity;
+  };
   const rows = new Map();
   for (const o of orders) {
     const k = o.product_id || o.product_name;
@@ -67,9 +73,9 @@ export default async function Rentabilidad({ searchParams }) {
     const r = rows.get(k);
     r.units += o.quantity;
     r.revenue += Number(o.total);
-    const c = o.product_id ? costById.get(o.product_id) : null;
-    if (c === null || c === undefined) r.costKnown = false;
-    else r.cost += Number(c) * o.quantity;
+    const c = costOf(o);
+    if (c === null) r.costKnown = false;
+    else r.cost += c;
   }
   const list = [...rows.values()].map((r) => ({ ...r, profit: r.costKnown ? r.revenue - r.cost : null, margin: r.costKnown && r.revenue ? Math.round(((r.revenue - r.cost) / r.revenue) * 1000) / 10 : null }));
   list.sort((a, b) => (b.profit ?? -Infinity) - (a.profit ?? -Infinity));
@@ -87,8 +93,8 @@ export default async function Rentabilidad({ searchParams }) {
     for (const o of allOrders || []) {
       if (o.date.slice(0, 7) !== m) continue;
       rev += Number(o.total);
-      const c = o.product_id ? costById.get(o.product_id) : null;
-      if (c !== null && c !== undefined) prof += Number(o.total) - Number(c) * o.quantity;
+      const c = costOf(o);
+      if (c !== null) prof += Number(o.total) - c;
     }
     series.push({ m, rev, prof });
   }
@@ -104,8 +110,8 @@ export default async function Rentabilidad({ searchParams }) {
     for (const o of allOrders || []) {
       if (o.date.slice(0, 7) !== m || o.date.slice(8) > dd) continue;
       rev += Number(o.total);
-      const c = o.product_id ? costById.get(o.product_id) : null;
-      if (c !== null && c !== undefined) prof += Number(o.total) - Number(c) * o.quantity;
+      const c = costOf(o);
+      if (c !== null) prof += Number(o.total) - c;
     }
     return { rev, prof };
   };

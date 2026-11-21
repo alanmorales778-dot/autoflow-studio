@@ -48,12 +48,12 @@ export function QtyPicker({ productId, qty }) {
 }
 
 // Entrega: con «envío» la dirección pasa a ser obligatoria (se valida antes de mandar).
-export function FulfillmentFields({ retiroLabel, envioLabel, deliveryEnabled, noPickupAddress }) {
-  const [mode, setMode] = useState('retiro');
+export function FulfillmentFields({ retiroLabel, envioLabel, deliveryEnabled, noPickupAddress, preferEnvio = false, label = 'Entrega' }) {
+  const [mode, setMode] = useState(preferEnvio && deliveryEnabled ? 'envio' : 'retiro');
   return (
     <>
       <div className="field">
-        <label htmlFor="fulfillment">Entrega</label>
+        <label htmlFor="fulfillment">{label}</label>
         <select id="fulfillment" name="fulfillment" value={mode} onChange={(e) => setMode(e.target.value)}>
           <option value="retiro">{retiroLabel}</option>
           {deliveryEnabled && <option value="envio">{envioLabel}</option>}
@@ -62,7 +62,7 @@ export function FulfillmentFields({ retiroLabel, envioLabel, deliveryEnabled, no
       </div>
       {deliveryEnabled && mode === 'envio' && (
         <div className="field">
-          <label htmlFor="address">Dirección de entrega</label>
+          <label htmlFor="address">{preferEnvio ? 'Dirección' : 'Dirección de entrega'}</label>
           <input id="address" name="address" required autoComplete="street-address" placeholder="Calle, número, piso, localidad" />
         </div>
       )}

@@ -46,7 +46,15 @@ function EditOrder({ o, bakery, T, open, back }) {
               {[...new Set([...(bakery.slots || []), ...(o.slot ? [o.slot] : [])])].map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
-          <div className="field"><label>Cantidad</label><input type="number" name="quantity" min="1" max="999" defaultValue={o.quantity} required /></div>
+          {T.link.mode === 'visita' ? (
+            <>
+              <input type="hidden" name="quantity" value={o.quantity} />
+              <div className="field"><label>Precio final del trabajo</label><input name="final_total" inputMode="decimal" defaultValue={Number(o.total) || ''} placeholder="Ej: 85000" /><div className="hint">Lo que le cobrás en total, después de presupuestar.</div></div>
+              <div className="field"><label>Materiales que gastaste</label><input name="material_cost" inputMode="decimal" defaultValue={o.material_cost ?? ''} placeholder="Ej: 23000" /><div className="hint">Para saber cuánto te quedó de este trabajo.</div></div>
+            </>
+          ) : (
+            <div className="field"><label>Cantidad</label><input type="number" name="quantity" min="1" max="999" defaultValue={o.quantity} required /></div>
+          )}
           <div className="field"><label>Cliente</label><input name="customer_name" defaultValue={o.customer_name} required /></div>
           <div className="field"><label>Teléfono</label><input name="customer_phone" defaultValue={o.customer_phone || ''} inputMode="tel" /></div>
           <div className="field">
@@ -61,9 +69,9 @@ function EditOrder({ o, bakery, T, open, back }) {
           <div className="field"><label>{T.note2.label}</label><input name="allergies" defaultValue={o.allergies || ''} placeholder={T.note2.ph} /></div>
         </div>
         <div className="field"><label>Notas</label><input name="notes" defaultValue={o.notes || ''} /></div>
-        <p className="muted" style={{ fontSize: 13, margin: '0 0 10px' }}>
+        {T.link.mode !== 'visita' && <p className="muted" style={{ fontSize: 13, margin: '0 0 10px' }}>
           Precio por unidad: {money(o.unit_price ?? Number(o.total) / Math.max(1, o.quantity))}. Si cambiás la cantidad, el total se recalcula{o.paid_at ? ' (la seña ya cobrada no cambia)' : ''}.
-        </p>
+        </p>}
         <button className="btn small">Guardar cambios</button>
       </form>
       <div className="fold-actions">
@@ -75,8 +83,16 @@ function EditOrder({ o, bakery, T, open, back }) {
 }
 
 // Mensaje «ya está listo» (no aplica a turnos ni reservas, que se hacen en el momento).
+// Oficios: mandar el presupuesto por WhatsApp con el link del trabajo.
+function quoteLink(bakery, o) {
+  if (!o.customer_phone || !(Number(o.total) > 0)) return null;
+  const name = String(o.customer_name || '').split(' ')[0];
+  const text = `¡Hola ${name}! Te paso el presupuesto de ${bakery.name}: ${o.product_name}${o.dedication ? ` (${o.dedication})` : ''}. Total: $${Math.round(Number(o.total)).toLocaleString('es-AR')}. ¿Te parece bien? Si me confirmás, coordinamos el día.`;
+  return waMeLink(o.customer_phone, text);
+}
+
 function readyLink(bakery, T, o) {
-  if (['belleza', 'eventos'].includes(T.key) || !o.customer_phone) return null;
+  if (['belleza', 'eventos', 'oficios'].includes(T.key) || !o.customer_phone) return null;
   const name = String(o.customer_name || '').split(' ')[0];
   const due = balanceDue(o);
   const where = o.fulfillment === 'envio'
@@ -203,8 +219,9 @@ export default async function Pedidos({ searchParams }) {
                   )}
                   <div className="item-sub">{CHANNEL[o.channel] || o.channel} · {dateTimeLabel(o.created_at)}{o.occasion ? ` · ${o.occasion}` : ''}</div>
                   <div className="item-actions">
-                    {o.status === 'pendiente_sena' && <Action id={o.id} status="confirmado" label="Seña cobrada" cls="" back={self} />}
-                    {o.status === 'confirmado' && <Action id={o.id} status="entregado" label="Entregado" cls="" back={self} />}
+                    {o.status === 'pendiente_sena' && <Action id={o.id} status="confirmado" label={T.link.mode === 'visita' && !(Number(o.deposit_amount) > 0) ? 'Confirmar' : 'Seña cobrada'} cls="" back={self} />}
+                    {o.status === 'confirmado' && <Action id={o.id} status="entregado" label={T.link.mode === 'visita' ? 'Terminado' : T.key === 'belleza' ? 'Atendido' : 'Entregado'} cls="" back={self} />}
+                    {T.link.mode === 'visita' && ['pendiente_sena', 'confirmado'].includes(o.status) && quoteLink(bakery, o) && <a className="btn secondary small" href={quoteLink(bakery, o)} target="_blank" rel="noreferrer">Mandar presupuesto</a>}
                     {o.status === 'vencido' && <Action id={o.id} status="confirmado" label="Confirmar igual" back={self} />}
                     {['confirmado', 'entregado'].includes(o.status) && due > 0 && (
                       <form action={markBalance}>
