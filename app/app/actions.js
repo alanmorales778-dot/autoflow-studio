@@ -46,7 +46,7 @@ export async function createBakery(fd) {
   if (!name) back('/app', { error: 'Poné el nombre de tu emprendimiento.' });
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
   const rubro = rubroOf(str(fd, 'business_type'));
-  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null });
+  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null, ...(rubro.minDays !== undefined ? { min_days_ahead: rubro.minDays } : {}) });
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
   back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
 }

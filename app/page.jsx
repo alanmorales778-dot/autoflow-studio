@@ -156,7 +156,7 @@ export default function Home() {
           <h2 className="big">Un mismo sistema, adaptado a lo que hacés.</h2>
           <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y AutoFlow cambia los nombres, los datos que pide en cada pedido, los ejemplos para arrancar y la pantalla de trabajo del día.</p>
           <div className="grid grid-3 rubro-grid" style={{ marginTop: 32 }}>
-            {rubros.map((r) => (
+            {rubros.filter((r) => r.key !== 'otro').map((r) => (
               <Link key={r.key} href={`/registro?rubro=${r.key}`} className={`card rubro-card ${r.key === 'cocina' ? 'featured' : ''}`}>
                 <span className="ico"><Ico d={r.icon} /></span>
                 <div>
@@ -167,6 +167,7 @@ export default function Home() {
               </Link>
             ))}
           </div>
+          <p className="muted" style={{ marginTop: 16 }}>¿Vendés otra cosa por encargo o con turno? <Link href="/registro?rubro=otro">Empezá con «Otro rubro»</Link> y adaptalo a lo tuyo.</p>
         </section>
 
         <section id="como-funciona" className="section container" style={{ paddingTop: 40 }}>

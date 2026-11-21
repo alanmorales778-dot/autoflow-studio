@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { changeOrderStatus, createManualOrder, markBalance, updateOrder } from '../actions';
 import { balanceDue, reminderLink } from '@/lib/balance';
+import { waMeLink } from '@/lib/customers';
 import { optionsSummary } from '@/lib/options';
 import { normName } from '@/lib/format';
 import { Flash, StatusBadge } from '../ui';
@@ -71,6 +72,18 @@ function EditOrder({ o, bakery, T, open, back }) {
       </div>
     </details>
   );
+}
+
+// Mensaje «ya está listo» (no aplica a turnos ni reservas, que se hacen en el momento).
+function readyLink(bakery, T, o) {
+  if (['belleza', 'eventos'].includes(T.key) || !o.customer_phone) return null;
+  const name = String(o.customer_name || '').split(' ')[0];
+  const due = balanceDue(o);
+  const where = o.fulfillment === 'envio'
+    ? 'Te lo llevamos a tu domicilio.'
+    : `Podés pasar a retirarlo${bakery.pickup_address ? ` por ${bakery.pickup_address}` : ''}${o.slot ? ` (${o.slot})` : ''}.`;
+  const text = `¡Hola ${name}! Tu pedido de ${o.quantity} × ${o.product_name} ya está listo. ${where}${due > 0 ? ` Saldo a pagar: $${Math.round(due).toLocaleString('es-AR')}.` : ''} ¡Gracias! ${bakery.name}`;
+  return waMeLink(o.customer_phone, text);
 }
 
 export default async function Pedidos({ searchParams }) {
@@ -198,7 +211,8 @@ export default async function Pedidos({ searchParams }) {
                         <button className="btn secondary small">Saldo cobrado</button>
                       </form>
                     )}
-                    {['confirmado', 'entregado'].includes(o.status) && link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">{due > 0 ? 'Cobrar por WhatsApp' : 'WhatsApp'}</a>}
+                    {o.status === 'confirmado' && readyLink(bakery, T, o) && <a className="btn secondary small" href={readyLink(bakery, T, o)} target="_blank" rel="noreferrer">Avisar que está listo</a>}
+                    {(o.status === 'entregado' || (o.status === 'confirmado' && !readyLink(bakery, T, o))) && link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">{due > 0 ? 'Cobrar por WhatsApp' : 'WhatsApp'}</a>}
                     {editable && <EditOrder o={o} bakery={bakery} T={T} open={sp.editar === o.id} back={self} />}
                   </div>
                 </li>

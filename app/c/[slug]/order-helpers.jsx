@@ -119,3 +119,43 @@ export function FormMemory({ storageKey, restore }) {
   }, [storageKey, restore]);
   return <span ref={ref} hidden />;
 }
+
+// Campo de foto del pedido (referencia o receta): achica la imagen en el celular antes de enviarla,
+// así una foto de 8 MB pasa a ~300 KB y el pedido no falla por el tamaño.
+export function PhotoField({ name = 'foto' }) {
+  const [status, setStatus] = useState('');
+  async function onChange(e) {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || !/^image\//.test(file.type)) { setStatus(''); return; }
+    setStatus('Preparando la foto…');
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+      if (scale < 1 || file.size > 900 * 1024) {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+        if (blob) {
+          const dt = new DataTransfer();
+          dt.items.add(new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }));
+          input.files = dt.files;
+        }
+      }
+      setStatus('Foto lista ✓');
+    } catch {
+      setStatus(file.size > 4 * 1024 * 1024 ? 'La foto es muy pesada: probá con una captura de pantalla.' : 'Foto lista ✓');
+    }
+  }
+  return (
+    <>
+      <input name={name} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={onChange} />
+      {status && <div className="hint">{status}</div>}
+    </>
+  );
+}

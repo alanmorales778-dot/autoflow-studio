@@ -138,7 +138,7 @@ export default async function Agenda({ searchParams }) {
           <p>Hoy es {dateLabel(today)} · próximos 14 días</p>
         </div>
         <div className="row">
-          <CopyLink value={catalogUrl} label={`Copiar mi link de ${T.orders.toLowerCase()}`} />
+          <CopyLink value={catalogUrl} label="Copiar mi link" />
           <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>
         </div>
       </div>

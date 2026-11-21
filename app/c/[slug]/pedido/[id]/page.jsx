@@ -69,7 +69,7 @@ export default async function PedidoEstado({ params, searchParams }) {
             <>{Number(order.deposit_amount) > 0 && <>Seña: {money(order.deposit_amount)}{order.paid_at ? ' (pagada)' : ''} · </>}{due > 0 ? <>Saldo a pagar: {money(due)}</> : 'Todo pago'}</>
           )}
         </p>
-        {order.reference_photo_url && <img src={order.reference_photo_url} alt="Foto de referencia" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 12 }} />}
+        {order.reference_photo_url && <img src={order.reference_photo_url} alt="Foto adjunta" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 12 }} />}
         {pendingValid && order.payment_url && <a className="btn block" href={order.payment_url}>Pagar seña con Mercado Pago</a>}
         {canPayBalance && (
           <form action={payBalance}>

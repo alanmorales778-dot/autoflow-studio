@@ -7,7 +7,7 @@ import { moduleAccess } from '@/lib/modules';
 import { availableDates, reservedByProduct } from '@/lib/orders';
 import { money, dateLabel, WEEKDAYS } from '@/lib/format';
 import { placeOrder, placeSubscription } from './actions';
-import { QtyPicker, FulfillmentFields, FormMemory } from './order-helpers';
+import { QtyPicker, FulfillmentFields, FormMemory, PhotoField } from './order-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -183,7 +183,7 @@ export default async function Catalogo({ params, searchParams }) {
                       <div className="field"><label>¿Para qué ocasión? (opcional)</label><input name="occasion" placeholder="Ej: cumple de Sofi, aniversario" /></div>
                       <div className="field"><label>{t.note1.label} (opcional)</label><input name="dedication" maxLength={200} placeholder={t.note1.ph} /></div>
                       <div className="field"><label>{t.note2.label} (opcional)</label><input name="allergies" placeholder={t.note2.ph} /></div>
-                      <div className="field"><label>Foto de referencia (opcional)</label><input name="foto" type="file" accept="image/jpeg,image/png,image/webp" /></div>
+                      <div className="field"><label>{t.photoLabel || 'Foto de referencia'} (opcional)</label><PhotoField /></div>
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
                       <div className="summary" style={{ marginBottom: 12 }}>
                         {qty > 1 && <>{qty} unidades · </>}Precio base: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
