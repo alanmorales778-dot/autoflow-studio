@@ -53,7 +53,7 @@ export default function RubroDemo({ rubros }) {
               </div>
               <div className="bar"><div className="fillbar" /></div>
             </div>
-            <div className="mock-card n n1" style={{ alignItems: 'flex-start', boxShadow: '0 10px 24px -16px rgba(31,25,21,.35)' }}>
+            <div className="mock-card n n1" style={{ alignItems: 'flex-start', boxShadow: '0 10px 24px -16px rgba(24,24,27,.35)' }}>
               <span className="ic pulse" style={{ background: 'var(--brand-soft)' }}><Ico d={['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0']} /></span>
               <div><strong>{r.key === 'belleza' ? 'Turno nuevo desde tu link' : 'Pedido nuevo desde tu link'}</strong><div className="sub">{d.order}</div></div>
             </div>
@@ -63,7 +63,7 @@ export default function RubroDemo({ rubros }) {
               <strong className="disp num" style={{ color: 'var(--ok)' }}>{d.deposit}</strong>
             </div>
             <div className="mock-card n n3">
-              <span className="ic" style={{ background: 'var(--sunken)' }}><Ico d={['M8 2v4M16 2v4M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'm9 16 2 2 4-4']} color="#4A3F37" /></span>
+              <span className="ic" style={{ background: 'var(--sunken)' }}><Ico d={['M8 2v4M16 2v4M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'm9 16 2 2 4-4']} color="#3f3f46" /></span>
               <div><strong>{d.day} completo</strong> <span className="sub">· tu link ya no lo ofrece</span></div>
             </div>
             <div className="mock-card n n4" style={{ flexDirection: 'column', alignItems: 'stretch', borderColor: 'var(--warn-line)', background: '#fffaf1', position: 'relative' }}>
@@ -73,7 +73,7 @@ export default function RubroDemo({ rubros }) {
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
                 <span className="mock-btn"><span className="lbl-a">Actualizar precio</span><span className="lbl-b">Actualizado</span></span>
-                <svg className="mock-cursor" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v18l5-5 3.5 7 3-1.5L12 13.5h7z" fill="#1F1915" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                <svg className="mock-cursor" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2v18l5-5 3.5 7 3-1.5L12 13.5h7z" fill="#18181b" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round" /></svg>
               </div>
             </div>
           </div>

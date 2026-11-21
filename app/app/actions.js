@@ -101,6 +101,7 @@ export async function saveSettings(fd) {
     slug: slugify(str(fd, 'slug')) || bakery.slug,
     whatsapp_contact: str(fd, 'whatsapp_contact') || null,
     pickup_address: str(fd, 'pickup_address') || null,
+    policy_text: fd.has('policy_text') ? (str(fd, 'policy_text').slice(0, 600) || null) : bakery.policy_text ?? null,
     delivery_enabled: fd.get('delivery_enabled') === 'on',
     deposit_percent: Math.min(100, Math.max(0, Math.round(parseNum(str(fd, 'deposit_percent')) ?? 50))),
     hold_minutes: Math.min(1440, Math.max(5, Math.round(parseNum(str(fd, 'hold_minutes')) ?? 30))),

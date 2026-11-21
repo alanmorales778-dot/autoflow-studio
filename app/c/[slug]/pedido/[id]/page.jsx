@@ -1,4 +1,4 @@
-import { rubroOf } from '@/lib/rubros';
+import { rubroOf, mapsUrl } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdmin } from '@/lib/supabase';
@@ -12,6 +12,33 @@ import { isHolding } from '@/lib/orders';
 import { payBalance } from '../../actions';
 
 export const dynamic = 'force-dynamic';
+
+// «Agregar a mi calendario» (Google Calendar). Entiende «16:30», «10:00 a 13:00» o sin horario (todo el día).
+function calendarUrl(bakery, order, T) {
+  const d = order.date.replace(/-/g, '');
+  const times = String(order.slot || '').match(/\d{1,2}[:.]\d{2}/g) || [];
+  const hhmm = (t) => t.replace(/[:.]/, '').padStart(4, '0') + '00';
+  let dates;
+  if (times[0]) {
+    const start = hhmm(times[0]);
+    let end = times[1] ? hhmm(times[1]) : null;
+    if (!end) { const h = Number(start.slice(0, 2)) + 1; end = `${String(Math.min(23, h)).padStart(2, '0')}${start.slice(2)}`; }
+    dates = `${d}T${start}/${d}T${end}`;
+  } else {
+    const next = new Date(`${order.date}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
+    dates = `${d}/${next.toISOString().slice(0, 10).replace(/-/g, '')}`;
+  }
+  const where = order.fulfillment === 'envio' ? order.address : bakery.pickup_address;
+  const q = new URLSearchParams({ action: 'TEMPLATE', text: `${T.orderCap}: ${order.product_name} · ${bakery.name}`, dates, ctz: 'America/Argentina/Buenos_Aires' });
+  if (where) q.set('location', where);
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+function waLink(num) {
+  const digits = String(num || '').replace(/\D/g, '');
+  if (!digits) return null;
+  return `https://wa.me/${digits.startsWith('54') ? digits : `549${digits.replace(/^0/, '')}`}`;
+}
 
 export default async function PedidoEstado({ params, searchParams }) {
   const { slug, id } = await params;
@@ -38,6 +65,8 @@ export default async function PedidoEstado({ params, searchParams }) {
 
   const pendingValid = order.status === 'pendiente_sena' && isHolding(order);
   const due = balanceDue(order);
+  const maps = mapsUrl(bakery.pickup_address);
+  const wa = waLink(bakery.whatsapp_contact);
   const canPayBalance = ['confirmado', 'entregado'].includes(order.status) && due > 0 && !!bakery.mp_access_token_enc;
   return (
     <main className="narrow">
@@ -45,22 +74,25 @@ export default async function PedidoEstado({ params, searchParams }) {
       <div className="card" style={{ marginTop: 20 }}>
         {sp.error && <div className="alert bad">{sp.error}</div>}
         {order.status === 'confirmado' || order.status === 'entregado' ? (
-          <div className="alert ok"><strong>¡Pedido confirmado!</strong> Gracias, {order.customer_name.split(' ')[0]}.{order.balance_paid_at && ' Está todo pago.'}</div>
+          <div className="alert ok"><strong>¡{T.orderCap} confirmado{T.order === 'reserva' ? 'a' : ''}!</strong> Gracias, {order.customer_name.split(' ')[0]}.{order.balance_paid_at && ' Está todo pago.'}</div>
         ) : order.status === 'pendiente_sena' ? (
           <div className="alert warn">
             <strong>Falta pagar la seña.</strong>
             {order.expires_at ? <> Tenés tiempo hasta {whenLabel(order.expires_at)}; si no, el lugar se libera.{!order.payment_url && <> {bakery.name} te va a escribir por WhatsApp para coordinar el pago.</>}</> : <> {bakery.name} te va a contactar para coordinar el pago.</>}
           </div>
         ) : (
-          <div className="alert bad"><strong>Este pedido {order.status === 'vencido' ? 'venció porque no se pagó la seña a tiempo' : 'fue cancelado'}.</strong> Podés hacer uno nuevo.</div>
+          <div className="alert bad"><strong>{T.order === 'reserva' ? 'Esta' : 'Este'} {T.order} {order.status === 'vencido' ? 'venció porque no se pagó la seña a tiempo' : (T.order === 'reserva' ? 'fue cancelada' : 'fue cancelado')}.</strong></div>
         )}
-        <h2>Detalle</h2>
+        <div className="when-box">
+          <span className="when-d">{dateLabel(order.date)}</span>
+          {order.slot && <span className="when-t num">{order.slot}</span>}
+        </div>
+        <h2 style={{ marginTop: 16 }}>Detalle</h2>
         <p>
-          {order.quantity} × {order.product_name}<br />
+          {order.quantity > 1 ? `${order.quantity} × ` : ''}{order.product_name}<br />
           {order.options?.length > 0 && <><small>{optionsSummary(order.options)}</small><br /></>}
           {order.dedication && <><small>{T.note1.label}: «{order.dedication}»</small><br /></>}
           {order.allergies && <><small>{T.note2.label}: {order.allergies}</small><br /></>}
-          Fecha: {dateLabel(order.date)}{order.slot ? ` · ${order.slot}` : ''}<br />
           {order.fulfillment === 'envio' ? `${T.envio}: ${order.address}` : `${T.retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ' · te confirmamos la dirección por WhatsApp'}`}<br />
           Total: {money(order.total)}<br />
           {order.status === 'pendiente_sena' && Number(order.deposit_amount) > 0 ? (
@@ -79,9 +111,17 @@ export default async function PedidoEstado({ params, searchParams }) {
             <button className="btn block">Pagar saldo de {money(due)} con Mercado Pago</button>
           </form>
         )}
-        {['vencido', 'cancelado'].includes(order.status) && <Link className="btn block" href={`/c/${slug}`}>Hacer un pedido nuevo</Link>}
+        {['confirmado', 'pendiente_sena'].includes(order.status) && (
+          <div className="row" style={{ gap: 8, marginTop: 4 }}>
+            <a className="btn secondary small" href={calendarUrl(bakery, order, T)} target="_blank" rel="noreferrer">Agregar a mi calendario</a>
+            {order.fulfillment !== 'envio' && maps && <a className="btn secondary small" href={maps} target="_blank" rel="noreferrer">Cómo llegar</a>}
+            {wa && <a className="btn secondary small" href={wa} target="_blank" rel="noreferrer">Escribir por WhatsApp</a>}
+          </div>
+        )}
+        {bakery.policy_text && <div className="policy" style={{ marginTop: 16 }}><strong>Condiciones</strong><p>{bakery.policy_text}</p></div>}
+        {['vencido', 'cancelado'].includes(order.status) && <Link className="btn block" href={`/c/${slug}`}>Hacer {T.order === 'reserva' ? 'una' : 'uno'} {T.order === 'reserva' ? 'nueva' : 'nuevo'}</Link>}
       </div>
-      <p className="muted" style={{ fontSize: 13 }}>Guardá este link para ver el estado de tu pedido.</p>
+      <p className="muted" style={{ fontSize: 13 }}>Guardá este link para ver cómo va tu {T.order}.</p>
     </main>
   );
 }

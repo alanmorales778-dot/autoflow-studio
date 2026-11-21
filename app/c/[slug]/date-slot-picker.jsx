@@ -5,7 +5,7 @@ import { useState } from 'react';
 const legend = { fontWeight: 600, fontSize: 13, color: 'var(--ink-2)', marginBottom: 6, padding: 0 };
 
 // Fecha y horario juntos: con cupo por horario, al cambiar el día se muestran solo los horarios con lugar.
-export default function DateSlotPicker({ dates, allSlots, perSlot }) {
+export default function DateSlotPicker({ dates, allSlots, perSlot, title = 'Fecha' }) {
   const [picked, setDate] = useState(dates[0]?.date);
   // Si cambia la cantidad y el día elegido ya no tiene lugar, pasamos al primero disponible.
   const date = dates.some((d) => d.date === picked) ? picked : dates[0]?.date;
@@ -16,7 +16,7 @@ export default function DateSlotPicker({ dates, allSlots, perSlot }) {
   return (
     <>
       <fieldset className="field" style={{ border: 0, padding: 0, margin: '0 0 14px' }}>
-        <legend style={legend}>Fecha · solo te mostramos días con lugar</legend>
+        <legend style={legend}>{title} · solo ves días con lugar</legend>
         <div className="dates">
           {dates.map((d) => (
             <label key={d.date} className="date-opt" style={{ margin: 0 }}>

@@ -126,54 +126,32 @@ export default async function Agenda({ searchParams }) {
   if (!showOnboarding && !bakery.sheet_productos_id && !(products || []).length) todo.push({ tone: 'warn', text: <>Todavía no cargaste tus {T.items.toLowerCase()}.</>, href: '/app/productos', cta: 'Cargar' });
   if (!showOnboarding && !bakery.mp_access_token_enc) todo.push({ tone: 'info', text: <>Conectá Mercado Pago para cobrar las señas solas.</>, href: '/app/configuracion#mercadopago', cta: 'Conectar' });
 
-  const busyDays = days.filter((x) => x.d === today || x.dayOrders.length > 0);
-  const freeDays = days.filter((x) => x.d !== today && x.dayOrders.length === 0);
+  if (tomorrowOrders.length > 0) todo.push({ tone: 'info', text: <>Mañana {tomorrowOrders.length === 1 ? 'tenés 1' : `tenés ${tomorrowOrders.length}`} {tomorrowOrders.length === 1 ? T.order : T.orders.toLowerCase()}. Mandá el recordatorio con el saldo.</>, href: `/app?dia=${addDays(today, 1)}#dia`, cta: 'Recordar' });
+
+  const sel = days.find((x) => x.d === sp?.dia) || days[0];
+  const selDate = sel.d;
+  const selOrders = [...sel.dayOrders].sort((a, b) => (a.slot || '99').localeCompare(b.slot || '99'));
+  const groups = [];
+  for (const o of selOrders) {
+    const key = o.slot || '';
+    const g = groups.find((x) => x.key === key);
+    if (g) g.items.push(o); else groups.push({ key, items: [o] });
+  }
+  const selCap = sel.usage.find((u) => u.label === 'Total') || sel.usage[0] || null;
+  const selBalance = selOrders.filter((o) => o.status !== 'pendiente_sena').reduce((s, o) => s + balanceDue(o), 0);
+  const selWaiting = selOrders.filter((o) => o.status === 'pendiente_sena').length;
+  const isToday = selDate === today;
+  const isTomorrow = selDate === addDays(today, 1);
+  const dayTitle = isToday ? 'Hoy' : isTomorrow ? 'Mañana' : dateLabel(selDate);
+  const maxCount = Math.max(1, ...days.map((x) => x.dayOrders.length));
+  const WD = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  const loadSlots = bakery.slot_capacity && (bakery.slots || []).length > 0
+    ? slotLoad(bakery.slots, sel.dayOrders.filter((o) => o.status === 'entregado' || isHolding(o)))
+    : null;
 
   return (
     <>
       <Flash sp={sp} />
-      <div className="page-head">
-        <div>
-          <h1>Agenda</h1>
-          <p>Hoy es {dateLabel(today)} · próximos 14 días</p>
-        </div>
-        <div className="row">
-          <CopyLink value={catalogUrl} label="Copiar mi link" />
-          <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>
-        </div>
-      </div>
-
-      <div className="kpis">
-        <div className="card kpi">
-          <span className="l">{T.orders} para hoy</span>
-          <span className="v">{todayOrders.length}</span>
-          <small>{todayWaiting ? `${todayWaiting} esperando seña` : todayOrders.length ? 'Todos confirmados' : 'Día libre'}</small>
-        </div>
-        <div className="card kpi">
-          <span className="l">Señas cobradas · 7 días</span>
-          <span className="v">{money(depositsWeek)}</span>
-          <small>{bakery.mp_access_token_enc ? 'Por Mercado Pago' : 'Cobradas a mano'}</small>
-        </div>
-        <div className="card kpi">
-          <span className="l">Saldo por cobrar · 14 días</span>
-          <span className="v">{money(upcomingBalance)}</span>
-          <small>al entregar</small>
-        </div>
-        <div className="card kpi">
-          <span className="l">Cupo de hoy</span>
-          {todayCap ? (
-            <>
-              <span className="v">{todayCap.used} / {todayCap.max}</span>
-              <div className={`bar ${todayCap.used >= todayCap.max ? 'full' : ''}`}><span style={{ width: `${Math.min(100, Math.round((todayCap.used / Math.max(1, todayCap.max)) * 100))}%` }} /></div>
-            </>
-          ) : (
-            <>
-              <span className="v">Sin límite</span>
-              <small><Link href="/app/configuracion#cupos">Poner cupos</Link></small>
-            </>
-          )}
-        </div>
-      </div>
 
       {showOnboarding && (
         <div className="card onboarding">
@@ -208,99 +186,151 @@ export default async function Agenda({ searchParams }) {
         </div>
       )}
 
-      {todo.length > 0 && (
-        <div className="card todo">
-          <h2>Para revisar</h2>
-          <ul>
-            {todo.map((it, i) => (
-              <li key={i} className={`todo-${it.tone}`}>
-                <span className="todo-dot" aria-hidden="true" />
-                <span className="todo-text">{it.text}</span>
-                <Link className="btn secondary small" href={it.href}>{it.cta}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {tomorrowOrders.length > 0 && (
-        <div className="card">
-          <h2>Mañana: {tomorrowOrders.length} {tomorrowOrders.length === 1 ? 'entrega' : 'entregas'}</h2>
-          <p className="muted">Mandales un recordatorio con el saldo. Se abre tu WhatsApp con el mensaje listo.</p>
-          {tomorrowOrders.map((o) => {
-            const link = o.customer_phone ? reminderLink(bakery, o) : null;
-            return (
-              <div key={o.id} className="order-line row between">
-                <span>{o.customer_name} · {o.quantity} × {o.product_name}{o.slot ? ` · ${o.slot}` : ''}{balanceDue(o) > 0 ? ` · saldo ${money(balanceDue(o))}` : ' · pagado'}</span>
-                {link ? <a className="btn small" href={link} target="_blank" rel="noreferrer">Recordar</a> : <small className="muted">sin teléfono</small>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="grid grid-2">
-        {busyDays.map(({ d, dayOrders, usage }) => (
-          <div key={d} className={`card day ${dayOrders.length ? '' : 'empty'} ${d === today ? 'today' : ''}`} style={{ marginBottom: 0 }}>
-            <div className="row between">
-              <h3 style={{ margin: 0 }}>{d === today ? 'Hoy · ' : ''}{dateLabel(d)}</h3>
-              {blockedSet.has(d) ? <span className="badge bad">Bloqueado</span> : null}
+      <div className="hoy-layout">
+        <section className="hoy" id="dia" aria-label="Tu día">
+          <header className="hoy-head">
+            <div>
+              <p className="hoy-date">{isToday || isTomorrow ? dateLabel(selDate) : (blockedSet.has(selDate) ? 'Día bloqueado' : 'Próximo')}</p>
+              <h1 className="hoy-title">{dayTitle}</h1>
+              <p className="hoy-sum">
+                {selOrders.length === 0
+                  ? (isToday ? 'Día libre. Buen momento para preparar lo que viene.' : 'Sin nada agendado.')
+                  : <>{selOrders.length} {selOrders.length === 1 ? T.order : T.orders.toLowerCase()}{selBalance > 0 ? <> · <strong>{money(selBalance)}</strong> a cobrar</> : ''}{selWaiting ? ` · ${selWaiting} sin seña` : ''}</>}
+              </p>
             </div>
-            {usage.length > 0 && (
-              <div className="row" style={{ margin: '6px 0' }}>
-                {usage.map((u) => (
-                  <span key={u.label} className={`badge ${u.used >= u.max ? 'bad' : u.used >= u.max * 0.75 ? 'warn' : 'ok'}`}>
-                    {u.label}: {u.used}/{u.max}
-                  </span>
-                ))}
-              </div>
-            )}
-            {bakery.slot_capacity && (bakery.slots || []).length > 0 && dayOrders.length > 0 && (() => {
-              const load = slotLoad(bakery.slots, dayOrders.filter((o) => o.status === 'entregado' || isHolding(o)));
+            <div className="hoy-actions">
+              <CopyLink value={catalogUrl} label="Copiar mi link" />
+              <Link href="/app/pedidos?nuevo=1#nuevo" className="btn small hide-mobile">+ Cargar {T.order}</Link>
+            </div>
+          </header>
+
+          <nav className="week" aria-label="Elegí el día">
+            {days.map(({ d, dayOrders }) => {
+              const n = dayOrders.length;
+              const cls = ['wk', d === selDate ? 'on' : '', d === today ? 'is-today' : '', blockedSet.has(d) ? 'blocked' : '', n ? '' : 'free'].join(' ');
               return (
-                <div className="row" style={{ margin: '6px 0', gap: 6 }} aria-label="Ocupación por horario">
+                <Link key={d} href={d === today ? '/app#dia' : `/app?dia=${d}#dia`} className={cls} aria-current={d === selDate ? 'date' : undefined} scroll={false}>
+                  <span className="wk-d">{d === today ? 'hoy' : WD[weekdayOf(d)]}</span>
+                  <span className="wk-n">{Number(d.slice(8))}</span>
+                  <span className="wk-load" aria-label={`${n} ${n === 1 ? T.order : T.orders.toLowerCase()}`}>
+                    <span style={{ width: `${n ? Math.max(18, Math.round((n / maxCount) * 100)) : 0}%` }} />
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {(selCap || loadSlots) && (
+            <div className="hoy-cap">
+              {selCap && (
+                <div className="cap-line">
+                  <span>Cupo {selCap.label === 'Total' ? 'del día' : selCap.label}</span>
+                  <div className={`bar ${selCap.used >= selCap.max ? 'full' : ''}`}><span style={{ width: `${Math.min(100, Math.round((selCap.used / Math.max(1, selCap.max)) * 100))}%` }} /></div>
+                  <strong className="num">{selCap.used}/{selCap.max}</strong>
+                </div>
+              )}
+              {loadSlots && selOrders.length > 0 && (
+                <div className="slot-chips" aria-label="Ocupación por horario">
                   {bakery.slots.map((sl) => (
-                    <span key={sl} className={`badge ${load[sl] >= bakery.slot_capacity ? 'bad' : load[sl] > 0 ? 'warn' : ''}`}>{sl} · {load[sl]}/{bakery.slot_capacity}</span>
+                    <span key={sl} className={`slot-chip ${loadSlots[sl] >= bakery.slot_capacity ? 'full' : loadSlots[sl] > 0 ? 'some' : ''}`}>{sl}<b className="num">{loadSlots[sl]}/{bakery.slot_capacity}</b></span>
                   ))}
                 </div>
-              );
-            })()}
-            {dayOrders.length === 0 ? (
-              <p className="muted" style={{ margin: '6px 0 0' }}>Nada para hoy</p>
-            ) : (
-              dayOrders.map((o) => (
-                <div key={o.id} className="order-line">
-                  <div className="row between">
-                    <strong>{o.quantity} × {o.product_name}</strong>
-                    <StatusBadge status={o.status} />
+              )}
+            </div>
+          )}
+
+          {selOrders.length === 0 ? (
+            <div className="hoy-empty">
+              <p>{blockedSet.has(selDate) ? 'Este día está bloqueado: no se pueden pedir.' : `Cuando alguien pida por tu link, aparece acá.`}</p>
+              <div className="row" style={{ justifyContent: 'center' }}>
+                <Link href="/app/pedidos?nuevo=1#nuevo" className="btn secondary small">+ Cargar {T.order} a mano</Link>
+              </div>
+            </div>
+          ) : (
+            <ol className="timeline">
+              {groups.map((g) => (
+                <li key={g.key || 'sin'} className="tl-group">
+                  <div className="tl-time num">{g.key || '—'}</div>
+                  <div className="tl-items">
+                    {g.items.map((o) => {
+                      const due = balanceDue(o);
+                      const remind = !isToday && o.status === 'confirmado' && o.customer_phone ? reminderLink(bakery, o) : null;
+                      return (
+                        <article key={o.id} className={`tl-card st-${o.status}`}>
+                          <div className="tl-top">
+                            <strong className="tl-what">{o.quantity > 1 ? `${o.quantity} × ` : ''}{o.product_name}</strong>
+                            <StatusBadge status={o.status} />
+                          </div>
+                          <div className="tl-who">
+                            {o.customer_name}
+                            <span className="tl-sep">{o.fulfillment === 'envio' ? `${T.envio}${o.address ? `: ${o.address}` : ''}` : T.retiro}</span>
+                          </div>
+                          {(o.options?.length > 0 || o.dedication) && (
+                            <div className="tl-note">
+                              {o.options?.length > 0 && optionsSummary(o.options)}
+                              {o.options?.length > 0 && o.dedication ? ' · ' : ''}
+                              {o.dedication && <>{T.note1.label}: «{o.dedication}»</>}
+                            </div>
+                          )}
+                          {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
+                          <div className="tl-foot">
+                            <span className={`tl-money num ${due > 0 && o.status !== 'pendiente_sena' ? '' : 'paid'}`}>
+                              {o.status === 'pendiente_sena' ? 'Esperando seña' : due > 0 ? `Saldo ${money(due)}` : 'Pagado'}
+                            </span>
+                            <div className="tl-btns">
+                              {remind && <a className="btn small" href={remind} target="_blank" rel="noreferrer">Recordar</a>}
+                              {o.status === 'confirmado' && selDate <= today && (
+                                <form action={changeOrderStatus}>
+                                  <input type="hidden" name="id" value={o.id} />
+                                  <input type="hidden" name="status" value="entregado" />
+                                  <input type="hidden" name="back" value={isToday ? '/app' : `/app?dia=${selDate}`} />
+                                  <button className="btn small">{T.key === 'belleza' ? 'Atendido' : 'Entregado'}</button>
+                                </form>
+                              )}
+                              <Link className="btn ghost small" href={`/app/pedidos?editar=${o.id}#p-${o.id}`}>Editar</Link>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-                  <div className="muted" style={{ fontSize: 13 }}>
-                    {o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}{o.slot ? ` · ${o.slot}` : ''} · {o.fulfillment === 'envio' ? `${T.envio}: ${o.address}` : T.retiro}
-                    {o.options?.length > 0 && <><br />{optionsSummary(o.options)}</>}
-                    {o.dedication && <><br />{T.note1.label}: «{o.dedication}»</>}
-                    {balanceDue(o) > 0 && o.status !== 'pendiente_sena' && <><br />Saldo a cobrar: {money(balanceDue(o))}</>}
-                  </div>
-                  {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
-                  {o.status === 'confirmado' && (
-                    <form action={changeOrderStatus} className="row" style={{ marginTop: 6, gap: 8 }}>
-                      <input type="hidden" name="id" value={o.id} />
-                      <input type="hidden" name="status" value="entregado" />
-                      <input type="hidden" name="back" value="/app" />
-                      {d <= today && <button className="btn secondary small">Marcar entregado</button>}
-                      <Link className="btn secondary small" href={`/app/pedidos?editar=${o.id}#p-${o.id}`}>Editar</Link>
-                    </form>
-                  )}
-                </div>
-              ))
-            )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+        <aside className="hoy-side">
+          {todo.length > 0 && (
+            <div className="card todo">
+              <h2>Para revisar</h2>
+              <ul>
+                {todo.map((it, i) => (
+                  <li key={i} className={`todo-${it.tone}`}>
+                    <span className="todo-dot" aria-hidden="true" />
+                    <span className="todo-text">{it.text}</span>
+                    <Link className="btn secondary small" href={it.href}>{it.cta}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="card stats">
+            <div className="stat">
+              <span>Señas cobradas, 7 días</span>
+              <strong className="num">{money(depositsWeek)}</strong>
+            </div>
+            <div className="stat">
+              <span>Saldo por cobrar, 14 días</span>
+              <strong className="num">{money(upcomingBalance)}</strong>
+            </div>
+            <div className="stat">
+              <span>Cupo de hoy</span>
+              {todayCap ? <strong className="num">{todayCap.used} de {todayCap.max}</strong> : <Link href="/app/configuracion#cupos">Poner cupos</Link>}
+            </div>
           </div>
-        ))}
+        </aside>
       </div>
-      {freeDays.length > 0 && (
-        <p className="muted free-days">
-          Días libres: {freeDays.map((x) => `${dateLabel(x.d)}${blockedSet.has(x.d) ? ' (bloqueado)' : ''}`).join(' · ')}
-        </p>
-      )}
     </>
   );
 }

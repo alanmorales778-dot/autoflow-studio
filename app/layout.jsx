@@ -13,7 +13,7 @@ export const metadata = {
   formatDetection: { telephone: false },
 };
 
-export const viewport = { themeColor: '#faf7f2' };
+export const viewport = { themeColor: '#fafaf9' };
 
 export default function RootLayout({ children }) {
   return (

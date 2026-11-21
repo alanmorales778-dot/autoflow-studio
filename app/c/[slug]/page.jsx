@@ -1,4 +1,4 @@
-import { rubroOf } from '@/lib/rubros';
+import { rubroOf, mapsUrl } from '@/lib/rubros';
 import DateSlotPicker from './date-slot-picker';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -13,8 +13,9 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { data } = await createAdmin().from('bakeries').select('name').eq('slug', slug).maybeSingle();
-  return { title: data ? `${data.name} — Hacé tu pedido` : 'Catálogo' };
+  const { data } = await createAdmin().from('bakeries').select('name,business_type').eq('slug', slug).maybeSingle();
+  const L = rubroOf(data).link;
+  return { title: data ? `${data.name} — ${L.mode === 'turno' ? 'Reservá tu turno' : L.mode === 'reserva' ? 'Reservá tu fecha' : 'Hacé tu pedido'}` : 'Catálogo' };
 }
 
 function waLink(num) {
@@ -60,6 +61,8 @@ export default async function Catalogo({ params, searchParams }) {
   const { data: bakery } = await admin.from('bakeries').select('*').eq('slug', slug).maybeSingle();
   if (!bakery) notFound();
   const t = rubroOf(bakery);
+  const L = t.link;
+  const maps = mapsUrl(bakery.pickup_address);
   const { data: sub } = await admin.from('subscriptions').select('*').eq('bakery_id', bakery.id).maybeSingle();
   const access = moduleAccess(sub);
   const open = access.base;
@@ -75,7 +78,7 @@ export default async function Catalogo({ params, searchParams }) {
 
   const selected = sp.p ? (products || []).find((p) => p.id === sp.p) : null;
   const subMode = sp.modo === 'suscripcion' && selected?.allow_subscription && access.recurring;
-  const qty = Math.max(1, Math.min(50, Number(sp.q) || 1));
+  const qty = L.qty ? Math.max(1, Math.min(50, Number(sp.q) || 1)) : 1;
   const dates = selected && open && !subMode ? await availableDates(admin, bakery, selected, qty) : [];
   const wa = waLink(bakery.whatsapp_contact);
   const depositPct = bakery.deposit_percent;
@@ -88,8 +91,14 @@ export default async function Catalogo({ params, searchParams }) {
           <Link href={`/c/${slug}`} className={`store-avatar ${bakery.logo_url ? 'has-logo' : ''}`} aria-label={`${bakery.name}, inicio`}>{bakery.logo_url ? <img src={bakery.logo_url} alt="" /> : (bakery.name || '?').trim().charAt(0).toUpperCase()}</Link>
           <div style={{ flex: '1 1 320px' }}>
             <h1 className="disp">{bakery.name}</h1>
+            {bakery.pickup_address && (
+              <p className="store-addr">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
+                <span>{bakery.pickup_address}</span>
+                {maps && <a href={maps} target="_blank" rel="noreferrer">Cómo llegar</a>}
+              </p>
+            )}
             <div className="store-chips">
-              {bakery.pickup_address && <span>{t.retiro} · {bakery.pickup_address}</span>}
               {bakery.delivery_enabled && <span>{t.envio}</span>}
               {bakery.min_days_ahead > 0 && <span>Pedí con {bakery.min_days_ahead} {bakery.min_days_ahead === 1 ? 'día' : 'días'} de anticipación</span>}
               {depositPct > 0 && <span className="brand">Seña del {depositPct} % para reservar</span>}
@@ -104,7 +113,7 @@ export default async function Catalogo({ params, searchParams }) {
         {selected && open ? (
           <div className="grid grid-2">
             <div>
-              <Link href={`/c/${slug}`}>← Ver todos los productos</Link>
+              <Link href={`/c/${slug}`}>← Ver todo</Link>
               <div className="card product-card" style={{ marginTop: 12 }}>
                 {selected.photo_url ? <img src={selected.photo_url} alt={selected.name} /> : <div className="ph" aria-hidden="true">{selected.name.charAt(0)}</div>}
                 <h2>{selected.name}</h2>
@@ -150,14 +159,14 @@ export default async function Catalogo({ params, searchParams }) {
                 </>
               ) : (
                 <>
-                  <h2>Tu pedido</h2>
-                  <QtyPicker productId={selected.id} qty={qty} />
+                  <h2>{L.form}</h2>
+                  {L.qty && <QtyPicker productId={selected.id} qty={qty} />}
                   {left(selected) === 0 ? (
                     <div className="alert warn">Agotado por ahora.</div>
                   ) : left(selected) !== null && left(selected) < qty ? (
                     <div className="alert warn">Solo quedan {left(selected)} unidades.</div>
                   ) : dates.length === 0 ? (
-                    <div className="alert warn">No quedan fechas disponibles para {qty} {qty === 1 ? 'unidad' : 'unidades'} en los próximos días.</div>
+                    <div className="alert warn">No quedan {L.mode === 'turno' ? 'turnos' : 'fechas'} disponibles{L.qty ? ` para ${qty} ${qty === 1 ? 'unidad' : 'unidades'}` : ''} en los próximos días.{wa ? ' Escribinos por WhatsApp y vemos.' : ''}</div>
                   ) : (
                     <form action={placeOrder}>
                       <input type="hidden" name="slug" value={slug} />
@@ -178,19 +187,21 @@ export default async function Catalogo({ params, searchParams }) {
                         dates={dates.map((d) => { const [wd, dm] = dateLabel(d.date).split(' '); return { ...d, wd, dm, dn: dm.split('/')[0] }; })}
                         allSlots={bakery.slots || []}
                         perSlot={!!bakery.slot_capacity}
+                        title={L.when}
                       />
                       <DeliveryFields bakery={bakery} noSlots />
-                      <div className="field"><label>¿Para qué ocasión? (opcional)</label><input name="occasion" placeholder="Ej: cumple de Sofi, aniversario" /></div>
+                      {L.occasion && <div className="field"><label>¿Para qué ocasión? (opcional)</label><input name="occasion" placeholder="Ej: cumple de Sofi, aniversario" /></div>}
                       <div className="field"><label>{t.note1.label} (opcional)</label><input name="dedication" maxLength={200} placeholder={t.note1.ph} /></div>
                       <div className="field"><label>{t.note2.label} (opcional)</label><input name="allergies" placeholder={t.note2.ph} /></div>
-                      <div className="field"><label>{t.photoLabel || 'Foto de referencia'} (opcional)</label><PhotoField /></div>
+                      {L.photo && <div className="field"><label>{t.photoLabel || 'Foto de referencia'} (opcional)</label><PhotoField /></div>}
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
                       <div className="summary" style={{ marginBottom: 12 }}>
                         {qty > 1 && <>{qty} unidades · </>}Precio base: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
                         {depositPct > 0 && <> · Seña: {depositPct}% del total</>}
                         {depositPct > 0 && bakery.mp_access_token_enc && <div className="muted" style={{ fontSize: 13 }}>Vas a pagar la seña con Mercado Pago. Tenés {bakery.hold_minutes} minutos; si no, el cupo se libera.</div>}
                       </div>
-                      <button className="btn block">{depositPct > 0 && bakery.mp_access_token_enc ? 'Confirmar y pagar seña' : 'Enviar pedido'}</button>
+                      {bakery.policy_text && <div className="policy"><strong>Antes de confirmar</strong><p>{bakery.policy_text}</p></div>}
+                      <button className="btn block">{depositPct > 0 && bakery.mp_access_token_enc ? 'Confirmar y pagar seña' : L.submit}</button>
                     </form>
                   )}
                 </>
@@ -199,9 +210,10 @@ export default async function Catalogo({ params, searchParams }) {
           </div>
         ) : (
           <>
-            <h2 className="disp" style={{ fontSize: 24 }}>Elegí qué querés</h2>
+            <h2 className="disp" style={{ fontSize: 24 }}>{L.pick}</h2>
+            {bakery.policy_text && <details className="policy-fold"><summary>Condiciones</summary><p>{bakery.policy_text}</p></details>}
             {!products || products.length === 0 ? (
-              <p className="muted">Todavía no hay productos cargados.</p>
+              <p className="muted">Todavía no hay nada cargado. Escribinos por WhatsApp.</p>
             ) : (
               <div className="grid grid-3">
                 {products.map((p) => {
@@ -219,7 +231,7 @@ export default async function Catalogo({ params, searchParams }) {
                         {l === 0 ? <span className="badge bad">Agotado</span> : open ? (
                           <span className="row" style={{ gap: 6 }}>
                             {p.allow_subscription && access.recurring && <Link className="btn secondary small" href={`/c/${slug}?p=${p.id}&modo=suscripcion`}>Suscribirme</Link>}
-                            <Link className="btn small" href={`/c/${slug}?p=${p.id}`}>Pedir</Link>
+                            <Link className="btn small" href={`/c/${slug}?p=${p.id}`}>{L.cta}</Link>
                           </span>
                         ) : null}
                       </div>

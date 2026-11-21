@@ -66,6 +66,11 @@ export default async function Configuracion({ searchParams }) {
               </div>
               <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia los nombres de la app. No borra nada.</div></div>
             </div>
+            <div className="field" style={{ marginTop: 4 }}>
+              <label>Condiciones para tus clientes (opcional)</label>
+              <textarea name="policy_text" maxLength={600} rows={3} defaultValue={bakery.policy_text || ''} placeholder={t.link.policyPh} />
+              <div className="hint">Se ven en tu link antes de {t.key === 'belleza' ? 'reservar' : 'pedir'} y en el detalle que recibe el cliente. Cancelaciones, seña, tolerancia: lo que te evite discusiones.</div>
+            </div>
           </fieldset>
           <fieldset className="set">
             <legend>Cuándo te pueden {t.key === 'belleza' ? 'reservar' : 'pedir'}</legend>

@@ -3,7 +3,7 @@
 .wrap {
   --fast: 180ms;
   --out: cubic-bezier(.16, 1, .3, 1);
-  --hair: rgba(31, 25, 21, .08);
+  --hair: rgba(24, 24, 27, .08);
   background: var(--card);
   border: 1px solid var(--hair);
   border-radius: var(--radius);
@@ -71,7 +71,7 @@
 .rowLine { display: flex; align-items: center; gap: 4px; min-height: 56px; }
 .rowDone .rowLine { opacity: .5; }
 .rowSettling { animation: settle 420ms var(--out) forwards; }
-.rowOpen { background: #fcfaf7; border-radius: 12px; border-top-color: transparent; box-shadow: 0 0 0 1px var(--hair); margin: 4px 0; }
+.rowOpen { background: #fafaf9; border-radius: 12px; border-top-color: transparent; box-shadow: 0 0 0 1px var(--hair); margin: 4px 0; }
 .rowOpen + .row { border-top-color: transparent; }
 
 @keyframes enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
@@ -95,7 +95,7 @@
 .name { font-size: 16px; font-weight: 600; color: var(--ink); line-height: 1.3; text-decoration: line-through; text-decoration-color: transparent; text-decoration-thickness: 1.5px; transition: text-decoration-color 200ms ease-out, color 200ms ease-out; overflow-wrap: anywhere; }
 .rowDone .name { text-decoration-color: var(--muted); color: var(--muted); }
 .details { font-size: 14px; color: var(--ink-2); }
-.addDetails { font-size: 13px; color: #a8998c; }
+.addDetails { font-size: 13px; color: #a1a1aa; }
 .note { font-size: 12px; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Edición de un ítem (se abre en el lugar) ---------- */
@@ -124,7 +124,7 @@
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 6px; border: 0; background: transparent; border-radius: 8px;
   font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer;
 }
-.sectionToggle:hover { background: rgba(31, 25, 21, .04); }
+.sectionToggle:hover { background: rgba(24, 24, 27, .04); }
 .chev { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transform: rotate(-90deg); transition: transform var(--fast) var(--out); }
 [aria-expanded="true"] > .chev { transform: none; }
 .count { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 1px 8px; }
@@ -132,7 +132,7 @@
 .confirmText { font-size: 13px; color: var(--ink-2); padding-right: 2px; }
 
 .textBtn { min-height: 44px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; }
-.textBtn:hover { background: rgba(31, 25, 21, .05); color: var(--ink); }
+.textBtn:hover { background: rgba(24, 24, 27, .05); color: var(--ink); }
 .textBtnDanger { color: var(--bad); font-weight: 600; }
 .textBtnDanger:hover { background: var(--bad-soft); color: var(--bad); }
 .textBtnBrand { color: var(--brand); font-weight: 700; }
