@@ -66,7 +66,7 @@ export default function RubroDemo({ rubros }) {
               <span className="ic" style={{ background: 'var(--sunken)' }}><Ico d={['M8 2v4M16 2v4M3 10h18', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'm9 16 2 2 4-4']} color="#3f3f46" /></span>
               <div><strong>{d.day} completo</strong> <span className="sub">· tu link ya no lo ofrece</span></div>
             </div>
-            <div className="mock-card n n4" style={{ flexDirection: 'column', alignItems: 'stretch', borderColor: 'var(--warn-line)', background: '#fffaf1', position: 'relative' }}>
+            <div className="mock-card n n4" style={{ flexDirection: 'column', alignItems: 'stretch', borderColor: 'var(--warn-line)', background: '#fafaf9', position: 'relative' }}>
               <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>
                 <span className="ic" style={{ background: 'var(--warn-soft)' }}><Ico d={['M3 17 9 11l4 4 8-8', 'M14 7h7v7']} color="#B45309" /></span>
                 <div><strong>{d.alert}</strong><div className="sub">{d.alertSub} <strong className="num">{d.price}</strong></div></div>

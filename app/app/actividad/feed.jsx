@@ -33,7 +33,7 @@ export default function Feed({ events }) {
       <div className="log">
         <div className="log-head"><span className="live" aria-hidden="true" />en vivo · se actualiza cada 30 s · {shown.length} eventos</div>
         {shown.length === 0 ? (
-          <div className="log-row"><span className="m" style={{ gridColumn: '1 / -1', color: '#bfae9f' }}>Sin movimientos todavía. Cuando entren pedidos y pagos los vas a ver acá.</span></div>
+          <div className="log-row"><span className="m" style={{ gridColumn: '1 / -1', color: '#a1a1aa' }}>Sin movimientos todavía. Cuando entren pedidos y pagos los vas a ver acá.</span></div>
         ) : (
           shown.map((e, i) => (
             <div key={`${e.at}-${i}`} className="log-row">

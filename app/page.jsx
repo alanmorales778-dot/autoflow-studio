@@ -35,14 +35,38 @@ const DOLORES = [
   },
 ];
 
-const ANTES_DESPUES = [
-  ['Respondés precios y fechas uno por uno', 'El cliente ve precios, fechas y horarios libres en tu link y pide solo'],
-  ['Anotás en un cuaderno o en el chat', 'Cada pedido queda en la agenda con todos sus datos, y te llega un mail'],
-  ['Aceptás de más y después no llegás', 'El día se cierra solo cuando se llena tu cupo'],
-  ['Perseguís a la gente para la seña', 'La seña se paga con Mercado Pago y, si no la pagan, el lugar se libera'],
-  ['Te enterás tarde de que subió la harina', 'Actualizás el precio del insumo y ves qué producto quedó en riesgo y a cuánto venderlo'],
-  ['Cobrar el saldo depende de tu memoria', 'Ves quién debe cuánto y le mandás el link de pago en un toque'],
+// Un pedido entra y se anota solo en todo lo demás: es lo que nos diferencia de juntar apps sueltas.
+const CONECTA = [
+  { t: 'Aparece en tu día', p: 'En Hoy, en su horario, con todo lo que pidió el cliente.', ui: 'agenda' },
+  { t: 'Ocupa su lugar', p: 'Se descuenta del cupo. Cuando el día se llena, tu link deja de ofrecerlo.', ui: 'cupo' },
+  { t: 'Queda la seña y el saldo', p: 'Sabés qué cobraste, qué falta y a quién recordárselo.', ui: 'cobro' },
+  { t: 'Suma a tu lista de compras', p: 'Lo que vas a usar en insumos, agrupado por pasillo.', ui: 'compras' },
+  { t: 'Calcula cuánto te deja', p: 'Ganancia por pedido, por producto y por mes, comparada con el anterior.', ui: 'ganancia' },
+  { t: 'Te avisa si un aumento te come el margen', p: 'Cambiás el precio de un insumo y ves qué producto quedó corto y a cuánto venderlo.', ui: 'aviso' },
 ];
+
+const COMPARA = {
+  cols: ['Catálogo por WhatsApp', 'App de turnos', 'Planilla de Excel', 'AutoFlow'],
+  rows: [
+    ['El cliente elige y pide desde un link', 'si', 'si', 'no', 'si'],
+    ['Fecha, horario y cupo por día', 'no', 'si', 'no', 'si'],
+    ['Seña y saldo de cada pedido', 'no', 'si', 'mano', 'si'],
+    ['Lista de compras según lo que vendiste', 'no', 'no', 'mano', 'si'],
+    ['Costo y ganancia de cada producto', 'no', 'no', 'mano', 'si'],
+    ['Aviso cuando sube un insumo', 'no', 'no', 'no', 'si'],
+    ['Se adapta a tu rubro', 'no', 'solo turnos', 'mano', 'si'],
+  ],
+};
+
+const CELU = [
+  { ico: ['M12 2v14', 'm7 11 5 5 5-5', 'M5 21h14'], t: 'Se instala como una app', p: 'Desde el navegador, en Android y iPhone. Sin tiendas ni descargas pesadas.' },
+  { ico: ['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9', 'M10.3 21a1.9 1.9 0 0 0 3.4 0'], t: 'Te avisa al instante', p: 'Pedido nuevo, seña pagada, reserva vencida y un resumen a la mañana con lo del día.' },
+  { ico: ['M3 3v18h18', 'M7 15l4-4 3 3 5-6'], t: 'Sabés si vas mejor que el mes pasado', p: 'Ventas, ganancia y cobros con la comparación hecha, y un gráfico simple de 6 meses.' },
+  { ico: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M12 18v-6', 'm9 15 3 3 3-3'], t: 'Tus datos son tuyos', p: 'Bajás pedidos, clientes, productos y ganancias en Excel cuando quieras.' },
+];
+
+const MODO = { turno: 'Tu cliente reserva turno con día y hora', pedido: 'Tu cliente pide con fecha de entrega o retiro', reserva: 'Tu cliente reserva la fecha de su evento' };
+
 
 const VOCAB = [
   ['Producto', 'Servicio', 'Artículo para alquilar'],
@@ -68,6 +92,8 @@ const FAQ = [
   ['¿Y si no uso Mercado Pago?', 'Podés tomar pedidos igual. La seña la coordinás vos y el lugar queda reservado las horas que elijas; si no se confirma, se libera solo.'],
   ['¿Necesito saber de computación?', 'Si usás Instagram o una planilla, te alcanza. Arrancás con productos de ejemplo de tu rubro y los cambiás por los tuyos, o subís tu Excel.'],
   ['¿Sirve si tengo un equipo o muchos productos?', 'Sí. Ponés cupos por categoría y por horario, ves la hoja de producción del día, la rentabilidad de cada producto y exportás todo a Excel.'],
+  ['¿Puedo llevarme mis datos?', 'Sí. Desde Ajustes bajás en Excel tus pedidos, clientes, productos, insumos y ganancias, cuando quieras.'],
+  ['¿Hay que instalar algo?', 'No hace falta. Funciona desde el navegador, y si querés la instalás en el celular como una app para recibir avisos.'],
   ['¿Emite factura electrónica?', 'Todavía no: por ahora seguís facturando como hoy. Es una de las próximas funciones.'],
   ['¿Qué pasa cuando terminan los 14 días?', 'Elegís los módulos que te sirven y pagás por mes. Si no seguís, no se te cobra nada: la prueba no pide tarjeta.'],
 ];
@@ -80,9 +106,9 @@ export default function Home() {
         <div className="container">
           <Logo />
           <nav className="nav" aria-label="Principal">
-            <a href="#problemas">Problemas</a>
+            <a href="#conectado">Cómo funciona</a>
             <a href="#rubros">Rubros</a>
-            <a href="#ahorro">Cuánto ahorrás</a>
+            <a href="#compara">Por qué AutoFlow</a>
             <a href="#precios">Precios</a>
             <Link href="/login">Ingresar</Link>
             <Link href="/registro" className="btn" style={{ marginLeft: 6 }}>Probar gratis</Link>
@@ -94,18 +120,18 @@ export default function Home() {
         <section className="hero grain" style={{ borderBottom: '1px solid var(--line)' }}>
           <div className="container hero-grid">
             <div>
-              <span className="pill"><span className="dot" />Para emprendedores y pymes que trabajan por encargo, turno o reserva</span>
-              <h1>Vendé por encargo sin vivir pegado al WhatsApp.</h1>
+              <span className="pill"><span className="dot" />Para quien vende por encargo, con turno o reserva</span>
+              <h1>Tomá pedidos por link y sabé cuánto ganás con cada uno.</h1>
               <p className="lead">
-                Tu link toma pedidos y turnos las 24 horas, cobra la seña por Mercado Pago, cierra el día cuando no das más y te avisa cuando un aumento te
-                come la ganancia. Vos hacés lo tuyo; AutoFlow ordena el resto.
+                Tu link toma pedidos y turnos las 24 horas. Cada uno se anota solo en tu agenda, en tus cobros, en tu lista de compras y en tus ganancias.
+                Sin planillas, sin apps sueltas y sin comisión por venta.
               </p>
               <div className="row" style={{ marginTop: 28 }}>
                 <Link href="/registro" className="btn large">
                   Empezar 14 días gratis
                   <Ico d={['M5 12h14', 'm13 6 6 6-6 6']} color="currentColor" size={18} />
                 </Link>
-                <a href="#ejemplo" className="btn large secondary">Ver un ejemplo</a>
+                <a href="#conectado" className="btn large secondary">Ver cómo funciona</a>
               </div>
               <ul className="trust">
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Listo en una tarde</li>
@@ -113,7 +139,37 @@ export default function Home() {
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Prueba sin tarjeta</li>
               </ul>
             </div>
-            <RubroDemo rubros={rubros} />
+            <div className="hero-demo"><RubroDemo rubros={rubros} /></div>
+          </div>
+        </section>
+
+        <section id="conectado" className="section container">
+          <span className="eyebrow">Cómo funciona</span>
+          <h2 className="big">Entra un pedido. Todo lo demás se acomoda solo.</h2>
+          <p className="lead" style={{ maxWidth: 680 }}>Lo que en otras herramientas son pantallas que no se hablan, en AutoFlow es un solo pedido que llega a todos lados.</p>
+          <div className="flow">
+            <div className="flow-ticket" aria-hidden="true">
+              <span className="ft-tag">Pedido nuevo · 23:14</span>
+              <strong className="ft-what">Torta Rogel</strong>
+              <span className="ft-line">Sábado 22 · 10 a 13 h · retira</span>
+              <span className="ft-line">Martina G. · «Feliz cumple, Sofi»</span>
+              <span className="ft-pay"><span className="ft-ok">Seña pagada</span><b className="num">$ 19.000</b></span>
+            </div>
+            <ol className="flow-list">
+              {CONECTA.map((c) => (
+                <li key={c.t} className="flow-item">
+                  <div className="fi-txt"><h3>{c.t}</h3><p>{c.p}</p></div>
+                  <div className={`fi-ui ui-${c.ui}`} aria-hidden="true">
+                    {c.ui === 'agenda' && <><span className="u-time num">10:00</span><span className="u-chip"><b>Torta Rogel</b> Martina G.</span></>}
+                    {c.ui === 'cupo' && <><span className="u-lab">Tortas del sábado</span><span className="u-bar"><i style={{ width: '83%' }} /></span><b className="num">5 de 6</b></>}
+                    {c.ui === 'cobro' && <><span className="u-ok">Seña <b className="num">$ 19.000</b> ✓</span><span className="u-due">Saldo <b className="num">$ 19.000</b></span></>}
+                    {c.ui === 'compras' && <><span className="u-li">Dulce de leche <b className="num">1,2 kg</b></span><span className="u-li">Harina 0000 <b className="num">500 g</b></span><span className="u-li">Caja de torta <b className="num">1</b></span></>}
+                    {c.ui === 'ganancia' && <><span className="u-big num">$ 18.400</span><span className="u-up">↑ 12 % más que en octubre</span></>}
+                    {c.ui === 'aviso' && <><span className="u-warn">Subió la manteca 18 %</span><span className="u-li">Rogel quedó en 31 % · sugerido <b className="num">$ 41.500</b></span></>}
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
@@ -133,28 +189,10 @@ export default function Home() {
           <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Dato de costos y precios: Encuesta Coyuntural de la Fundación Observatorio PyME, 2026. Las 4 horas por día son una cuenta de ejemplo.</p>
         </section>
 
-        <section className="section container" style={{ paddingTop: 40 }}>
-          <span className="eyebrow">La solución</span>
-          <h2 className="big">Lo que hoy hacés a mano, AutoFlow lo hace solo.</h2>
-          <div className="card" style={{ marginTop: 28, padding: 0, overflow: 'hidden' }}>
-            <table className="vs">
-              <thead><tr><th>Hoy</th><th>Con AutoFlow</th></tr></thead>
-              <tbody>
-                {ANTES_DESPUES.map(([a, b]) => (
-                  <tr key={a}>
-                    <td><span className="vs-c"><Ico d="M18 6 6 18M6 6l12 12" color="#B91C1C" size={16} />{a}</span></td>
-                    <td><span className="vs-c"><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />{b}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         <section id="rubros" className="section container">
           <span className="eyebrow">Rubros</span>
           <h2 className="big">Un mismo sistema, adaptado a lo que hacés.</h2>
-          <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y AutoFlow cambia los nombres, los datos que pide en cada pedido, los ejemplos para arrancar y la pantalla de trabajo del día.</p>
+          <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y AutoFlow cambia los nombres, lo que ve tu cliente en el link, los datos que pide y la pantalla de trabajo del día.</p>
           <div className="grid grid-3 rubro-grid" style={{ marginTop: 32 }}>
             {rubros.filter((r) => r.key !== 'otro').map((r) => (
               <Link key={r.key} href={`/registro?rubro=${r.key}`} className={`card rubro-card ${r.key === 'cocina' ? 'featured' : ''}`}>
@@ -162,12 +200,45 @@ export default function Home() {
                 <div>
                   <h3>{r.label}{r.key === 'cocina' && <span className="badge" style={{ marginLeft: 8, verticalAlign: 'middle' }}>Ejemplo completo</span>}</h3>
                   <p>{r.ejemplos}.</p>
+                  <p className="rubro-mode">{r.key === 'optica' ? 'Tu cliente pide y elige día y horario para retirar' : MODO[r.link?.mode] || MODO.pedido}.</p>
                 </div>
                 <span className="go">Empezar con {r.short.toLowerCase()} →</span>
               </Link>
             ))}
           </div>
           <p className="muted" style={{ marginTop: 16 }}>¿Vendés otra cosa por encargo o con turno? <Link href="/registro?rubro=otro">Empezá con «Otro rubro»</Link> y adaptalo a lo tuyo.</p>
+        </section>
+
+        <section id="compara" className="section container" style={{ paddingTop: 40 }}>
+          <span className="eyebrow">Por qué AutoFlow</span>
+          <h2 className="big">En vez de juntar tres herramientas que no se hablan.</h2>
+          <p className="lead" style={{ maxWidth: 680 }}>Hay buenos catálogos, buenas apps de turnos y planillas para todo. Lo que no hay es algo que una el pedido con lo que cobrás, lo que comprás y lo que ganás.</p>
+          <div className="card table-wrap compare" style={{ marginTop: 28 }}>
+            <table>
+              <thead><tr><th /><th>{COMPARA.cols[0]}</th><th>{COMPARA.cols[1]}</th><th>{COMPARA.cols[2]}</th><th className="us">{COMPARA.cols[3]}</th></tr></thead>
+              <tbody>
+                {COMPARA.rows.map(([label, ...vals]) => (
+                  <tr key={label}>
+                    <td>{label}</td>
+                    {vals.map((v, k) => (
+                      <td key={k} className={k === 3 ? 'us' : ''}>
+                        {v === 'si' ? <Ico d="m5 12 5 5 9-10" color={k === 3 ? '#C2410C' : '#15803D'} size={18} /> : v === 'no' ? <span className="c-no" aria-label="No">—</span> : <span className="c-mid">{v === 'mano' ? 'a mano' : v}</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid grid-4 celu" style={{ marginTop: 28 }}>
+            {CELU.map((c) => (
+              <article key={c.t} className="celu-item">
+                <span className="ico"><Ico d={c.ico} /></span>
+                <h3>{c.t}</h3>
+                <p>{c.p}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section id="como-funciona" className="section container" style={{ paddingTop: 40 }}>

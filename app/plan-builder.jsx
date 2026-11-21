@@ -25,7 +25,7 @@ export default function PlanBuilder({ prices }) {
         <p style={{ color: 'var(--ink-2)', fontSize: 17, margin: 0 }}>Precios finales en pesos, por mes. Los primeros 14 días tenés todos los módulos activados.</p>
         <div className="card plan-total" style={{ marginTop: 8, padding: 24 }}>
           <div className="muted" style={{ fontSize: 14 }}>Tu plan con lo que elegiste</div>
-          <div key={bump} className="price pop">{fmt(total)}<span style={{ fontSize: 16, fontWeight: 600, color: '#d9cbbe' }}> /mes</span></div>
+          <div key={bump} className="price pop">{fmt(total)}<span style={{ fontSize: 16, fontWeight: 600, color: '#d4d4d8' }}> /mes</span></div>
           <div className="muted" style={{ fontSize: 14 }}>{chosen.length ? 'Base + ' + chosen.map((m) => m.name).join(' + ') : 'Solo la base'}</div>
           <Link className="btn large block" href="/registro" style={{ marginTop: 16 }}>Empezar 14 días gratis</Link>
         </div>

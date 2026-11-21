@@ -62,17 +62,17 @@ export default async function Cocina({ searchParams }) {
         <div>
           <div className="eyebrow">{T.workMode} · {bakery.name}</div>
           <div className="row" style={{ marginTop: 12 }}>
-            <Link href="/cocina" className={`chip ${day === today ? 'on' : ''}`} style={day === today ? { background: '#fb923c', borderColor: '#fb923c', color: '#120e0b' } : { background: '#1e1814', borderColor: '#3a2f28', color: '#f6efe6' }}>Hoy · {dateLabel(today)}</Link>
-            <Link href="/cocina?dia=manana" className={`chip ${day !== today ? 'on' : ''}`} style={day !== today ? { background: '#fb923c', borderColor: '#fb923c', color: '#120e0b' } : { background: '#1e1814', borderColor: '#3a2f28', color: '#f6efe6' }}>Mañana · {dateLabel(addDays(today, 1))}</Link>
+            <Link href="/cocina" className={`chip ${day === today ? 'on' : ''}`} style={day === today ? { background: '#fb923c', borderColor: '#fb923c', color: '#120e0b' } : { background: '#1e1814', borderColor: '#3f3f46', color: '#f4f4f2' }}>Hoy · {dateLabel(today)}</Link>
+            <Link href="/cocina?dia=manana" className={`chip ${day !== today ? 'on' : ''}`} style={day !== today ? { background: '#fb923c', borderColor: '#fb923c', color: '#120e0b' } : { background: '#1e1814', borderColor: '#3f3f46', color: '#f4f4f2' }}>Mañana · {dateLabel(addDays(today, 1))}</Link>
           </div>
         </div>
         <Link href="/app" className="btn kitchen-exit">Volver al panel</Link>
       </div>
       <Board items={items} labels={{ note1: T.note1.label, note2: T.note2.label, warn: T.note2.warn }} />
       {pending.length > 0 && (
-        <section aria-label="Esperando seña" style={{ border: '2px dashed #3a2f28', borderRadius: 18, padding: 20 }}>
+        <section aria-label="Esperando seña" style={{ border: '2px dashed #3f3f46', borderRadius: 18, padding: 20 }}>
           <div className="eyebrow" style={{ marginBottom: 10 }}>Todavía sin seña · {T.pending}</div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 18, color: '#d9cbbe' }}>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 18, color: '#d4d4d8' }}>
             {pending.map((o) => (
               <li key={o.id}>{o.quantity} × {o.product_name} · {[o.slot, o.customer_name].filter(Boolean).join(' · ')}</li>
             ))}
