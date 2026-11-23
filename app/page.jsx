@@ -4,6 +4,7 @@ import { RUBROS, publicRubros } from '@/lib/rubros';
 import Logo from './logo';
 import PlanBuilder from './plan-builder';
 import HeroStage from './hero-stage';
+import DemoVideo from './demo-video';
 import Ahorro from './ahorro';
 
 const Ico = ({ d, color = '#C2410C', size = 22 }) => (
@@ -131,7 +132,7 @@ export default function Home() {
                   Probar 14 días gratis
                   <Ico d={['M5 12h14', 'm13 6 6 6-6 6']} color="currentColor" size={18} />
                 </Link>
-                <a href="#conectado" className="btn large ghost">Ver cómo funciona</a>
+                <a href="#video" className="btn large ghost">Ver el video</a>
               </div>
               <ul className="trust">
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Listo en una tarde</li>
@@ -147,6 +148,30 @@ export default function Home() {
                 <li key={r.key}><Link href={`/registro?rubro=${r.key}`}><Ico d={r.icon} size={16} />{r.short}</Link></li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        <section id="video" className="section container demo">
+          <div className="demo-grid">
+            <div>
+              <span className="eyebrow">En 35 segundos</span>
+              <h2 className="big">Así se ve un pedido, de punta a punta.</h2>
+              <ol className="demo-steps">
+                <li><b>Tu cliente entra a tu link</b> y elige lo que quiere.</li>
+                <li><b>Elige día y horario</b>: solo ve los que tienen lugar.</li>
+                <li><b>Paga la seña</b> y le queda el detalle de su pedido.</li>
+                <li><b>A vos te avisa</b> y aparece en Hoy, en su horario.</li>
+                <li><b>Anotás lo que hay que comprar</b>, agrupado por pasillo.</li>
+                <li><b>Ves cuánto vendiste</b> y cuánto te quedó este mes.</li>
+              </ol>
+              <Link href="/registro" className="btn large" style={{ marginTop: 8 }}>Probarlo con mi negocio</Link>
+            </div>
+            <div className="demo-phone">
+              <div className="phone phone-video">
+                <div className="phone-notch" />
+                <div className="phone-screen"><DemoVideo src="/demo/autoflow-demo.mp4" poster="/demo/autoflow-demo.jpg" /></div>
+              </div>
+            </div>
           </div>
         </section>
 
