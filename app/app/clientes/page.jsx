@@ -84,7 +84,7 @@ export default async function Clientes({ searchParams }) {
       )}
 
       <form method="get" className="row" style={{ marginBottom: 12, gap: 8, flexWrap: 'nowrap' }}>
-        <input type="search" name="q" defaultValue={search} placeholder="Buscar por nombre o teléfono" aria-label="Buscar clientes" />
+        <input type="search" name="q" defaultValue={search} placeholder="Nombre o teléfono" aria-label="Buscar clientes" />
         <button className="btn secondary">Buscar</button>
       </form>
 

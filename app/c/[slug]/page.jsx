@@ -243,11 +243,9 @@ export default async function Catalogo({ params, searchParams }) {
                     <div key={p.id} className="card product-card">
                       <Link href={`/c/${slug}?p=${p.id}`} className="pc-media" aria-label={`Ver ${p.name}`} tabIndex={-1}>
                         {cover ? <img src={cover.url} alt={p.name} loading="lazy" /> : <div className="ph" aria-hidden="true">{p.name.charAt(0)}</div>}
-                        {(hasVideo || m.filter((x) => x.kind === 'image').length > 1 || p.tryon_url) && (
+                        {(p.tryon_url || hasVideo || m.filter((x) => x.kind === 'image').length > 1) && (
                           <span className="pc-tags">
-                            {p.tryon_url && <span>Probátelos</span>}
-                            {hasVideo && <span>▶ Video</span>}
-                            {m.filter((x) => x.kind === 'image').length > 1 && <span className="num">{m.filter((x) => x.kind === 'image').length} fotos</span>}
+                            <span>{p.tryon_url ? 'Probátelos' : hasVideo ? '▶ Video' : `${m.filter((x) => x.kind === 'image').length} fotos`}</span>
                           </span>
                         )}
                       </Link>

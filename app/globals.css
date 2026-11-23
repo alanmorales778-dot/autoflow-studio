@@ -1037,3 +1037,13 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .tryon-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
 .tryon-actions .btn { justify-content: center; min-height: 46px; }
 .tryon-privacy { margin: 0; font-size: 11px; color: var(--muted); text-align: center; }
+
+/* ---------- Ajustes de la revisión de diseño ---------- */
+.item-who { margin-top: 3px; font-size: 14px; color: var(--ink); }
+.item-who strong { font-weight: 600; }
+.item-when { margin-top: 1px; }
+.pc-tags { top: 8px; bottom: auto; }
+.pc-tags span { font-size: 10.5px; padding: 3px 8px; }
+.product-card .ph { background: linear-gradient(140deg, var(--brand-soft), #f4f4f2); color: rgba(194, 65, 12, .35); }
+.media-tools button { min-width: 32px; height: 32px; }
+@media (max-width: 640px) { .tl-btns .btn { min-height: 44px; } .item-actions .btn { min-height: 44px; } }

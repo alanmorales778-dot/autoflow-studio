@@ -180,7 +180,7 @@ export default async function Pedidos({ searchParams }) {
       </div>
       <form method="get" className="row" style={{ marginBottom: 12, gap: 8, flexWrap: 'nowrap' }}>
         {filter !== 'activos' && <input type="hidden" name="f" value={filter} />}
-        <input type="search" name="q" defaultValue={search} placeholder="Buscar por cliente, teléfono o producto" aria-label="Buscar" />
+        <input type="search" name="q" defaultValue={search} placeholder="Cliente, teléfono o producto" aria-label="Buscar" />
         <button className="btn secondary">Buscar</button>
       </form>
 
@@ -198,8 +198,9 @@ export default async function Pedidos({ searchParams }) {
                 <li key={o.id} id={`p-${o.id}`} className={`item ${sp.editar === o.id ? 'highlight' : ''}`}>
                   <div className="item-head">
                     <div>
-                      <div className="item-title">{o.quantity} × {o.product_name}</div>
-                      <div className="item-sub">{dateLabel(o.date)}{o.slot ? ` · ${o.slot}` : ''} · {o.customer_name}{o.customer_phone ? ` · ${o.customer_phone}` : ''}</div>
+                      <div className="item-title">{o.quantity > 1 ? `${o.quantity} × ` : ''}{o.product_name}</div>
+                      <div className="item-who"><strong>{o.customer_name}</strong>{o.customer_phone && <span className="muted"> · {o.customer_phone}</span>}</div>
+                      <div className="item-sub item-when">{dateLabel(o.date)}{o.slot ? ` · ${o.slot}` : ''}</div>
                     </div>
                     <StatusBadge status={o.status} />
                   </div>
