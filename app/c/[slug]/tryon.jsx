@@ -47,7 +47,7 @@ function placeGlasses(ctx, frame, pts, W, H, mirror, prev) {
     x: (a.x + b.x) / 2,
     y: (a.y + b.y) / 2,
     ang: Math.atan2(b.y - a.y, b.x - a.x),
-    w: eye * 1.55,
+    w: eye * 1.72,
     sx: ratio,
   };
   if (prev) {

@@ -5,3 +5,5 @@ alter table public.products add constraint products_gallery_array check (jsonb_t
 alter table public.products add column if not exists tryon_url text;
 -- Videos cortos: el depósito de productos acepta hasta 50 MB por archivo (las fotos se siguen achicando en el navegador).
 update storage.buckets set file_size_limit = 52428800 where id = 'productos';
+-- El depósito solo aceptaba imágenes: se suman los formatos de video.
+update storage.buckets set allowed_mime_types = array['image/jpeg','image/png','image/webp','video/mp4','video/quicktime','video/webm'] where id = 'productos';
