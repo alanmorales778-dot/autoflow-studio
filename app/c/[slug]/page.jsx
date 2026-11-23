@@ -8,6 +8,16 @@ import { availableDates, reservedByProduct } from '@/lib/orders';
 import { money, dateLabel, WEEKDAYS } from '@/lib/format';
 import { placeOrder, placeSubscription } from './actions';
 import { QtyPicker, FulfillmentFields, FormMemory, PhotoField } from './order-helpers';
+import MediaGallery from './media-gallery';
+import Tryon from './tryon';
+
+// Portada + galería, sin repetir la portada si también está en la galería.
+function mediaOf(p) {
+  const g = Array.isArray(p.gallery) ? p.gallery : [];
+  const out = p.photo_url ? [{ url: p.photo_url, kind: 'image' }] : [];
+  for (const it of g) if (it?.url && !out.some((o) => o.url === it.url)) out.push(it);
+  return out;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -116,11 +126,17 @@ export default async function Catalogo({ params, searchParams }) {
           <div className="grid grid-2">
             <div>
               <Link href={`/c/${slug}`}>← Ver todo</Link>
-              <div className="card product-card" style={{ marginTop: 12 }}>
-                {selected.photo_url ? <img src={selected.photo_url} alt={selected.name} /> : <div className="ph" aria-hidden="true">{selected.name.charAt(0)}</div>}
+              <div className="card product-card product-detail" style={{ marginTop: 12 }}>
+                <MediaGallery items={mediaOf(selected)} name={selected.name} />
                 <h2>{selected.name}</h2>
                 <div className="price">{money(selected.price)}{groups.some((g) => g.choices.some((c) => c.delta)) ? <small className="muted" style={{ fontSize: 14 }}> base</small> : null}</div>
                 {selected.description && <p className="muted">{selected.description}</p>}
+                {selected.tryon_url && (
+                  <Tryon
+                    frames={[selected, ...products.filter((p) => p.tryon_url && p.id !== selected.id)].map((p) => ({ id: p.id, name: p.name, url: p.tryon_url }))}
+                    initialId={selected.id}
+                  />
+                )}
                 {selected.allow_subscription && access.recurring && (
                   <div className="row" style={{ marginTop: 8 }}>
                     <Link className={`btn small ${subMode ? 'secondary' : ''}`} href={`/c/${slug}?p=${selected.id}`}>Pedido único</Link>
@@ -217,12 +233,24 @@ export default async function Catalogo({ params, searchParams }) {
             {!products || products.length === 0 ? (
               <p className="muted">Todavía no hay nada cargado. Escribinos por WhatsApp.</p>
             ) : (
-              <div className="grid grid-3">
+              <div className="grid grid-3 shop-grid">
                 {products.map((p) => {
                   const l = left(p);
+                  const m = mediaOf(p);
+                  const cover = m.find((x) => x.kind === 'image');
+                  const hasVideo = m.some((x) => x.kind === 'video');
                   return (
                     <div key={p.id} className="card product-card">
-                      {p.photo_url ? <img src={p.photo_url} alt={p.name} /> : <div className="ph" aria-hidden="true">{p.name.charAt(0)}</div>}
+                      <Link href={`/c/${slug}?p=${p.id}`} className="pc-media" aria-label={`Ver ${p.name}`} tabIndex={-1}>
+                        {cover ? <img src={cover.url} alt={p.name} loading="lazy" /> : <div className="ph" aria-hidden="true">{p.name.charAt(0)}</div>}
+                        {(hasVideo || m.filter((x) => x.kind === 'image').length > 1 || p.tryon_url) && (
+                          <span className="pc-tags">
+                            {p.tryon_url && <span>Probátelos</span>}
+                            {hasVideo && <span>▶ Video</span>}
+                            {m.filter((x) => x.kind === 'image').length > 1 && <span className="num">{m.filter((x) => x.kind === 'image').length} fotos</span>}
+                          </span>
+                        )}
+                      </Link>
                       <h3>{p.name}</h3>
                       <div className="grow">
                         {p.description && <p className="muted" style={{ fontSize: 14 }}>{p.description}</p>}

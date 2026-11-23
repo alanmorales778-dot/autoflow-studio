@@ -508,7 +508,7 @@ export async function uploadProductPhoto(fd) {
   const id = str(fd, 'id');
   const to = `/app/productos/${id}#foto`;
   const admin = createAdmin();
-  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url,gallery').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
   if (!product) back('/app/productos', { error: 'No encontramos ese producto.' });
   const file = fd.get('foto');
   if (!file || typeof file.arrayBuffer !== 'function' || !file.size) back(to, { error: 'Elegí una foto.' });
@@ -521,8 +521,9 @@ export async function uploadProductPhoto(fd) {
   if (error) back(to, { error: 'No se pudo subir la foto. Probá de nuevo.' });
   const url = admin.storage.from('productos').getPublicUrl(path).data.publicUrl;
   await setProductPhoto(bakery, product, url);
+  const inGallery = (product.gallery || []).some((g) => g.url === product.photo_url);
   const old = String(product.photo_url || '').split('/storage/v1/object/public/productos/')[1];
-  if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
+  if (old && !inGallery) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
   revalidatePath('/app', 'layout');
   revalidatePath(`/c/${bakery.slug}`);
   back(to, { ok: 'Foto actualizada: ya se ve en tu catálogo.' });
@@ -566,10 +567,11 @@ export async function removeProductPhoto(fd) {
   const { bakery } = await requireBakery();
   const id = str(fd, 'id');
   const admin = createAdmin();
-  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  const { data: product } = await admin.from('products').select('id,sheet_row,photo_url,gallery').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
   if (!product) back('/app/productos', { error: 'No encontramos ese producto.' });
   await setProductPhoto(bakery, product, null);
-  const old = String(product.photo_url || '').split('/storage/v1/object/public/productos/')[1];
+  const inGallery = (product.gallery || []).some((g) => g.url === product.photo_url);
+  const old = inGallery ? null : String(product.photo_url || '').split('/storage/v1/object/public/productos/')[1];
   if (old) await admin.storage.from('productos').remove([decodeURIComponent(old)]);
   revalidatePath('/app', 'layout');
   back(`/app/productos/${id}#foto`, { ok: 'Foto quitada.' });

@@ -7,6 +7,8 @@ import { liveCosts } from '@/lib/sheets';
 import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
 import PhotoPicker from '../../photo-picker';
+import MediaManager from './media-manager';
+import TryonManager from './tryon-manager';
 import { money, normName, pct } from '@/lib/format';
 import { RECIPE_UNITS, normUnit, currentMargin, suggestedPrice } from '@/lib/costs';
 
@@ -82,13 +84,13 @@ export default async function Receta({ params, searchParams }) {
       )}
 
       <div className="card" id="foto">
-        <h2>Foto en el catálogo</h2>
+        <h2>Fotos y video</h2>
         <div className="row" style={{ alignItems: 'flex-start', gap: 20 }}>
           <div style={{ flex: '0 1 320px', minWidth: 220 }}>
-            <PhotoPicker action={uploadProductPhoto} hidden={{ id: product.id }} current={product.photo_url} placeholder={product.name.charAt(0)} label="Elegir foto" changeLabel="Cambiar foto" />
+            <PhotoPicker action={uploadProductPhoto} hidden={{ id: product.id }} current={product.photo_url} placeholder={product.name.charAt(0)} label="Elegir foto" changeLabel="Cambiar portada" maxSide={2400} />
           </div>
           <div style={{ flex: '1 1 240px' }}>
-            <p className="muted" style={{ marginTop: 0 }}>Tocá el recuadro o arrastrá una foto. Se achica sola para que cargue rápido en el celular de tus clientes; se ve mejor apaisada.</p>
+            <p className="muted" style={{ marginTop: 0 }}><strong style={{ color: 'var(--ink)' }}>Portada:</strong> es la que se ve primero en tu link. Se ve mejor apaisada.</p>
             {product.photo_url ? (
               <form action={removeProductPhoto}>
                 <input type="hidden" name="id" value={product.id} />
@@ -97,6 +99,14 @@ export default async function Receta({ params, searchParams }) {
             ) : <p className="muted" style={{ fontSize: 13 }}>Sin foto, el catálogo muestra la inicial del nombre.</p>}
           </div>
         </div>
+        <div className="media-sep" />
+        <MediaManager productId={product.id} items={Array.isArray(product.gallery) ? product.gallery : []} cover={product.photo_url} title={T.media.title} hint={T.media.hint} />
+        {T.key === 'optica' && (
+          <>
+            <div className="media-sep" />
+            <TryonManager productId={product.id} current={product.tryon_url} />
+          </>
+        )}
       </div>
 
       <div className="card table-wrap">
