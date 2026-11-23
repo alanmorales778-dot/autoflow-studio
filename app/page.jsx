@@ -3,7 +3,7 @@ import { PRICES } from '@/lib/modules';
 import { RUBROS, publicRubros } from '@/lib/rubros';
 import Logo from './logo';
 import PlanBuilder from './plan-builder';
-import RubroDemo from './rubro-demo';
+import HeroStage from './hero-stage';
 import Ahorro from './ahorro';
 
 const Ico = ({ d, color = '#C2410C', size = 22 }) => (
@@ -117,29 +117,36 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="hero grain" style={{ borderBottom: '1px solid var(--line)' }}>
-          <div className="container hero-grid">
-            <div>
-              <span className="pill"><span className="dot" />Para quien vende por encargo, con turno o reserva</span>
-              <h1>Tomá pedidos por link y sabé cuánto ganás con cada uno.</h1>
+        <section className="hero2">
+          <div className="container hero2-grid">
+            <div className="hero2-copy">
+              <p className="hero2-kicker"><span className="dot" />Para quien vende por encargo, con turno o reserva</p>
+              <h1>Del chat lleno de mensajes al día ordenado.</h1>
               <p className="lead">
-                Tu link toma pedidos y turnos las 24 horas. Cada uno se anota solo en tu agenda, en tus cobros, en tu lista de compras y en tus ganancias.
-                Sin planillas, sin apps sueltas y sin comisión por venta.
+                Tu link toma los pedidos y turnos, cobra la seña y te dice cuánto ganás con cada uno.
+                Vos abrís <b>Hoy</b> y ya sabés qué hacer.
               </p>
-              <div className="row" style={{ marginTop: 28 }}>
+              <div className="hero2-cta">
                 <Link href="/registro" className="btn large">
-                  Empezar 14 días gratis
+                  Probar 14 días gratis
                   <Ico d={['M5 12h14', 'm13 6 6 6-6 6']} color="currentColor" size={18} />
                 </Link>
-                <a href="#conectado" className="btn large secondary">Ver cómo funciona</a>
+                <a href="#conectado" className="btn large ghost">Ver cómo funciona</a>
               </div>
               <ul className="trust">
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Listo en una tarde</li>
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Sin comisión por venta</li>
-                <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Prueba sin tarjeta</li>
+                <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Sin tarjeta</li>
               </ul>
             </div>
-            <div className="hero-demo"><RubroDemo rubros={rubros} /></div>
+            <HeroStage />
+          </div>
+          <div className="container">
+            <ul className="hero2-rubros" aria-label="Rubros">
+              {rubros.map((r) => (
+                <li key={r.key}><Link href={`/registro?rubro=${r.key}`}><Ico d={r.icon} size={16} />{r.short}</Link></li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -343,7 +350,7 @@ export default function Home() {
         <section className="container" style={{ paddingBottom: 88 }}>
           <div className="cta-band">
             <div style={{ maxWidth: 620 }}>
-              <h2>Esta noche, que los pedidos se tomen solos.</h2>
+              <h2>Esta noche tu link ya puede estar tomando pedidos.</h2>
               <p>14 días gratis con todos los módulos. Sin tarjeta y sin comisión por venta.</p>
             </div>
             <Link href="/registro" className="btn large">Empezar gratis</Link>

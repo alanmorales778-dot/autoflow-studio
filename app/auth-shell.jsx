@@ -4,20 +4,31 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Logo from './logo';
 
+const NOTIS = [
+  { t: 'Nuevo pedido', b: 'Torta Rogel para el sábado · $ 38.000', h: 'ahora' },
+  { t: 'Seña cobrada', b: 'Martina pagó $ 19.000 por Mercado Pago', h: '2 min' },
+  { t: 'Mañana', b: '3 entregas y $ 57.000 para cobrar', h: '8:00' },
+];
+
 export function AuthShell({ children }) {
   return (
     <div className="auth">
       <aside className="auth-side">
-        <Logo mark="#C2410C" />
-        <div style={{ maxWidth: 460 }}>
-          <h2 className="disp">Tu negocio, ordenado antes de empezar el día.</h2>
-          <ul>
-            <li>Pedidos y turnos con seña cobrada, ordenados por día</li>
-            <li>Cupos que cierran la fecha cuando no das abasto</li>
-            <li>Precios que se recalculan cuando sube lo que comprás</li>
+        <Link href="/" aria-label="Volver al inicio"><Logo mark="#C2410C" /></Link>
+        <div className="auth-pitch">
+          <h2 className="disp">Tu día, ordenado antes de empezar.</h2>
+          <p>Pedidos, señas, compras y ganancias en un solo lugar. Te avisa al celular cuando pasa algo.</p>
+          <ul className="auth-notis" aria-label="Ejemplos de avisos">
+            {NOTIS.map((n, i) => (
+              <li key={n.t} style={{ '--d': `${0.2 + i * 0.22}s` }}>
+                <span className="an-ico" aria-hidden="true" />
+                <div><b>{n.t}</b><span>{n.b}</span></div>
+                <em>{n.h}</em>
+              </li>
+            ))}
           </ul>
         </div>
-        <p className="foot">14 días gratis con todos los módulos. Sin tarjeta.</p>
+        <p className="foot">14 días gratis con todo incluido · Sin tarjeta · Sin comisión por venta</p>
       </aside>
       <main className="auth-main">
         <div className="auth-box">{children}</div>
