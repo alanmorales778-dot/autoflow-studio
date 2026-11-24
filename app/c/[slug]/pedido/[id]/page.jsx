@@ -13,6 +13,13 @@ import { payBalance } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
+// Título propio (antes mostraba el de la página de venta de HakkiraApp) y fuera de los buscadores: es un link privado.
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const { data: b } = await createAdmin().from('bakeries').select('name').eq('slug', slug).maybeSingle();
+  return { title: b?.name ? `Tu pedido · ${b.name}` : 'Tu pedido', robots: { index: false, follow: false } };
+}
+
 // «Agregar a mi calendario» (Google Calendar). Entiende «16:30», «10:00 a 13:00» o sin horario (todo el día).
 function calendarUrl(bakery, order, T) {
   const d = order.date.replace(/-/g, '');

@@ -222,9 +222,9 @@ export async function applyRecipesImport(fd) {
     }
     await admin.from('import_previews').delete().eq('id', pv.id);
     msg = `Listo: ${touched.length} ${touched.length === 1 ? 'receta cargada' : 'recetas cargadas'}.`
-      + (created ? ` Se crearon ${created} productos nuevos, ocultos del catálogo hasta que les pongas precio.` : '')
+      + (created ? (created === 1 ? ' Se creó 1 producto nuevo, oculto del catálogo hasta que le pongas precio.' : ` Se crearon ${created} productos nuevos, ocultos del catálogo hasta que les pongas precio.`) : '')
       + (skipped ? ` ${skipped} no se cargaron porque el producto no existe.` : '')
-      + (addedIng ? ` Se agregaron ${addedIng} insumos sin precio: completalos en Insumos para ver el costo.` : '');
+      + (addedIng ? (addedIng === 1 ? ' Se agregó 1 insumo sin precio: completalo en Insumos para ver el costo.' : ` Se agregaron ${addedIng} insumos sin precio: completalos en Insumos para ver el costo.`) : '');
   } catch (e) {
     err = e.message;
   }
@@ -253,7 +253,7 @@ export async function saveRecipeDraft(fd) {
     if (productId === 'nuevo' || !productId) {
       if (!newName) throw new Error('Elegí a qué producto pertenece la receta o escribí el nombre de uno nuevo.');
       if (bakery.sheet_productos_id) throw new Error('Tus productos vienen de Google Drive: agregalo primero en tu planilla y después elegilo acá.');
-      const { data: same } = await admin.from('products').select('id').eq('bakery_id', bakery.id).ilike('name', newName).not('sheet_row', 'is', null).maybeSingle();
+      const { data: same } = await admin.from('products').select('id').eq('bakery_id', bakery.id).ilike('name', newName.replace(/[\\%_]/g, (c) => `\\${c}`)).not('sheet_row', 'is', null).limit(1).maybeSingle();
       productId = same ? same.id : await createProductFor(admin, bakery, newName, parseNum(str(fd, 'new_price')));
       created = !same;
       name = newName;

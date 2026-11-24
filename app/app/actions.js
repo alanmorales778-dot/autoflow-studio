@@ -25,7 +25,11 @@ import { newCalendarToken } from '@/lib/ics';
 import { rubroOf, RUBROS } from '@/lib/rubros';
 import { createCustomerSubscription, changeSubscriptionStatus, generateRecurringOrders } from '@/lib/recurring';
 
+// Solo se vuelve a rutas internas: un «back» que venga del formulario no puede mandar a otro sitio.
+const internal = (path) => (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\') ? path : '/app');
+
 function back(path, { error, ok } = {}) {
+  path = internal(path);
   const p = new URLSearchParams();
   if (error) p.set('error', String(error).slice(0, 300));
   if (ok) p.set('ok', String(ok).slice(0, 300));
@@ -36,6 +40,8 @@ function back(path, { error, ok } = {}) {
 }
 
 const str = (fd, k) => String(fd.get(k) ?? '').trim();
+// Para comparar nombres con ilike sin que % o _ funcionen como comodines.
+const likeExact = (v) => String(v).replace(/[\\%_]/g, (c) => `\\${c}`);
 
 // ---------- Onboarding ----------
 export async function createBakery(fd) {
@@ -123,6 +129,8 @@ export async function saveSettings(fd) {
     business_type: fd.get('business_type') ? rubroOf(str(fd, 'business_type')).key : rubroOf(bakery).key,
     slot_capacity: fd.has('slot_capacity') ? (Math.round(parseNum(str(fd, 'slot_capacity')) || 0) >= 1 ? Math.min(100, Math.round(parseNum(str(fd, 'slot_capacity')))) : null) : bakery.slot_capacity ?? null,
   };
+  if (patch.max_days_ahead < patch.min_days_ahead) back('/app/configuracion', { error: `«Hasta cuántos días antes» (${patch.max_days_ahead}) no puede ser menor que la anticipación mínima (${patch.min_days_ahead}): tu catálogo no mostraría ningún día.` });
+  if (patch.slug.length < 3) back('/app/configuracion', { error: 'El link tiene que tener al menos 3 letras.' });
   const { error } = await supabase.from('bakeries').update(patch).eq('id', bakery.id);
   if (error) back('/app/configuracion', { error: error.code === '23505' ? 'Ese link ya está en uso.' : error.message });
   if (patch.margin_percent !== Number(bakery.margin_percent) || patch.overhead_percent !== Number(bakery.overhead_percent)) {
@@ -391,7 +399,7 @@ export async function createProduct(fd) {
   if (!name) back('/app/productos', { error: 'Poné el nombre.' });
   if (price === null || price < 0) back('/app/productos', { error: 'Poné un precio válido (solo números).' });
   const admin = createAdmin();
-  const { data: same } = await admin.from('products').select('id').eq('bakery_id', bakery.id).ilike('name', name).not('sheet_row', 'is', null).maybeSingle();
+  const { data: same } = await admin.from('products').select('id').eq('bakery_id', bakery.id).ilike('name', likeExact(name)).not('sheet_row', 'is', null).limit(1).maybeSingle();
   if (same) back('/app/productos', { error: `Ya tenés uno llamado «${name}».` });
   const stock = parseNum(str(fd, 'stock'));
   const row = {
@@ -463,7 +471,7 @@ export async function saveIngredient(fd) {
     if (!name) back(path, { error: 'Poné el nombre.' });
     if (!qty || qty <= 0) back(path, { error: 'Poné cuánto trae la presentación que comprás (por ejemplo 1000 si es un paquete de 1 kg en gramos).' });
     if (!normUnit(unit)) back(path, { error: 'Elegí la unidad (g, kg, ml, l o u).' });
-    const { data: same } = await admin.from('ingredients').select('id').eq('bakery_id', bakery.id).ilike('name', name).maybeSingle();
+    const { data: same } = await admin.from('ingredients').select('id').eq('bakery_id', bakery.id).ilike('name', likeExact(name)).neq('id', id || '00000000-0000-0000-0000-000000000000').limit(1).maybeSingle();
     if (same && same.id !== id) back(path, { error: `Ya tenés uno llamado «${name}».` });
     patch = { ...patch, name, qty, unit, purchase_unit: str(fd, 'purchase_unit').slice(0, 80) || null, supplier: str(fd, 'supplier').slice(0, 80) || null };
   }
