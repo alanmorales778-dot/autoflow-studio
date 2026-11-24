@@ -1266,3 +1266,14 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .adm-login-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .adm-login-head .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: #c2410c; color: #fff; padding: 3px 8px; border-radius: 6px; }
 .adm-login .foot { color: #a1a1aa; font-size: 12px; text-align: center; margin-top: 16px; }
+
+/* Recetas */
+.upload-option { border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; }
+.upload-option h3 { margin: 0 0 4px; font-size: 16px; }
+.upload-option p { margin: 0 0 12px; font-size: 14px; }
+.upload-option .photo-picker { margin-top: auto; }
+.recipe-table td { vertical-align: top; padding-top: 6px; padding-bottom: 6px; }
+.recipe-table input, .recipe-table select { min-width: 0; }
+.recipe-table td:first-child { min-width: 180px; }
+.recipe-table small { display: block; margin-top: 3px; }
+.recipe-table tr.estimated input[name=qty] { border-color: var(--warn); background: var(--warn-soft); }

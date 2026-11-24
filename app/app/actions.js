@@ -467,6 +467,10 @@ export async function saveIngredient(fd) {
     if (same && same.id !== id) back(path, { error: `Ya tenés uno llamado «${name}».` });
     patch = { ...patch, name, qty, unit, purchase_unit: str(fd, 'purchase_unit').slice(0, 80) || null, supplier: str(fd, 'supplier').slice(0, 80) || null };
   }
+  // Insumos agregados desde una receta llegan sin presentación: el precio solo no alcanza.
+  if (prev && !fd.has('name') && !(Number(prev.qty) > 0 && normUnit(prev.unit))) {
+    back(`${path}#nuevo`, { error: `A «${prev.name}» le falta cuánto trae la presentación. Tocá «Editar» y completala junto con el precio.` });
+  }
   const { error } = id
     ? await admin.from('ingredients').update(patch).eq('id', id)
     : await admin.from('ingredients').insert({ ...patch, bakery_id: bakery.id, sheet_row: await nextSheetRow(admin, 'ingredients', bakery.id) });

@@ -13,6 +13,7 @@ const I = {
   recurrentes: 'M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M21 4v5h-5M3 20v-5h5',
   productos: 'M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',
   insumos: 'M4 7h16M4 12h16M4 17h10',
+  recetas: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M9 7h7M9 11h5',
   costos: 'M3 17l6-6 4 4 8-8M14 7h7v7',
   rentabilidad: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
   actividad: 'M22 12h-4l-3 9L9 3l-3 9H2',
@@ -34,6 +35,7 @@ const groups = (t) => [
   ['Tu negocio', [
     ['/app/productos', t.items, 'productos'],
     ['/app/insumos', t.insumos, 'insumos'],
+    ['/app/recetas', t.recetas || 'Recetas', 'recetas'],
     ['/app/rentabilidad', 'Costos y ganancias', 'rentabilidad', ['/app/costos']],
   ]],
   ['Cuenta', [

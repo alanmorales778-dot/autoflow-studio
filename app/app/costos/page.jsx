@@ -1,4 +1,5 @@
 import { rubroOf } from '@/lib/rubros';
+import { loadRecipeItems } from '@/lib/recipes';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { Flash, Locked } from '../ui';
@@ -30,7 +31,7 @@ export default async function Costos({ searchParams }) {
   ]);
   const products = (rawProducts || []).map((p) => ({ ...p, cost_error: live.get(p.id)?.error ?? p.cost_error }));
   const ids = (products || []).map((p) => p.id);
-  const { data: items } = ids.length ? await supabase.from('recipe_items').select('*').in('product_id', ids) : { data: [] };
+  const items = await loadRecipeItems(supabase, ids);
   const ingByName = new Map((ingredients || []).map((i) => [normName(i.name), i]));
   const byProduct = new Map();
   for (const it of items || []) {

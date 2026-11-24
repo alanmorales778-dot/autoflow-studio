@@ -2,15 +2,20 @@ import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireBakery } from '@/lib/session';
-import { addRecipeItem, deleteRecipeItem, applySuggestedPrice, saveProductSettings, uploadProductPhoto, removeProductPhoto, updateProduct } from '../../actions';
+import { applySuggestedPrice, saveProductSettings, uploadProductPhoto, removeProductPhoto, updateProduct } from '../../actions';
 import { liveCosts } from '@/lib/sheets';
 import { formatOptionsText } from '@/lib/options';
 import { Flash, Locked } from '../../ui';
 import PhotoPicker from '../../photo-picker';
 import MediaManager from './media-manager';
 import TryonManager from './tryon-manager';
-import { money, normName, pct } from '@/lib/format';
-import { RECIPE_UNITS, normUnit, currentMargin, suggestedPrice } from '@/lib/costs';
+import { money, pct } from '@/lib/format';
+import { currentMargin, suggestedPrice } from '@/lib/costs';
+import { hasRecipeAI } from '@/lib/recipes';
+import RecipeEditor from '../../recetas/recipe-editor';
+import { saveRecipe, readRecipePhoto } from '../../recetas/actions';
+
+export const maxDuration = 60;
 
 export default async function Receta({ params, searchParams }) {
   const { id } = await params;
@@ -24,17 +29,9 @@ export default async function Receta({ params, searchParams }) {
   const product = live ? { ...stored, cost: live.cost, min_price: live.min, cost_error: live.error } : stored;
   const fromDrive = !!bakery.sheet_productos_id;
   const [{ data: items }, { data: ingredients }] = await Promise.all([
-    supabase.from('recipe_items').select('*').eq('product_id', id).order('ingredient_name'),
+    supabase.from('recipe_items').select('*').eq('product_id', id).order('position').order('ingredient_name'),
     supabase.from('ingredients').select('*').eq('bakery_id', bakery.id).order('name'),
   ]);
-  const byName = new Map((ingredients || []).map((i) => [normName(i.name), i]));
-  const lineCost = (it) => {
-    const ing = byName.get(normName(it.ingredient_name));
-    const iu = ing && normUnit(ing.unit);
-    const ru = normUnit(it.unit);
-    if (!ing || ing.error || !iu || !ru || iu.base !== ru.base) return null;
-    return (Number(ing.price) / (Number(ing.qty) * iu.factor)) * Number(it.qty) * ru.factor;
-  };
   const margin = currentMargin(product.price, product.cost);
   const below = product.min_price && Number(product.price) < Number(product.min_price);
 
@@ -47,7 +44,7 @@ export default async function Receta({ params, searchParams }) {
 
       <div className="grid grid-3">
         <div className="card"><small className="muted">Precio de venta</small><div className="price">{money(product.price)}</div></div>
-        <div className="card"><small className="muted">Costo (con {pct(bakery.overhead_percent, 0)} de indirectos)</small><div className="price">{product.cost !== null ? money(product.cost) : '—'}</div></div>
+        <div className="card"><small className="muted">Costo por unidad (con {pct(bakery.overhead_percent, 0)} de indirectos)</small><div className="price">{product.cost !== null ? money(product.cost) : '—'}</div></div>
         <div className="card">
           <small className="muted">Precio mínimo para {pct(bakery.margin_percent, 0)} de margen</small>
           <div className="price">{product.min_price ? money(product.min_price) : '—'}</div>
@@ -61,7 +58,7 @@ export default async function Receta({ params, searchParams }) {
           )}
         </div>
       </div>
-      {product.cost_error && access.costs && <div className="alert warn">{product.cost_error === 'Sin receta cargada' ? <>Cargá abajo qué lleva para calcular el costo.</> : <>Para completar el cálculo: {product.cost_error}. <Link href="/app/insumos#nuevo">Agregar {T.insumo.toLowerCase()}</Link></>}</div>}
+      {product.cost_error && access.costs && <div className="alert warn">{product.cost_error === 'Sin receta cargada' ? <>Cargá <a href="#receta">abajo</a> qué lleva para calcular el costo.</> : <>Para completar el cálculo: {product.cost_error}. <Link href="/app/insumos#nuevo">Agregar {T.insumo.toLowerCase()}</Link></>}</div>}
 
       {!fromDrive && (
         <div className="card" id="datos">
@@ -109,53 +106,31 @@ export default async function Receta({ params, searchParams }) {
         )}
       </div>
 
-      <div className="card table-wrap">
-        <h2>{T.key === 'cocina' ? 'Ingredientes' : T.insumos} por unidad de «{product.name}»</h2>
-        {!items || items.length === 0 ? (
-          <p className="muted">Todavía no cargaste qué lleva.</p>
-        ) : (
-          <table>
-            <thead><tr><th>{T.insumo}</th><th>Cantidad</th><th>Costo</th><th></th></tr></thead>
-            <tbody>
-              {items.map((it) => {
-                const c = lineCost(it);
-                return (
-                  <tr key={it.id}>
-                    <td>{it.ingredient_name}{!byName.get(normName(it.ingredient_name)) && <><br /><small style={{ color: 'var(--bad)' }}>No está en tu lista de {T.insumos.toLowerCase()}. <Link href="/app/insumos#nuevo">Agregalo</Link></small></>}</td>
-                    <td>{Number(it.qty)} {it.unit}</td>
-                    <td>{c === null ? '—' : money(c)}</td>
-                    <td>
-                      <form action={deleteRecipeItem}>
-                        <input type="hidden" name="id" value={it.id} />
-                        <input type="hidden" name="product_id" value={product.id} />
-                        <button className="btn danger small">Quitar</button>
-                      </form>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="card" id="receta">
+        <div className="row between" style={{ alignItems: 'baseline' }}>
+          <h2 style={{ margin: 0 }}>{T.receta} de «{product.name}»</h2>
+          <Link href="/app/recetas" className="muted" style={{ fontSize: 14 }}>Todas las {T.key === 'cocina' ? 'recetas' : 'fichas'} →</Link>
+        </div>
+        {(!items || items.length === 0) && (
+          <p className="muted">Todavía no cargaste qué lleva. Escribilo abajo{access.costs && hasRecipeAI() ? ' o subí una foto de la receta y la cargamos por vos' : ''}.</p>
         )}
-
-        {access.costs && (
-          <form action={addRecipeItem} style={{ marginTop: 16 }}>
-            <input type="hidden" name="product_id" value={product.id} />
-            <div className="grid grid-3">
-              <div className="field">
-                <label>{T.insumo}</label>
-                <input name="ingredient_name" list="insumos" required placeholder="Elegí o escribí" />
-                <datalist id="insumos">{(ingredients || []).map((i) => <option key={i.id} value={i.name} />)}</datalist>
-              </div>
-              <div className="field"><label>Cantidad</label><input name="qty" inputMode="decimal" required placeholder="Ej: 250" /></div>
-              <div className="field">
-                <label>Unidad</label>
-                <select name="unit">{RECIPE_UNITS.map((u) => <option key={u}>{u}</option>)}</select>
-              </div>
-            </div>
-            <button className="btn">Agregar ingrediente</button>
-          </form>
+        {access.costs && hasRecipeAI() && (!items || items.length === 0) && (
+          <div style={{ maxWidth: 320, marginBottom: 16 }}>
+            <PhotoPicker key={sp.error || 'foto-receta'} action={readRecipePhoto} hidden={{ product_id: product.id }} label="Subir foto de la receta" changeLabel="Elegir otra" busyLabel="Leyendo la receta…" maxSide={2000} placeholder="📷" />
+          </div>
         )}
+        <RecipeEditor
+          action={saveRecipe}
+          hidden={{ product_id: product.id, back: `/app/productos/${product.id}#receta` }}
+          items={(items || []).map((it) => ({ name: it.ingredient_name, qty: Number(it.qty), unit: it.unit }))}
+          recipeYield={product.recipe_yield}
+          notes={product.recipe_notes}
+          ingredients={ingredients || []}
+          T={T}
+          overheadPercent={bakery.overhead_percent}
+          extraRows={items && items.length ? 3 : 6}
+          disabled={!access.costs}
+        />
       </div>
       <div className="card">
         <h2>Duración, opciones y suscripción</h2>

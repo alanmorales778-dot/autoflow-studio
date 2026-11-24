@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { loadRecipeItems } from '@/lib/recipes';
 import { getContext } from '@/lib/session';
 import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding } from './actions';
 import { onboardingSteps } from '@/lib/onboarding';
@@ -81,8 +82,8 @@ export default async function Agenda({ searchParams }) {
     const soon = await productionOrders(supabase, bakery.id, today, addDays(today, 2));
     const ids = [...new Set(soon.map((o) => o.product_id).filter(Boolean))];
     if (ids.length) {
-      const [{ data: items }, { data: ingredients }] = await Promise.all([
-        supabase.from('recipe_items').select('*').in('product_id', ids),
+      const [items, { data: ingredients }] = await Promise.all([
+        loadRecipeItems(supabase, ids),
         supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
       ]);
       const list = shoppingList(soon, items || [], ingredients || []);

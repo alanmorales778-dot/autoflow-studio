@@ -6,10 +6,42 @@ import { liveCosts } from '@/lib/sheets';
 import { rubroOf } from '@/lib/rubros';
 import { slugify, todayAR, STATUS_LABEL } from '@/lib/format';
 import { balanceDue } from '@/lib/balance';
+import { RECETAS_HEADER, loadRecipeItems } from '@/lib/recipes';
 
 export const dynamic = 'force-dynamic';
 
-const KINDS = ['insumos', 'productos', 'pedidos', 'clientes', 'ganancias'];
+const KINDS = ['insumos', 'productos', 'pedidos', 'clientes', 'ganancias', 'recetas'];
+
+const EJEMPLO_RECETAS = [
+  ['Alfajores de maicena (docena)', 'Maicena', 300, 'g', 2, 'Batir manteca y azúcar, sumar yemas y secos. Estirar, cortar y hornear 10 min a 170 °C.'],
+  ['', 'Harina 000', 200, 'g', '', ''],
+  ['', 'Manteca', 200, 'g', '', ''],
+  ['', 'Azúcar', 150, 'g', '', ''],
+  ['', 'Huevos', 3, 'u', '', ''],
+  ['', 'Dulce de leche', 500, 'g', '', ''],
+  ['Torta de chocolate grande', 'Harina 000', 500, 'g', 1, ''],
+  ['', 'Huevos', 6, 'u', '', ''],
+  ['', 'Chocolate semiamargo', 300, 'g', '', ''],
+  ['', 'Crema de leche', 200, 'ml', '', ''],
+];
+
+// Recetas: una fila por ingrediente; el producto, el rinde y los pasos van en la primera fila de cada receta.
+async function recetas(admin, bakery, plantilla) {
+  if (plantilla) return writeXlsx('Recetas', [RECETAS_HEADER, ...EJEMPLO_RECETAS]);
+  const { data: products } = await admin.from('products').select('id,name,recipe_yield,recipe_notes').eq('bakery_id', bakery.id).not('sheet_row', 'is', null).order('sheet_row');
+  const ids = (products || []).map((p) => p.id);
+  const items = await loadRecipeItems(admin, ids);
+  const byProduct = new Map();
+  items.forEach((it) => { if (!byProduct.has(it.product_id)) byProduct.set(it.product_id, []); byProduct.get(it.product_id).push(it); });
+  const rows = [];
+  for (const p of products || []) {
+    const list = byProduct.get(p.id) || [];
+    list.forEach((it, i) => rows.push(i === 0
+      ? [p.name, it.ingredient_name, it.batch_qty, it.unit, Number(p.recipe_yield) || 1, p.recipe_notes || '']
+      : ['', it.ingredient_name, it.batch_qty, it.unit, '', '']));
+  }
+  return writeXlsx('Recetas', [RECETAS_HEADER, ...(rows.length ? rows : EJEMPLO_RECETAS)]);
+}
 
 function monthBounds(ym) {
   const [y, m] = ym.split('-').map(Number);
@@ -99,6 +131,11 @@ export async function GET(request, { params }) {
   let filename;
   if (kind === 'pedidos') { buf = await pedidos(admin, bakery); filename = `${slugify(rubroOf(bakery).orders)}-${biz}-${today}.xlsx`; }
   else if (kind === 'clientes') { buf = await clientes(admin, bakery); filename = `clientes-${biz}-${today}.xlsx`; }
+  else if (kind === 'recetas') {
+    const plantilla = new URL(request.url).searchParams.get('plantilla') === '1';
+    buf = await recetas(admin, bakery, plantilla);
+    filename = plantilla ? 'plantilla-recetas-autoflow.xlsx' : `recetas-${biz}-${today}.xlsx`;
+  }
   else if (kind === 'ganancias') {
     const mes = new URL(request.url).searchParams.get('mes');
     const ym = /^\d{4}-\d{2}$/.test(mes || '') ? mes : today.slice(0, 7);

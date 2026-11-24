@@ -45,7 +45,7 @@ export default async function AppLayout({ children }) {
     isPilot = !!pp && pp.status !== 'abandonado';
   } catch {}
   const showFeedback = isPilot || bakery.is_test;
-  const terms = { items: T.items, insumos: T.insumos, workMode: T.workMode, orders: T.orders, order: T.order, prodTitle: T.prodTitle, recurring: access.recurring };
+  const terms = { items: T.items, insumos: T.insumos, workMode: T.workMode, orders: T.orders, order: T.order, prodTitle: T.prodTitle, recurring: access.recurring, recetas: T.key === 'cocina' ? 'Recetas' : 'Fichas de costo' };
 
   return (
     <>

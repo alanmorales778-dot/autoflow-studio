@@ -27,7 +27,7 @@ async function shrink(file, maxSide, keepPng) {
   return new File([blob], file.name.replace(/\.\w+$/, '') + (png ? '.png' : '.jpg'), { type });
 }
 
-export default function PhotoPicker({ action, hidden = {}, current, label = 'Elegir foto', changeLabel = 'Cambiar foto', maxSide = 1600, keepPng = false, shape = 'wide', placeholder }) {
+export default function PhotoPicker({ action, hidden = {}, current, label = 'Elegir foto', changeLabel = 'Cambiar foto', busyLabel = 'Subiendo…', maxSide = 1600, keepPng = false, shape = 'wide', placeholder }) {
   const formRef = useRef(null);
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -72,7 +72,7 @@ export default function PhotoPicker({ action, hidden = {}, current, label = 'Ele
         aria-label={img ? changeLabel : label}
       >
         {img ? <img src={img} alt="" /> : <span className="photo-ph">{placeholder}</span>}
-        <span className="photo-cta">{busy ? 'Subiendo…' : img ? changeLabel : label}</span>
+        <span className="photo-cta">{busy ? busyLabel : img ? changeLabel : label}</span>
       </button>
       {error && <p className="hint err" role="alert">{error}</p>}
     </form>

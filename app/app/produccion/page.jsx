@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { loadRecipeItems } from '@/lib/recipes';
 import { rubroOf } from '@/lib/rubros';
 import { requireBakery } from '@/lib/session';
 import { Flash } from '../ui';
@@ -27,8 +28,8 @@ export default async function Produccion({ searchParams }) {
   let list = null;
   if (access.costs) {
     const productIds = [...new Set(orders.map((o) => o.product_id).filter(Boolean))];
-    const [{ data: items }, { data: ingredients }] = await Promise.all([
-      productIds.length ? supabase.from('recipe_items').select('*').in('product_id', productIds) : { data: [] },
+    const [items, { data: ingredients }] = await Promise.all([
+      loadRecipeItems(supabase, productIds),
       supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
     ]);
     list = shoppingList(orders, items || [], ingredients || []);
