@@ -44,7 +44,7 @@ export default function InstallPrompt() {
       <div className="install no-print" role="region" aria-label="Instalar la app">
         <img src="/icon-192.png" alt="" width="40" height="40" />
         <div className="install-txt">
-          <strong>Instalá AutoFlow</strong>
+          <strong>Instalá HakkiraApp</strong>
           <span>Entrá de un toque y recibí avisos.</span>
         </div>
         <button type="button" className="btn small" onClick={install}>Instalar</button>
@@ -58,7 +58,7 @@ export default function InstallPrompt() {
             <ol className="ios-steps">
               <li><span className="n">1</span>Tocá el botón <b>Compartir</b> <span className="ios-share" aria-hidden="true">⬆︎</span> abajo en Safari.</li>
               <li><span className="n">2</span>Elegí <b>«Agregar a inicio»</b>.</li>
-              <li><span className="n">3</span>Abrí AutoFlow desde el ícono nuevo y activá los avisos con la 🔔.</li>
+              <li><span className="n">3</span>Abrí HakkiraApp desde el ícono nuevo y activá los avisos con la 🔔.</li>
             </ol>
             <button type="button" className="btn" style={{ width: '100%' }} onClick={() => hide(30)}>Entendido</button>
           </div>

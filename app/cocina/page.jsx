@@ -6,7 +6,7 @@ import { optionsSummary } from '@/lib/options';
 import Board from './board';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Pantalla del día · AutoFlow' };
+export const metadata = { title: 'Pantalla del día · HakkiraApp' };
 
 export default async function Cocina({ searchParams }) {
   const sp = await searchParams;

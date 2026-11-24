@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// Escena del hero: los mensajes sueltos del WhatsApp se convierten en el día ordenado de AutoFlow.
+// Escena del hero: los mensajes sueltos del WhatsApp se convierten en el día ordenado de HakkiraApp.
 // Va pasando sola por varios rubros (se frena si la pestaña no está a la vista o si el
 // visitante pidió «reducir movimiento»); también se puede elegir el rubro tocando abajo.
 const SCENES = [

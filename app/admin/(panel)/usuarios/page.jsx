@@ -50,7 +50,7 @@ export default async function Usuarios({ searchParams }) {
         <details className="card" id="invitar">
           <summary style={{ cursor: 'pointer', fontWeight: 600 }}>+ Dar usuario a alguien (invitación)</summary>
           <p className="muted" style={{ marginTop: 10 }}>Se crea la cuenta y te damos un link para mandarle. Al abrirlo elige su contraseña y crea su negocio con el rubro que pongas acá. Si le asignás un código piloto, recibe los días de prueba de esa invitación.</p>
-          <LinkForm action={inviteUser} label="Crear usuario y generar link" className="btn small" shareText="Te invito a probar AutoFlow. Entrá desde acá para crear tu contraseña">
+          <LinkForm action={inviteUser} label="Crear usuario y generar link" className="btn small" shareText="Te invito a probar HakkiraApp. Entrá desde acá para crear tu contraseña">
             <input name="email" type="email" required placeholder="email@cliente.com" style={{ maxWidth: 240 }} />
             <input name="business_name" placeholder="Nombre del negocio (opcional)" style={{ maxWidth: 220 }} />
             <select name="business_type" defaultValue="cocina" style={{ maxWidth: 200 }}>

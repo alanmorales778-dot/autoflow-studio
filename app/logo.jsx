@@ -12,9 +12,9 @@ export function LogoMark({ color = '#FB923C' }) {
 
 export default function Logo({ href = '/', mark = '#FB923C' }) {
   return (
-    <Link href={href} className="logo" aria-label="AutoFlow, inicio">
+    <Link href={href} className="logo" aria-label="HakkiraApp, inicio">
       <LogoMark color={mark} />
-      Auto<span style={{ marginLeft: -10 }}>Flow</span>
+      Hakkira<span style={{ marginLeft: -10 }}>App</span>
     </Link>
   );
 }

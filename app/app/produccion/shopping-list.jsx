@@ -197,7 +197,7 @@ export default function ShoppingList({ initialItems, mode, loadError, bakeryId, 
       {/* Sugeridos por los pedidos: una línea que se abre */}
       {suggestionsLocked ? (
         <p className={`${s.suggestBar} ${s.suggestLocked} no-print`}>
-          Con el módulo de Costos, AutoFlow te sugiere qué comprar según tus {labels.orders || 'pedidos'}. <a href="/app/plan">Ver planes →</a>
+          Con el módulo de Costos, HakkiraApp te sugiere qué comprar según tus {labels.orders || 'pedidos'}. <a href="/app/plan">Ver planes →</a>
         </p>
       ) : freshSuggestions.length > 0 && (
         <div className={`${s.suggest} no-print`}>

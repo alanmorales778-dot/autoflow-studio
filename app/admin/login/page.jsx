@@ -39,11 +39,11 @@ export default function AdminLogin() {
         <div className="adm-login-box fade-in">
           <div className="adm-login-head">
             <LogoMark color="#C2410C" />
-            <strong style={{ fontSize: 18 }}>AutoFlow</strong>
+            <strong style={{ fontSize: 18 }}>HakkiraApp</strong>
             <span className="tag">Admin</span>
           </div>
           <h1 className="disp" style={{ fontSize: 24 }}>Panel de administración</h1>
-          <p className="muted" style={{ marginBottom: 18 }}>Acceso solo para el equipo de AutoFlow.</p>
+          <p className="muted" style={{ marginBottom: 18 }}>Acceso solo para el equipo de HakkiraApp.</p>
           <form onSubmit={onSubmit} noValidate>
             <div className="field">
               <label htmlFor="email">Email</label>

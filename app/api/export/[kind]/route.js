@@ -125,7 +125,7 @@ export async function GET(request, { params }) {
   const { data: bakery } = await supabase.from('bakeries').select('*').eq('owner_id', user.id).maybeSingle();
   if (!bakery) return NextResponse.redirect(new URL('/app', request.url));
   const admin = createAdmin();
-  const biz = slugify(bakery.name) || 'autoflow';
+  const biz = slugify(bakery.name) || 'hakkiraapp';
   const today = todayAR();
   let buf;
   let filename;
@@ -134,7 +134,7 @@ export async function GET(request, { params }) {
   else if (kind === 'recetas') {
     const plantilla = new URL(request.url).searchParams.get('plantilla') === '1';
     buf = await recetas(admin, bakery, plantilla);
-    filename = plantilla ? 'plantilla-recetas-autoflow.xlsx' : `recetas-${biz}-${today}.xlsx`;
+    filename = plantilla ? 'plantilla-recetas-hakkiraapp.xlsx' : `recetas-${biz}-${today}.xlsx`;
   }
   else if (kind === 'ganancias') {
     const mes = new URL(request.url).searchParams.get('mes');

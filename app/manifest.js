@@ -1,8 +1,8 @@
 // La app instalable: nombre, ícono y cómo se abre desde la pantalla de inicio del celular.
 export default function manifest() {
   return {
-    name: 'AutoFlow',
-    short_name: 'AutoFlow',
+    name: 'HakkiraApp',
+    short_name: 'HakkiraApp',
     description: 'Pedidos, turnos, señas y costos de tu negocio.',
     id: '/app',
     start_url: '/app?app=1',

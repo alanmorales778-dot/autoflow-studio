@@ -84,7 +84,7 @@ export default async function Pilotos({ searchParams }) {
                     <td>
                       <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
                         <Copy value={pilotUrl(i.code)} />
-                        <a className="btn secondary small" href={`https://wa.me/?text=${encodeURIComponent(`Te invito a probar AutoFlow gratis ${i.trial_days} días como negocio piloto: ${pilotUrl(i.code)}`)}`} target="_blank" rel="noreferrer">WhatsApp</a>
+                        <a className="btn secondary small" href={`https://wa.me/?text=${encodeURIComponent(`Te invito a probar HakkiraApp gratis ${i.trial_days} días como negocio piloto: ${pilotUrl(i.code)}`)}`} target="_blank" rel="noreferrer">WhatsApp</a>
                         {can('manage') && (
                           <form action={toggleInvite}>
                             <input type="hidden" name="id" value={i.id} />

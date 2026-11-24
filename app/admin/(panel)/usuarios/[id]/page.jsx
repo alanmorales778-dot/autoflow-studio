@@ -133,7 +133,7 @@ export default async function Ficha({ params, searchParams }) {
           {can('support') && (
             <>
               <p className="muted" style={{ fontSize: 13 }}>Si se olvidó la contraseña o no le llegó el mail, generá un link y mandáselo.</p>
-              <LinkForm action={makeAccessLink} hidden={{ kind: 'recovery', email: r.email }} label="Link para nueva contraseña" shareText="Entrá desde acá para elegir una contraseña nueva de AutoFlow" />
+              <LinkForm action={makeAccessLink} hidden={{ kind: 'recovery', email: r.email }} label="Link para nueva contraseña" shareText="Entrá desde acá para elegir una contraseña nueva de HakkiraApp" />
             </>
           )}
           {can('manage') && r.is_test && (

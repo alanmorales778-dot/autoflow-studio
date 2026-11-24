@@ -48,7 +48,7 @@ export default async function Recetas({ searchParams }) {
         </div>
       </div>
       <p className="muted">
-        Qué lleva cada {T.item} y cuánto rinde. Con eso AutoFlow calcula el costo por unidad con los precios de tus <Link href="/app/insumos">{T.insumos.toLowerCase()}</Link>, arma la lista de compras y te avisa si vendés por debajo de tu margen ({pct(bakery.margin_percent, 0)}).
+        Qué lleva cada {T.item} y cuánto rinde. Con eso HakkiraApp calcula el costo por unidad con los precios de tus <Link href="/app/insumos">{T.insumos.toLowerCase()}</Link>, arma la lista de compras y te avisa si vendés por debajo de tu margen ({pct(bakery.margin_percent, 0)}).
       </p>
       {!access.costs && <Locked title="Módulo de Costos y producción">Cargá tus recetas desde Excel, Google Drive o una foto, y sabé cuánto te cuesta cada {T.item}.</Locked>}
 

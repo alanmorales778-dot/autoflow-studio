@@ -26,7 +26,7 @@ export default async function Equipo({ searchParams }) {
       <div className="page-head">
         <div>
           <h1>Equipo y perfiles</h1>
-          <p>Quién del equipo de AutoFlow entra a este panel y qué puede hacer. Los clientes nunca ven el panel: si abren /admin les aparece «página no encontrada».</p>
+          <p>Quién del equipo de HakkiraApp entra a este panel y qué puede hacer. Los clientes nunca ven el panel: si abren /admin les aparece «página no encontrada».</p>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ export default async function Equipo({ searchParams }) {
             <input name="email" type="email" required placeholder="email de la persona" style={{ maxWidth: 260 }} />
             <select name="role" defaultValue="soporte" style={{ maxWidth: 200 }}>{Object.entries(ROLES).map(([k, r]) => <option key={k} value={k}>{r.label}</option>)}</select>
             <button className="btn small">Sumar al equipo</button>
-            <span className="muted" style={{ fontSize: 12 }}>La persona tiene que tener cuenta en AutoFlow (si no, dale usuario desde Usuarios).</span>
+            <span className="muted" style={{ fontSize: 12 }}>La persona tiene que tener cuenta en HakkiraApp (si no, dale usuario desde Usuarios).</span>
           </form>
         )}
       </div>

@@ -255,7 +255,7 @@ export async function createTestAccount(fd) {
   const rubro = rubroOf(str(fd, 'business_type'));
   const name = str(fd, 'name').slice(0, 60) || `Prueba ${rubro.short || rubro.label}`;
   const tag = crypto.randomBytes(3).toString('hex');
-  const email = `prueba-${rubro.key}-${tag}@autoflow.test`;
+  const email = `prueba-${rubro.key}-${tag}@hakkiraapp.test`;
   const password = crypto.randomBytes(24).toString('base64url'); // nadie la usa: se entra con link directo
   let bakeryId = null;
   let err = null;

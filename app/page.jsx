@@ -47,7 +47,7 @@ const CONECTA = [
 ];
 
 const COMPARA = {
-  cols: ['Catálogo por WhatsApp', 'App de turnos', 'Planilla de Excel', 'AutoFlow'],
+  cols: ['Catálogo por WhatsApp', 'App de turnos', 'Planilla de Excel', 'HakkiraApp'],
   rows: [
     ['El cliente elige y pide desde un link', 'si', 'si', 'no', 'si'],
     ['Fecha, horario y cupo por día', 'no', 'si', 'no', 'si'],
@@ -83,13 +83,13 @@ const EJEMPLO = [
   ['Comparte el link', 'Lo deja en la bio de Instagram y en el estado de WhatsApp.'],
   ['Le piden a las 23:14', 'El cliente elige la torta, la fecha y la franja, y paga la seña con Mercado Pago. Si no paga, el lugar se libera solo.'],
   ['Cocina tranquila', 'El viernes abre el modo cocina: cada pedido con su dedicatoria y las alergias resaltadas.'],
-  ['No vende a pérdida', 'Sube la manteca y AutoFlow le avisa qué torta quedó con poco margen y a cuánto venderla.'],
+  ['No vende a pérdida', 'Sube la manteca y HakkiraApp le avisa qué torta quedó con poco margen y a cuánto venderla.'],
 ];
 
 const FAQ = [
   ['¿Mis clientes tienen que descargar algo?', 'No. Entran a tu link desde el celular, eligen y listo. No necesitan cuenta ni app.'],
   ['¿Tengo que dejar de usar WhatsApp?', 'No. Seguís atendiendo por WhatsApp como siempre, pero en vez de explicar todo mandás tu link. Si querés, el bot de WhatsApp toma los pedidos por vos.'],
-  ['¿AutoFlow se queda con un porcentaje de mis ventas?', 'No. Pagás el plan mensual y nada más. Mercado Pago cobra su comisión habitual por cada cobro, igual que hoy.'],
+  ['¿HakkiraApp se queda con un porcentaje de mis ventas?', 'No. Pagás el plan mensual y nada más. Mercado Pago cobra su comisión habitual por cada cobro, igual que hoy.'],
   ['¿Y si no uso Mercado Pago?', 'Podés tomar pedidos igual. La seña la coordinás vos y el lugar queda reservado las horas que elijas; si no se confirma, se libera solo.'],
   ['¿Necesito saber de computación?', 'Si usás Instagram o una planilla, te alcanza. Arrancás con productos de ejemplo de tu rubro y los cambiás por los tuyos, o subís tu Excel.'],
   ['¿Sirve si tengo un equipo o muchos productos?', 'Sí. Ponés cupos por categoría y por horario, ves la hoja de producción del día, la rentabilidad de cada producto y exportás todo a Excel.'],
@@ -109,7 +109,7 @@ export default function Home() {
           <nav className="nav" aria-label="Principal">
             <a href="#conectado">Cómo funciona</a>
             <a href="#rubros">Rubros</a>
-            <a href="#compara">Por qué AutoFlow</a>
+            <a href="#compara">Por qué HakkiraApp</a>
             <a href="#precios">Precios</a>
             <Link href="/login">Ingresar</Link>
             <Link href="/registro" className="btn" style={{ marginLeft: 6 }}>Probar gratis</Link>
@@ -169,7 +169,7 @@ export default function Home() {
             <div className="demo-phone">
               <div className="phone phone-video">
                 <div className="phone-notch" />
-                <div className="phone-screen"><DemoVideo src="/demo/autoflow-demo.mp4" poster="/demo/autoflow-demo.jpg" /></div>
+                <div className="phone-screen"><DemoVideo src="/demo/hakkiraapp-demo.mp4" poster="/demo/hakkiraapp-demo.jpg" /></div>
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function Home() {
         <section id="conectado" className="section container">
           <span className="eyebrow">Cómo funciona</span>
           <h2 className="big">Entra un pedido. Todo lo demás se acomoda solo.</h2>
-          <p className="lead" style={{ maxWidth: 680 }}>Lo que en otras herramientas son pantallas que no se hablan, en AutoFlow es un solo pedido que llega a todos lados.</p>
+          <p className="lead" style={{ maxWidth: 680 }}>Lo que en otras herramientas son pantallas que no se hablan, en HakkiraApp es un solo pedido que llega a todos lados.</p>
           <div className="flow">
             <div className="flow-ticket" aria-hidden="true">
               <span className="ft-tag">Pedido nuevo · 23:14</span>
@@ -224,7 +224,7 @@ export default function Home() {
         <section id="rubros" className="section container">
           <span className="eyebrow">Rubros</span>
           <h2 className="big">Un mismo sistema, adaptado a lo que hacés.</h2>
-          <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y AutoFlow cambia los nombres, lo que ve tu cliente en el link, los datos que pide y la pantalla de trabajo del día.</p>
+          <p className="lead" style={{ maxWidth: 680 }}>Elegís tu rubro al crear la cuenta y HakkiraApp cambia los nombres, lo que ve tu cliente en el link, los datos que pide y la pantalla de trabajo del día.</p>
           <div className="grid grid-3 rubro-grid" style={{ marginTop: 32 }}>
             {rubros.map((r) => (
               <Link key={r.key} href={`/registro?rubro=${r.key}`} className={`card rubro-card ${r.key === 'cocina' ? 'featured' : ''}`}>
@@ -241,7 +241,7 @@ export default function Home() {
         </section>
 
         <section id="compara" className="section container" style={{ paddingTop: 40 }}>
-          <span className="eyebrow">Por qué AutoFlow</span>
+          <span className="eyebrow">Por qué HakkiraApp</span>
           <h2 className="big">En vez de juntar tres herramientas que no se hablan.</h2>
           <p className="lead" style={{ maxWidth: 680 }}>Hay buenos catálogos, buenas apps de turnos y planillas para todo. Lo que no hay es algo que una el pedido con lo que cobrás, lo que comprás y lo que ganás.</p>
           <div className="card table-wrap compare" style={{ marginTop: 28 }}>
@@ -385,7 +385,7 @@ export default function Home() {
 
       <footer className="footer" style={{ marginTop: 0 }}>
         <div className="container row between">
-          <span>© {new Date().getFullYear()} AutoFlow</span>
+          <span>© {new Date().getFullYear()} HakkiraApp</span>
           <Link href="/legal" style={{ color: 'var(--muted)' }}>Términos y privacidad</Link>
         </div>
       </footer>

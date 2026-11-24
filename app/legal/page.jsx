@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Logo from '../logo';
 
-export const metadata = { title: 'Términos y privacidad — AutoFlow' };
+export const metadata = { title: 'Términos y privacidad — HakkiraApp' };
 
 const CONTACT = 'alan.morales778@gmail.com';
 
@@ -34,16 +34,16 @@ export default function Legal() {
         </nav>
 
         <h2 id="servicio">1. El servicio</h2>
-        <p>AutoFlow es un servicio de AutoFlow Studio que ayuda a negocios que trabajan por encargo, turno o reserva (cocina, belleza, regalos, talleres, alquileres y otros) a tomar pedidos online, administrar cupos de producción, cobrar señas, calcular costos y llevar el stock. Al crear una cuenta aceptás estos términos.</p>
+        <p>HakkiraApp es un servicio que ayuda a negocios que trabajan por encargo, turno o reserva (cocina, belleza, regalos, talleres, alquileres y otros) a tomar pedidos online, administrar cupos de producción, cobrar señas, calcular costos y llevar el stock. Al crear una cuenta aceptás estos términos.</p>
 
         <h2 id="cuenta">2. Tu cuenta y uso aceptable</h2>
         <p>Sos responsable de la información que cargás, de mantener segura tu contraseña y de lo que pase desde tu cuenta. No podés usar el servicio para vender productos ilegales, enviar mensajes no solicitados ni cargar datos de terceros sin derecho a hacerlo. Podemos suspender cuentas que incumplan estas reglas, avisando antes salvo que haya un riesgo urgente.</p>
 
         <h2 id="pagos">3. Prueba, pagos y cancelación</h2>
-        <p>Las cuentas nuevas tienen 14 días de prueba con todos los módulos, sin tarjeta. Después, la suscripción se cobra por mes y por adelantado con Mercado Pago, según los módulos elegidos. Los precios están en pesos e incluyen impuestos; si cambian, te avisamos con al menos 30 días de anticipación. Podés cancelar cuando quieras desde Mercado Pago o escribiéndonos: el servicio sigue activo hasta el fin del período pagado y no hay reintegros por períodos parciales. Las señas y pagos de tus clientes van directo a tu cuenta de Mercado Pago; AutoFlow no los retiene ni cobra comisión sobre ellos.</p>
+        <p>Las cuentas nuevas tienen 14 días de prueba con todos los módulos, sin tarjeta. Después, la suscripción se cobra por mes y por adelantado con Mercado Pago, según los módulos elegidos. Los precios están en pesos e incluyen impuestos; si cambian, te avisamos con al menos 30 días de anticipación. Podés cancelar cuando quieras desde Mercado Pago o escribiéndonos: el servicio sigue activo hasta el fin del período pagado y no hay reintegros por períodos parciales. Las señas y pagos de tus clientes van directo a tu cuenta de Mercado Pago; HakkiraApp no los retiene ni cobra comisión sobre ellos.</p>
 
         <h2 id="roles">4. Quién es responsable de cada dato</h2>
-        <p>Para los datos de tu cuenta y de tu suscripción, AutoFlow Studio es el responsable. Para los datos de tus clientes (los que dejan al hacer un pedido), el responsable es tu negocio y AutoFlow actúa como encargado del tratamiento: los procesa solo para prestarte el servicio y siguiendo tus instrucciones. Tu negocio debe informar a sus clientes cómo usa sus datos.</p>
+        <p>Para los datos de tu cuenta y de tu suscripción, HakkiraApp es el responsable. Para los datos de tus clientes (los que dejan al hacer un pedido), el responsable es tu negocio y HakkiraApp actúa como encargado del tratamiento: los procesa solo para prestarte el servicio y siguiendo tus instrucciones. Tu negocio debe informar a sus clientes cómo usa sus datos.</p>
 
         <h2 id="datos">5. Datos que tratamos y para qué</h2>
         <ul>
@@ -61,7 +61,7 @@ export default function Legal() {
         <p>Para funcionar usamos: Supabase (base de datos, servidores en San Pablo, Brasil), Vercel (alojamiento), Mercado Pago (cobros), Meta (WhatsApp, solo si activás el bot), Google (tus planillas, solo si conectás Drive, y el envío de emails). Algunos de estos servicios guardan datos fuera de Argentina, en países con niveles de protección adecuados o bajo contratos que exigen protegerlos.</p>
 
         <h2 id="google">8. Acceso a Google Drive</h2>
-        <p>Si conectás Google Drive, AutoFlow pide acceso únicamente a los archivos que la propia app crea en tu Drive (permiso «drive.file»). No puede ver ni modificar el resto de tus archivos. Usamos ese acceso solo para leer tus insumos, productos y stock, y para escribir las columnas calculadas por AutoFlow. Podés revocarlo cuando quieras desde tu cuenta de Google o desde Ajustes. El uso de la información recibida de las APIs de Google cumple la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado.</p>
+        <p>Si conectás Google Drive, HakkiraApp pide acceso únicamente a los archivos que la propia app crea en tu Drive (permiso «drive.file»). No puede ver ni modificar el resto de tus archivos. Usamos ese acceso solo para leer tus insumos, productos y stock, y para escribir las columnas calculadas por HakkiraApp. Podés revocarlo cuando quieras desde tu cuenta de Google o desde Ajustes. El uso de la información recibida de las APIs de Google cumple la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado.</p>
 
         <h2 id="seguridad">9. Seguridad y conservación</h2>
         <p>La información viaja cifrada. Las credenciales de Mercado Pago y WhatsApp que cargues se guardan cifradas y solo se usan para cobrar y enviar mensajes en nombre de tu negocio. Cada negocio solo puede ver sus propios datos. Conservamos tus datos mientras tengas la cuenta; si la das de baja, los borramos dentro de los 30 días, salvo lo que la ley nos obligue a guardar (por ejemplo, comprobantes de pago).</p>
@@ -70,12 +70,12 @@ export default function Legal() {
         <p>Podés pedir acceso, corrección, actualización o eliminación de tus datos en cualquier momento, sin costo, escribiendo a <a href={`mailto:${CONTACT}`}>{CONTACT}</a>. Respondemos dentro de los 10 días hábiles. Si no quedás conforme, podés reclamar ante la Agencia de Acceso a la Información Pública (AAIP), autoridad de control de la Ley 25.326 de Protección de Datos Personales.</p>
 
         <h2 id="responsabilidad">11. Responsabilidad</h2>
-        <p>AutoFlow calcula costos, márgenes y precios sugeridos con los datos que cargás: las decisiones de precio, la elaboración de los productos y la relación con tus clientes son responsabilidad de tu negocio. Trabajamos para que el servicio esté siempre disponible, pero puede haber interrupciones por mantenimiento o fallas de proveedores. En ningún caso nuestra responsabilidad supera lo que pagaste por el servicio en los últimos 3 meses.</p>
+        <p>HakkiraApp calcula costos, márgenes y precios sugeridos con los datos que cargás: las decisiones de precio, la elaboración de los productos y la relación con tus clientes son responsabilidad de tu negocio. Trabajamos para que el servicio esté siempre disponible, pero puede haber interrupciones por mantenimiento o fallas de proveedores. En ningún caso nuestra responsabilidad supera lo que pagaste por el servicio en los últimos 3 meses.</p>
 
         <h2 id="cambios">12. Cambios y contacto</h2>
         <p>Si cambiamos estos términos de forma importante, te avisamos por email o dentro de la app antes de que rijan. Estos términos se rigen por las leyes de la República Argentina. Contacto: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
       </main>
-      <footer className="footer"><div className="container">© {new Date().getFullYear()} AutoFlow</div></footer>
+      <footer className="footer"><div className="container">© {new Date().getFullYear()} HakkiraApp</div></footer>
     </>
   );
 }

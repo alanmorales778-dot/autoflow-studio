@@ -6,10 +6,10 @@ import WebVitals from './web-vitals';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
 export const metadata = {
-  title: 'AutoFlow — Pedidos, turnos, señas y costos para negocios por encargo',
+  title: 'HakkiraApp — Pedidos, turnos, señas y costos para negocios por encargo',
   description: 'Link de pedidos y turnos con cupos por día, señas automáticas con Mercado Pago, costos que se actualizan desde tu Excel o Google Drive y bot de WhatsApp.',
-  applicationName: 'AutoFlow',
-  appleWebApp: { capable: true, title: 'AutoFlow', statusBarStyle: 'default' },
+  applicationName: 'HakkiraApp',
+  appleWebApp: { capable: true, title: 'HakkiraApp', statusBarStyle: 'default' },
   icons: { icon: [{ url: '/icon-192.png', sizes: '192x192' }], apple: '/apple-touch-icon.png' },
   formatDetection: { telephone: false },
 };

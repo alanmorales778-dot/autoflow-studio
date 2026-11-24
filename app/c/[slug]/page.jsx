@@ -271,7 +271,7 @@ export default async function Catalogo({ params, searchParams }) {
           </>
         )}
       </main>
-      <footer className="footer"><div className="container">Pedidos online con <Link href="/">AutoFlow</Link></div></footer>
+      <footer className="footer"><div className="container">Pedidos online con <Link href="/">HakkiraApp</Link></div></footer>
     </>
   );
 }

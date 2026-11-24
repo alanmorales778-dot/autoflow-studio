@@ -31,7 +31,7 @@ export async function GET(request) {
   try {
     const tokens = await exchangeCode(code);
     const refresh = tokens.refresh_token || (bakery.google_refresh_token_enc ? decrypt(bakery.google_refresh_token_enc) : null);
-    if (!refresh) return back(request, { error: 'Google no devolvió permiso permanente. Quitá AutoFlow en myaccount.google.com/permissions y volvé a conectar.' });
+    if (!refresh) return back(request, { error: 'Google no devolvió permiso permanente. Quitá HakkiraApp en myaccount.google.com/permissions y volvé a conectar.' });
     const patch = { google_refresh_token_enc: encrypt(refresh), google_email: emailFromIdToken(tokens.id_token) };
 
     let fresh = { ...bakery, ...patch };

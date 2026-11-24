@@ -209,7 +209,7 @@ export default async function Configuracion({ searchParams }) {
       {/* Calendario */}
       <details className="card fold" id="calendario">
         <summary><h2>Ver tus {t.orders.toLowerCase()} en el calendario</h2></summary>
-        <p className="muted">Sumalos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en AutoFlow.</p>
+        <p className="muted">Sumalos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en HakkiraApp.</p>
         {bakery.calendar_token ? (
           <>
             <CopyField value={calendarUrl(bakery.calendar_token)} />
@@ -265,11 +265,11 @@ export default async function Configuracion({ searchParams }) {
               <form action={syncNow}><input type="hidden" name="back" value="/app/configuracion" /><button className="btn">Actualizar ahora</button></form>
               <form action={disconnectGoogle}><button className="btn danger">Desconectar</button></form>
             </div>
-            <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>Editá solo las columnas blancas. Las grises (Reservado, Disponible, Costo, Precio mínimo, Margen) las completa AutoFlow.</p>
+            <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>Editá solo las columnas blancas. Las grises (Reservado, Disponible, Costo, Precio mínimo, Margen) las completa HakkiraApp.</p>
           </>
         ) : (
           <>
-            <p>Al conectar, creamos dos planillas en tu Google Drive: <strong>Insumos</strong> (precios de lo que comprás) y <strong>Productos y stock</strong> (lo que vendés). AutoFlow solo puede ver esas dos planillas, nada más de tu Drive.</p>
+            <p>Al conectar, creamos dos planillas en tu Google Drive: <strong>Insumos</strong> (precios de lo que comprás) y <strong>Productos y stock</strong> (lo que vendés). HakkiraApp solo puede ver esas dos planillas, nada más de tu Drive.</p>
             <a className="btn" href="/api/google/connect">Conectar Google Drive</a>
           </>
         )}

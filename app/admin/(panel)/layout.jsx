@@ -4,7 +4,7 @@ import AdminNav from './nav';
 import { adminSignOut } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Admin · AutoFlow', robots: { index: false, follow: false } };
+export const metadata = { title: 'Admin · HakkiraApp', robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }) {
   const { user, role, admin } = await requireAdmin('view');

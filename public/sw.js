@@ -1,4 +1,4 @@
-// AutoFlow: recibe los avisos aunque la app esté cerrada y abre la pantalla correcta al tocarlos.
+// HakkiraApp: recibe los avisos aunque la app esté cerrada y abre la pantalla correcta al tocarlos.
 const VERSION = 'af-1';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -6,8 +6,8 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 
 self.addEventListener('push', (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'AutoFlow', body: event.data && event.data.text() }; }
-  const title = data.title || 'AutoFlow';
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'HakkiraApp', body: event.data && event.data.text() }; }
+  const title = data.title || 'HakkiraApp';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

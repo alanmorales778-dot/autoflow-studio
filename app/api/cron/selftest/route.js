@@ -26,7 +26,7 @@ async function run(request) {
     }
   };
   const page = (path, must, status = 200) => async () => {
-    const res = await fetch(base + path, { redirect: 'manual', signal: AbortSignal.timeout(15000), headers: { 'user-agent': 'autoflow-selftest' } });
+    const res = await fetch(base + path, { redirect: 'manual', signal: AbortSignal.timeout(15000), headers: { 'user-agent': 'hakkiraapp-selftest' } });
     if (res.status !== status) return `HTTP ${res.status}`;
     if (must) {
       const body = await res.text();

@@ -30,7 +30,7 @@ export default async function Insumos({ searchParams }) {
         </div>
       </div>
       <p className="muted">
-        {fromDrive ? <>Última actualización: {dateTimeLabel(bakery.last_sync_at)}. AutoFlow revisa tu planilla de Drive cada 10 minutos.</> : <>Cuando cambia un precio, cambialo acá y tocá «Guardar»: el costo de tus {T.items.toLowerCase()} se recalcula al instante. Si son muchos, subí un archivo{drive ? <> o <Link href="/app/configuracion#drive">conectá Google Drive</Link></> : ''}.</>}
+        {fromDrive ? <>Última actualización: {dateTimeLabel(bakery.last_sync_at)}. HakkiraApp revisa tu planilla de Drive cada 10 minutos.</> : <>Cuando cambia un precio, cambialo acá y tocá «Guardar»: el costo de tus {T.items.toLowerCase()} se recalcula al instante. Si son muchos, subí un archivo{drive ? <> o <Link href="/app/configuracion#drive">conectá Google Drive</Link></> : ''}.</>}
       </p>
       {!access.costs && <Locked title="Módulo de Costos">Con el módulo de Costos, cada cambio de precio acá recalcula el costo de todos tus {T.items.toLowerCase()}.</Locked>}
       {bakery.last_sync_error && <div className="alert bad">{bakery.last_sync_error}</div>}

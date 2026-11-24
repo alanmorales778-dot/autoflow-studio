@@ -4,7 +4,7 @@ import { RUBROS } from '@/lib/rubros';
 import { AuthShell } from '../../auth-shell';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Invitación piloto · AutoFlow', robots: { index: false, follow: false } };
+export const metadata = { title: 'Invitación piloto · HakkiraApp', robots: { index: false, follow: false } };
 
 const ASK = [
   'Usarlo con pedidos o turnos reales durante la prueba.',
@@ -42,7 +42,7 @@ export default async function Piloto({ params }) {
       ) : (
         <div className="fade-in">
           <span className="badge warn" style={{ marginBottom: 12 }}>Programa piloto</span>
-          <h1 className="disp">Te invitamos a probar AutoFlow {inv.trial_days} días gratis</h1>
+          <h1 className="disp">Te invitamos a probar HakkiraApp {inv.trial_days} días gratis</h1>
           <p style={{ color: 'var(--ink-2)', fontSize: 16 }}>
             Sos parte de los primeros negocios{rubro ? ` de ${rubro.label.toLowerCase()}` : ''} que lo usan. Tenés todos los módulos incluidos, sin tarjeta y sin comisión por venta.
           </p>

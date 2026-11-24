@@ -496,7 +496,7 @@ export async function applySuggestedPrice(fd) {
       await writeCells(bakery, [{ range: `Productos!D${p.sheet_row}`, values: [[price]] }]);
       await pushStockToSheet(createAdmin(), bakery, [id]);
     } catch (e) {
-      err = `Se actualizó en AutoFlow pero no en la planilla: ${e.message}`;
+      err = `Se actualizó en HakkiraApp pero no en la planilla: ${e.message}`;
     }
   }
   revalidatePath('/app', 'layout');
@@ -511,7 +511,7 @@ async function setProductPhoto(bakery, product, url) {
     try {
       await writeCells(bakery, [{ range: `Productos!G${product.sheet_row}`, values: [[url || '']] }]);
     } catch {
-      // la foto queda en AutoFlow aunque no se pueda escribir la planilla
+      // la foto queda en HakkiraApp aunque no se pueda escribir la planilla
     }
   }
 }
@@ -615,7 +615,7 @@ export async function applySimulatedPrices(fd) {
       await writeCells(bakery, cells);
       await pushStockToSheet(createAdmin(), bakery, valid.map((w) => w.id));
     } catch (e) {
-      err = `Se actualizó en AutoFlow pero no en la planilla: ${e.message}`;
+      err = `Se actualizó en HakkiraApp pero no en la planilla: ${e.message}`;
     }
   }
   revalidatePath('/app', 'layout');
@@ -814,7 +814,7 @@ export async function subscribe(fd) {
   let err = null;
   try {
     const pre = await createPreapproval(process.env.MP_PLATFORM_ACCESS_TOKEN, {
-      reason: `AutoFlow – ${modules}`,
+      reason: `HakkiraApp – ${modules}`,
       amount,
       payerEmail: user.email,
       externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}`,

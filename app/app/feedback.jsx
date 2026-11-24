@@ -33,14 +33,14 @@ export default function Feedback() {
       {open && (
         <div className="fb-panel" role="dialog" aria-label="Enviar un comentario">
           {thanks ? (
-            <p style={{ margin: 0 }}><strong>¡Gracias!</strong> Lo lee el equipo de AutoFlow.</p>
+            <p style={{ margin: 0 }}><strong>¡Gracias!</strong> Lo lee el equipo de HakkiraApp.</p>
           ) : (
             <form action={action} key={state?.at || 'f'}>
               <strong style={{ display: 'block', marginBottom: 8 }}>¿Qué nos querés contar?</strong>
               <div className="fb-kinds" role="radiogroup" aria-label="Tipo">
                 {KINDS.map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{l}</button>)}
               </div>
-              <div className="fb-stars" aria-label="¿Qué tan útil te resulta AutoFlow?">
+              <div className="fb-stars" aria-label="¿Qué tan útil te resulta HakkiraApp?">
                 {[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" className={n <= rating ? 'on' : ''} onClick={() => setRating(n === rating ? 0 : n)} aria-label={`${n} de 5`}>★</button>)}
               </div>
               <input type="hidden" name="kind" value={kind} />

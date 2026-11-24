@@ -13,9 +13,9 @@ export default function Ahorro({ price }) {
   const [caidos, setCaidos] = useState(2);
   const [ticket, setTicket] = useState(20000);
 
-  const MIN_CON_AUTOFLOW = 2; // revisar y confirmar un pedido que ya llega completo
+  const MIN_CON_HAKKIRA = 2; // revisar y confirmar un pedido que ya llega completo
   const semanas = 4.3;
-  const horas = Math.max(0, (pedidos * semanas * (minutos - MIN_CON_AUTOFLOW)) / 60);
+  const horas = Math.max(0, (pedidos * semanas * (minutos - MIN_CON_HAKKIRA)) / 60);
   const plataTiempo = horas * hora;
   const plataCaidos = caidos * semanas * ticket * 0.5; // la seña cubre la mitad de lo que hoy se pierde
   const total = plataTiempo + plataCaidos;
@@ -46,8 +46,8 @@ export default function Ahorro({ price }) {
         <div className="calc-big num">{Math.round(horas)} h</div>
         <span className="muted" style={{ fontSize: 14 }}>respondiendo lo mismo, más los pedidos que se caen. En plata:</span>
         <div className="calc-big num" style={{ color: 'var(--brand)' }}>{fmt(total)}</div>
-        {veces >= 1 && <p style={{ margin: '8px 0 0', fontWeight: 600 }}>Es {veces >= 10 ? Math.round(veces) : veces.toFixed(1).replace('.', ',')} veces lo que cuesta AutoFlow por mes.</p>}
-        <p className="muted" style={{ fontSize: 12, margin: '12px 0 0' }}>Estimación con tus números: suponemos 2 minutos por pedido para revisarlo con AutoFlow y que la seña recupera la mitad de lo que hoy se cae.</p>
+        {veces >= 1 && <p style={{ margin: '8px 0 0', fontWeight: 600 }}>Es {veces >= 10 ? Math.round(veces) : veces.toFixed(1).replace('.', ',')} veces lo que cuesta HakkiraApp por mes.</p>}
+        <p className="muted" style={{ fontSize: 12, margin: '12px 0 0' }}>Estimación con tus números: suponemos 2 minutos por pedido para revisarlo con HakkiraApp y que la seña recupera la mitad de lo que hoy se cae.</p>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { createAdmin } from '@/lib/supabase';
 import { getPreapproval } from '@/lib/mp';
 import { applyPreapproval } from '@/lib/billing';
 
-// Notificaciones de suscripciones de AutoFlow (cuenta de Mercado Pago de la plataforma)
+// Notificaciones de suscripciones de HakkiraApp (cuenta de Mercado Pago de la plataforma)
 export async function POST(request) {
   const token = process.env.MP_PLATFORM_ACCESS_TOKEN;
   if (!token) return NextResponse.json({ ok: true });

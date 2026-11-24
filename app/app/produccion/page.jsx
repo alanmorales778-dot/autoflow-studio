@@ -159,7 +159,7 @@ export default async function Produccion({ searchParams }) {
             labels={{ insumo: T.insumo, insumos: T.insumos, shopCats: T.shopCats, shopEx: T.shopEx, orders: T.orders.toLowerCase() }}
           />
           {list && orders.length > 0 && list.rows.length === 0 && (
-            <p className={`${p.note} no-print`}>Para que AutoFlow te sugiera qué comprar, cargá qué lleva cada uno de tus {T.items.toLowerCase()}.</p>
+            <p className={`${p.note} no-print`}>Para que HakkiraApp te sugiera qué comprar, cargá qué lleva cada uno de tus {T.items.toLowerCase()}.</p>
           )}
           {list && list.missing.length > 0 && <p className={`${p.note} no-print`}>Sin {T.receta.toLowerCase()} cargada (no se sugieren sus {T.insumos.toLowerCase()}): {list.missing.join(', ')}.</p>}
           {list && list.warnings.map((w) => <p key={w} className={`${p.note} no-print`}>{w}</p>)}
