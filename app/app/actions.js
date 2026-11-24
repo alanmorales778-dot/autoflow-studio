@@ -46,9 +46,18 @@ export async function createBakery(fd) {
   if (!name) back('/app', { error: 'Poné el nombre de tu emprendimiento.' });
   if (slug.length < 3) back('/app', { error: 'El link tiene que tener al menos 3 letras.' });
   const rubro = rubroOf(str(fd, 'business_type'));
-  const { error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null, ...(rubro.delivery ? { delivery_enabled: true } : {}), ...(rubro.minDays !== undefined ? { min_days_ahead: rubro.minDays } : {}) });
+  const { data: created, error } = await supabase.from('bakeries').insert({ owner_id: user.id, name, slug, whatsapp_contact: str(fd, 'whatsapp') || null, business_type: rubro.key, slots: rubro.slots, slot_capacity: rubro.slotCapacity || null, ...(rubro.delivery ? { delivery_enabled: true } : {}), ...(rubro.minDays !== undefined ? { min_days_ahead: rubro.minDays } : {}) }).select('id').single();
   if (error) back('/app', { error: error.code === '23505' ? 'Ese link ya está en uso, elegí otro.' : error.message });
-  back('/app', { ok: '¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.' });
+  // Invitación piloto (viene del registro o de una invitación del panel admin): suma días de prueba y lo marca como piloto
+  let pilotMsg = '';
+  const pilotCode = String(user.user_metadata?.pilot_code || '').trim();
+  if (pilotCode && created?.id) {
+    try {
+      const { data: r } = await createAdmin().rpc('redeem_pilot_invite', { p_code: pilotCode, p_bakery: created.id });
+      if (r?.ok) pilotMsg = ` Sos negocio piloto: tenés ${r.trial_days} días de prueba con todo incluido.`;
+    } catch {}
+  }
+  back('/app', { ok: `¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.${pilotMsg}` });
 }
 
 // Carga dos productos con receta e insumos de ejemplo para ver la app funcionando antes de cargar los propios.

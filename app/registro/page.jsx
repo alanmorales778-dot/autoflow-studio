@@ -9,9 +9,13 @@ const RUBROS = publicRubros();
 
 export default function Registro() {
   const [rubro, setRubro] = useState('cocina');
+  const [pilot, setPilot] = useState('');
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('rubro');
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('rubro');
     if (q && RUBROS.some((r) => r.key === q)) setRubro(q);
+    const pc = String(params.get('piloto') || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    if (pc.length >= 4) setPilot(pc);
   }, []);
   const ph = (RUBROS.find((r) => r.key === rubro) || RUBROS[0]).bizPh;
   const [email, setEmail] = useState('');
@@ -41,7 +45,7 @@ export default function Registro() {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { business_name: business.trim(), business_type: rubro } },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { business_name: business.trim(), business_type: rubro, ...(pilot ? { pilot_code: pilot } : {}) } },
     });
     setLoading(false);
     if (error) {
@@ -71,6 +75,7 @@ export default function Registro() {
         <>
           <h1 className="disp">Probá 14 días gratis</h1>
           <p className="sub">Todos los módulos incluidos. Sin tarjeta.</p>
+          {pilot && <div className="alert info" style={{ marginBottom: 12 }}>Invitación piloto <strong className="mono">{pilot}</strong>: los días extra se activan al crear tu negocio.</div>}
           <AuthTabs active="registro" />
           <form key={shake} className={shake ? 'shake' : ''} onSubmit={onSubmit} noValidate>
             <fieldset className="field rubro-pick">

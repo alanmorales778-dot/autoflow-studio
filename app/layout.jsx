@@ -1,4 +1,5 @@
 import './globals.css';
+import WebVitals from './web-vitals';
 
 // Las fuentes se cargan desde el navegador (no en el build): el build de Vercel
 // no siempre puede descargar Google Fonts y eso hacía fallar el deploy.
@@ -23,7 +24,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href={FONTS} />
       </head>
-      <body>{children}</body>
+      <body>
+        <WebVitals />
+        {children}
+      </body>
     </html>
   );
 }

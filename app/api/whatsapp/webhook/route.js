@@ -35,7 +35,7 @@ export async function POST(request) {
       if (!bakery) continue;
       if (!verifyMetaSignature(raw, request.headers.get('x-hub-signature-256'), bakery.wa_app_secret_enc)) continue;
       const { data: sub } = await admin.from('subscriptions').select('*').eq('bakery_id', bakery.id).maybeSingle();
-      if (!moduleAccess(sub).whatsapp) continue;
+      if (!moduleAccess(sub, bakery).whatsapp) continue;
       const contactName = value.contacts?.[0]?.profile?.name || '';
       for (const msg of value.messages) {
         if (!['text', 'interactive', 'button'].includes(msg.type)) continue;

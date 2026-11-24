@@ -76,7 +76,7 @@ export default async function Catalogo({ params, searchParams }) {
   const L = t.link;
   const maps = mapsUrl(bakery.pickup_address);
   const { data: sub } = await admin.from('subscriptions').select('*').eq('bakery_id', bakery.id).maybeSingle();
-  const access = moduleAccess(sub);
+  const access = moduleAccess(sub, bakery);
   const open = access.base;
   const { data: products } = await admin
     .from('products')

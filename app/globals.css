@@ -1197,3 +1197,65 @@ input.switch:focus-visible { box-shadow: var(--ring); }
   .demo-grid { grid-template-columns: 1fr; gap: 28px; }
   .phone-video { transform: none; width: 300px; height: 640px; }
 }
+
+/* ---------- Panel de administración (/admin) ---------- */
+.adm-top { background: #18181b; color: #f4f4f5; position: sticky; top: 0; z-index: 30; }
+.adm-top-in { display: flex; align-items: center; gap: 14px; padding: 10px 20px; flex-wrap: wrap; max-width: 1280px; margin: 0 auto; }
+.adm-top .logo { color: #fff; }
+.adm-top .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: #c2410c; color: #fff; padding: 3px 8px; border-radius: 6px; }
+.adm-top .end { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 13px; color: #a1a1aa; flex-wrap: wrap; }
+.adm-top .end a { color: #e4e4e7; }
+.adm-nav { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 52px; z-index: 29; }
+.adm-nav-in { display: flex; gap: 4px; overflow-x: auto; padding: 0 16px; max-width: 1280px; margin: 0 auto; scrollbar-width: none; }
+.adm-nav-in::-webkit-scrollbar { display: none; }
+.adm-nav a { padding: 12px 12px; font-size: 14px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
+.adm-nav a:hover { color: var(--ink); }
+.adm-nav a.on { color: var(--ink); border-bottom-color: var(--brand); font-weight: 600; }
+.adm-nav .dot { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+.adm-main { max-width: 1280px; margin: 0 auto; padding: 24px 20px 72px; }
+.adm-main .kpi .v { font-size: 26px; }
+.adm-main .kpi .s { font-size: 12px; color: var(--muted); }
+.adm-bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 8px; }
+.adm-bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; font-size: 11px; color: var(--muted); }
+.adm-bars .b i { display: block; width: 100%; max-width: 34px; background: var(--brand); border-radius: 6px 6px 2px 2px; min-height: 2px; }
+.adm-bars .b span.n { font-weight: 600; color: var(--ink-2); }
+.adm-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.adm-filters a { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--ink-2); background: #fff; }
+.adm-filters a.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.adm-table td { font-size: 13.5px; }
+.adm-table td small { display: block; }
+.adm-table tr:hover td { background: #fcfcfb; }
+.adm-link-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--sunken); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+.adm-link-box code { font-family: var(--font-mono); font-size: 12px; word-break: break-all; flex: 1 1 240px; }
+.adm-inline { display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap; }
+.adm-inline input, .adm-inline select { width: auto; min-height: 34px; padding: 4px 8px; font-size: 13px; }
+.adm-qa { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.adm-qa:last-child { border-bottom: 0; }
+.adm-qa .t { font-weight: 600; font-size: 14px; }
+.adm-qa .d { font-size: 13px; color: var(--muted); }
+.adm-qa .btns { display: flex; gap: 4px; }
+.adm-qa .btns button { min-height: 32px; padding: 0 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; color: var(--ink-2); }
+.adm-qa .btns button.on-ok { background: var(--ok-soft); border-color: var(--ok-line); color: var(--ok); }
+.adm-qa .btns button.on-falla { background: var(--bad-soft); border-color: var(--bad-line); color: var(--bad); }
+.adm-qa .btns button.on-pendiente { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn); }
+.adm-progress { height: 8px; background: var(--sunken); border-radius: 999px; overflow: hidden; display: flex; }
+.adm-progress i { display: block; height: 100%; }
+.adm-vital { display: flex; flex-direction: column; gap: 2px; }
+.adm-vital .v { font-family: var(--font-display); font-size: 24px; font-weight: 800; }
+.adm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; margin-right: 6px; vertical-align: middle; }
+.adm-dot.ok { background: var(--ok); } .adm-dot.warn { background: #d97706; } .adm-dot.bad { background: var(--bad); }
+.adm-msg { white-space: pre-wrap; font-size: 14px; }
+@media (max-width: 640px) { .adm-main { padding: 16px 14px 72px; } .adm-qa { grid-template-columns: 1fr; } }
+
+/* Botón de comentarios para pilotos (dentro de la app) */
+.fb-fab { position: fixed; right: 18px; bottom: 18px; z-index: 40; display: inline-flex; gap: 8px; align-items: center; background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 10px 16px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-lg); cursor: pointer; }
+.fb-fab:hover { background: #000; }
+.fb-panel { position: fixed; right: 18px; bottom: 70px; z-index: 41; width: min(360px, calc(100vw - 24px)); background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg); padding: 16px; animation: fade-in .25s var(--ease); }
+.fb-kinds { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.fb-kinds button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 13px; cursor: pointer; }
+.fb-kinds button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.fb-stars { display: flex; gap: 2px; margin-bottom: 10px; }
+.fb-stars button { background: none; border: 0; font-size: 22px; cursor: pointer; color: #d4d4d8; padding: 0 2px; }
+.fb-stars button.on { color: #f59e0b; }
+@media (max-width: 860px) { .fb-fab { bottom: 84px; right: 12px; padding: 9px 14px; } .fb-panel { bottom: 134px; right: 12px; } }
+@media print { .fb-fab, .fb-panel { display: none; } }

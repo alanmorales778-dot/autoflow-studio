@@ -18,7 +18,7 @@ export default async function Plan({ searchParams }) {
       const updated = await applyPreapproval(createAdmin(), pre);
       if (updated) {
         sub = updated;
-        access = moduleAccess(sub);
+        access = moduleAccess(sub, bakery);
       }
     } catch {}
   }

@@ -18,7 +18,7 @@ async function loadContext(slug) {
   const { data: bakery } = await admin.from('bakeries').select('*').eq('slug', slug).maybeSingle();
   if (!bakery) redirect('/');
   const { data: sub } = await admin.from('subscriptions').select('*').eq('bakery_id', bakery.id).maybeSingle();
-  return { admin, bakery, access: moduleAccess(sub) };
+  return { admin, bakery, access: moduleAccess(sub, bakery) };
 }
 
 async function uploadReference(admin, bakery, file) {

@@ -41,6 +41,7 @@ async function run(request) {
   await check('login', page('/login', 'Hola de nuevo'));
   await check('registro', page('/registro', 'Probá 14 días gratis'));
   await check('legal', page('/legal', 'Ley 25.326'));
+  await check('admin sin sesión redirige', page('/admin', null, 307));
   await check('panel sin sesión redirige', page('/app', null, 307));
   await check('calendario inválido da 404', page('/cal/tokenInventadoQueNoExiste123456789.ics', null, 404));
   await check('base de datos', async () => {
@@ -58,7 +59,7 @@ async function run(request) {
 
   const failed = checks.filter((c) => !c.ok);
   if (failed.length) await reportError('selftest', `Autoprueba: ${failed.length} de ${checks.length} fallaron — ${failed.map((f) => `${f.name}: ${f.detail}`).join(' · ')}`);
-  await heartbeat('selftest', { total: checks.length, failed: failed.length });
+  await heartbeat('selftest', { total: checks.length, failed: failed.length, failedNames: failed.map((f) => f.name).slice(0, 10) });
   return NextResponse.json({ ok: failed.length === 0, total: checks.length, failed });
 }
 
