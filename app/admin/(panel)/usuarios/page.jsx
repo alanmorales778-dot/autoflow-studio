@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { requireAdmin, overview, accountState, daysLeft, ago } from '@/lib/admin';
 import { RUBROS, RUBRO_KEYS } from '@/lib/rubros';
-import { Flash } from '../../app/ui';
-import LinkForm from '../link-form';
-import { inviteUser } from '../actions';
+import { Flash } from '@/app/app/ui';
+import LinkForm from '@/app/admin/link-form';
+import { inviteUser } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 

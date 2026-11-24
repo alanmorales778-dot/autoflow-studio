@@ -3,7 +3,8 @@
 import crypto from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { requireAdmin, audit, accessLink, randomCode, QA_SCENARIOS, ROLES } from '@/lib/admin';
+import { requireAdmin, audit, accessLink, randomCode, QA_SCENARIOS, ROLES, getAdminRole } from '@/lib/admin';
+import { createClient } from '@/lib/supabase';
 import { seedTestBusiness } from '@/lib/admin-seed';
 import { RUBROS, rubroOf } from '@/lib/rubros';
 import { slugify } from '@/lib/format';
@@ -390,4 +391,23 @@ export async function removeTeamMember(fd) {
   await audit(ctx, 'sacar_equipo', userId);
   revalidatePath('/admin/equipo');
   back('/admin/equipo', { ok: 'Quitado del equipo.' });
+}
+
+// ---------- Entrada al panel (separada de la app) ----------
+export async function amIAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const role = await getAdminRole(user.id);
+  if (!role) {
+    await supabase.auth.signOut();
+    return { ok: false, reason: 'Esta cuenta no tiene acceso al panel de administración.' };
+  }
+  return { ok: true };
+}
+
+export async function adminSignOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect('/admin/login');
 }

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireAdmin, overview, accountState, daysLeft, ago } from '@/lib/admin';
 import { money } from '@/lib/format';
 import { RUBROS } from '@/lib/rubros';
-import { Flash } from '../app/ui';
+import { Flash } from '@/app/app/ui';
 
 export const dynamic = 'force-dynamic';
 

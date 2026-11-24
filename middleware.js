@@ -20,9 +20,10 @@ export async function middleware(request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const p = request.nextUrl.pathname;
-  if (!user && (p.startsWith('/app') || p.startsWith('/cocina') || p.startsWith('/admin'))) {
+  if (!user && (p.startsWith('/app') || p.startsWith('/cocina') || (p.startsWith('/admin') && p !== '/admin/login'))) {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    // El panel de administración tiene su propia entrada, separada de la app de los clientes
+    url.pathname = p.startsWith('/admin') ? '/admin/login' : '/login';
     url.search = '';
     return NextResponse.redirect(url);
   }

@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation';
 import { requireAdmin, overview, accountState, daysLeft, ago } from '@/lib/admin';
 import { RUBROS } from '@/lib/rubros';
 import { money, dateTimeLabel } from '@/lib/format';
-import { Flash, StatusBadge } from '../../../app/ui';
-import ConfirmButton from '../../../app/confirm-button';
-import LinkForm from '../../link-form';
+import { Flash, StatusBadge } from '@/app/app/ui';
+import ConfirmButton from '@/app/app/confirm-button';
+import LinkForm from '@/app/admin/link-form';
 import {
   extendTrial, setPlan, suspendBakery, reactivateBakery, toggleTestFlag, saveAdminNotes,
   makeAccessLink, addParticipant, setParticipant, resetTestData, deleteTestAccount,
-} from '../../actions';
+} from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 

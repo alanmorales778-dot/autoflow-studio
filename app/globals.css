@@ -1259,3 +1259,10 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .fb-stars button.on { color: #f59e0b; }
 @media (max-width: 860px) { .fb-fab { bottom: 84px; right: 12px; padding: 9px 14px; } .fb-panel { bottom: 134px; right: 12px; } }
 @media print { .fb-fab, .fb-panel { display: none; } }
+
+/* Entrada al panel de administración (separada del login de clientes) */
+.adm-login { min-height: 100vh; display: grid; place-items: center; background: #18181b; padding: 24px; }
+.adm-login-box { width: min(400px, 100%); background: #fff; border-radius: 18px; padding: 28px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .6); }
+.adm-login-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.adm-login-head .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: #c2410c; color: #fff; padding: 3px 8px; border-radius: 6px; }
+.adm-login .foot { color: #a1a1aa; font-size: 12px; text-align: center; margin-top: 16px; }

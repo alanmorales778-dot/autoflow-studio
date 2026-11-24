@@ -1,7 +1,7 @@
 import { requireAdmin, ROLES, ago } from '@/lib/admin';
-import { Flash } from '../../app/ui';
-import ConfirmButton from '../../app/confirm-button';
-import { addTeamMember, setTeamRole, removeTeamMember } from '../actions';
+import { Flash } from '@/app/app/ui';
+import ConfirmButton from '@/app/app/confirm-button';
+import { addTeamMember, setTeamRole, removeTeamMember } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 

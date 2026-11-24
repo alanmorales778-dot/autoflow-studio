@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireAdmin, ago, bytes } from '@/lib/admin';
-import { Flash } from '../../app/ui';
-import { runSelftest } from '../actions';
+import { Flash } from '@/app/app/ui';
+import { runSelftest } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { requireAdmin, ROLES } from '@/lib/admin';
-import Logo from '../logo';
+import Logo from '@/app/logo';
 import AdminNav from './nav';
+import { adminSignOut } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Admin · AutoFlow', robots: { index: false, follow: false } };
@@ -19,8 +19,8 @@ export default async function AdminLayout({ children }) {
           <span className="tag">Admin</span>
           <div className="end">
             <span className="hide-mobile">{user.email} · {ROLES[role]?.label}</span>
-            <Link href="/app">Ir a la app</Link>
-            <a href="/" target="_blank" rel="noreferrer">Ver la página</a>
+            <a href="/" target="_blank" rel="noreferrer">Ver la página pública</a>
+            <form action={adminSignOut}><button className="btn secondary small">Salir</button></form>
           </div>
         </div>
       </header>

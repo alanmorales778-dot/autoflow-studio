@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { requireAdmin, overview, ago, QA_SCENARIOS } from '@/lib/admin';
 import { RUBROS, RUBRO_KEYS } from '@/lib/rubros';
-import { Flash } from '../../app/ui';
-import ConfirmButton from '../../app/confirm-button';
-import LinkForm from '../link-form';
-import { createTestAccount, makeAccessLink, saveQa, resetTestData, deleteTestAccount } from '../actions';
+import { Flash } from '@/app/app/ui';
+import ConfirmButton from '@/app/app/confirm-button';
+import LinkForm from '@/app/admin/link-form';
+import { createTestAccount, makeAccessLink, saveQa, resetTestData, deleteTestAccount } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 

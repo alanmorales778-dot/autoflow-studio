@@ -42,6 +42,7 @@ async function run(request) {
   await check('registro', page('/registro', 'Probá 14 días gratis'));
   await check('legal', page('/legal', 'Ley 25.326'));
   await check('admin sin sesión redirige', page('/admin', null, 307));
+  await check('entrada del panel admin', page('/admin/login', 'Panel de administración'));
   await check('panel sin sesión redirige', page('/app', null, 307));
   await check('calendario inválido da 404', page('/cal/tokenInventadoQueNoExiste123456789.ics', null, 404));
   await check('base de datos', async () => {
