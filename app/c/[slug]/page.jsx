@@ -124,7 +124,7 @@ export default async function Catalogo({ params, searchParams }) {
   const nextDates = firstAvail ? await availableDates(admin, bakery, firstAvail, 1) : [];
   const nextLabel = nextDates[0] ? (() => { const [wd, dm] = dateLabel(nextDates[0].date).split(' '); return `${wd} ${dm.split('/')[0]}`; })() : null;
   const cats = [...new Set(list.map((p) => (p.category || '').trim()).filter(Boolean))];
-  const sections = cats.length > 1 && list.length >= 6 ? [...cats.map((c) => ({ name: c, items: list.filter((p) => (p.category || '').trim() === c) })), { name: 'Otros', items: list.filter((p) => !(p.category || '').trim()) }].filter((g) => g.items.length) : [{ name: null, items: list }];
+  const sections = cats.length > 1 && list.length >= Math.max(6, cats.length * 3) ? [...cats.map((c) => ({ name: c, items: list.filter((p) => (p.category || '').trim() === c) })), { name: 'Otros', items: list.filter((p) => !(p.category || '').trim()) }].filter((g) => g.items.length) : [{ name: null, items: list }];
   const asList = L.mode === 'turno' || L.mode === 'visita';
   const fmtDur = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`);
 
