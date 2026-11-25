@@ -23,9 +23,21 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { data } = await createAdmin().from('bakeries').select('name,business_type').eq('slug', slug).maybeSingle();
+  const admin = createAdmin();
+  const { data } = await admin.from('bakeries').select('id,name,business_type,logo_url,pickup_address,policy_text').eq('slug', slug).maybeSingle();
   const L = rubroOf(data).link;
-  return { title: data ? `${data.name} — ${L.mode === 'turno' ? 'Reservá tu turno' : L.mode === 'reserva' ? 'Reservá tu fecha' : L.mode === 'visita' ? 'Pedí una visita' : 'Hacé tu pedido'}` : 'Catálogo' };
+  const title = data ? `${data.name} — ${L.mode === 'turno' ? 'Reservá tu turno' : L.mode === 'reserva' ? 'Reservá tu fecha' : L.mode === 'visita' ? 'Pedí una visita' : 'Hacé tu pedido'}` : 'Catálogo';
+  if (!data) return { title };
+  // Vista previa al compartir el link por WhatsApp o Instagram: foto del primer producto (o el logo).
+  const { data: first } = await admin.from('products').select('name,photo_url').eq('bakery_id', data.id).eq('visible', true).not('sheet_row', 'is', null).not('photo_url', 'is', null).order('sheet_row').limit(1).maybeSingle();
+  const image = first?.photo_url || data.logo_url || null;
+  const description = `${L.mode === 'turno' ? 'Elegí día y horario' : 'Elegí, pedí y reservá'} online${data.pickup_address ? ` · ${data.pickup_address}` : ''}.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: 'website', ...(image ? { images: [{ url: image }] } : {}) },
+    twitter: { card: image ? 'summary_large_image' : 'summary', title, description, ...(image ? { images: [image] } : {}) },
+  };
 }
 
 function waLink(num) {
@@ -95,6 +107,11 @@ export default async function Catalogo({ params, searchParams }) {
   const wa = waLink(bakery.whatsapp_contact);
   const depositPct = bakery.deposit_percent;
   const groups = selected?.options || [];
+  const [{ count: couponCount }, { data: reviews }] = await Promise.all([
+    admin.from('coupons').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id).eq('active', true),
+    admin.from('reviews').select('rating,comment,name,created_at').eq('bakery_id', bakery.id).eq('visible', true).order('created_at', { ascending: false }).limit(50),
+  ]);
+  const avgRating = reviews?.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : null;
 
   return (
     <>
@@ -114,6 +131,7 @@ export default async function Catalogo({ params, searchParams }) {
               {bakery.delivery_enabled && <span>{t.envio}</span>}
               {bakery.min_days_ahead > 0 && <span>Pedí con {bakery.min_days_ahead} {bakery.min_days_ahead === 1 ? 'día' : 'días'} de anticipación</span>}
               {depositPct > 0 && <span className="brand">Seña del {depositPct} % para reservar</span>}
+              {avgRating && reviews.length >= 3 && <a href="#resenas" style={{ textDecoration: 'none' }}><span>★ {avgRating.toFixed(1).replace('.', ',')} · {reviews.length} opiniones</span></a>}
             </div>
           </div>
           {wa && <a className="btn secondary" href={wa} target="_blank" rel="noreferrer">Consultas por WhatsApp</a>}
@@ -213,9 +231,11 @@ export default async function Catalogo({ params, searchParams }) {
                       <div className="field"><label>{t.note2.label} (opcional)</label><input name="allergies" placeholder={t.note2.ph} /></div>
                       {L.photo && <div className="field"><label>{t.photoLabel || 'Foto de referencia'} (opcional)</label><PhotoField /></div>}
                       <div className="field"><label>Otras aclaraciones (opcional)</label><input name="notes" /></div>
+                      {couponCount > 0 && <div className="field"><label>Cupón de descuento (opcional)</label><input name="coupon_code" maxLength={20} autoCapitalize="characters" style={{ textTransform: 'uppercase' }} /></div>}
                       <div className="summary" style={{ marginBottom: 12 }}>
                         {qty > 1 && <>{qty} unidades · </>}{L.mode === 'visita' ? 'Precio de referencia' : 'Precio base'}: <strong>{money(Number(selected.price) * qty)}</strong>{groups.some((g) => g.choices.some((c) => c.delta)) ? ' + opciones elegidas' : ''}
                         {depositPct > 0 && <> · Seña: {depositPct}% del total</>}
+                        {bakery.delivery_enabled && Number(bakery.delivery_fee) > 0 && <div className="muted" style={{ fontSize: 13 }}>{t.envio}: {money(bakery.delivery_fee)}{Number(bakery.free_delivery_from) > 0 ? ` (gratis desde ${money(bakery.free_delivery_from)})` : ''}.</div>}
                         {depositPct > 0 && bakery.mp_access_token_enc && <div className="muted" style={{ fontSize: 13 }}>Vas a pagar la seña con Mercado Pago. Tenés {bakery.hold_minutes} minutos; si no, el cupo se libera.</div>}
                       </div>
                       {bakery.policy_text && <div className="policy"><strong>Antes de confirmar</strong><p>{bakery.policy_text}</p></div>}
@@ -267,6 +287,20 @@ export default async function Catalogo({ params, searchParams }) {
                   );
                 })}
               </div>
+            )}
+            {reviews?.length > 0 && (
+              <section id="resenas" style={{ marginTop: 28 }}>
+                <h2 className="disp" style={{ fontSize: 22 }}>Lo que dicen {avgRating ? <small className="muted" style={{ fontSize: 15 }}>★ {avgRating.toFixed(1).replace('.', ',')} · {reviews.length}</small> : null}</h2>
+                <div className="grid grid-3">
+                  {reviews.filter((r) => r.comment).slice(0, 6).map((r, i) => (
+                    <div key={i} className="card" style={{ margin: 0 }}>
+                      <div aria-label={`${r.rating} de 5`}>{'★'.repeat(r.rating)}<span className="muted">{'★'.repeat(5 - r.rating)}</span></div>
+                      <p style={{ margin: '6px 0' }}>«{r.comment}»</p>
+                      <small className="muted">{r.name || 'Cliente'}</small>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
           </>
         )}

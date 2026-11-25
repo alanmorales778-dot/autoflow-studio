@@ -10,6 +10,9 @@ import { safeEqual } from '@/lib/crypto';
 import { ensureBalanceLink } from '@/lib/balance';
 import { createCustomerSubscription, subscriptionStatusUrl } from '@/lib/recurring';
 import { notifyOwner } from '@/lib/notify';
+import { notify } from '@/lib/notifications';
+import { submitReceipt } from '@/lib/receipts';
+import { money, dateLabel } from '@/lib/format';
 
 const str = (fd, k) => String(fd.get(k) ?? '').trim();
 
@@ -63,6 +66,7 @@ export async function placeOrder(fd) {
       dedication: str(fd, 'dedication'),
       allergies: str(fd, 'allergies'),
       occasion: str(fd, 'occasion'),
+      coupon_code: str(fd, 'coupon_code'),
       reference_photo_url: photoUrl,
       selectedOptions,
       channel: 'web',
@@ -128,4 +132,71 @@ export async function placeSubscription(fd) {
   if (err) redirect(`/c/${slug}?p=${productId}&modo=suscripcion&error=${encodeURIComponent(err)}`);
   if (sub.init_point) redirect(sub.init_point);
   redirect(subscriptionStatusUrl(bakery, sub).replace(/^https?:\/\/[^/]+/, ''));
+}
+
+// ---------- Acciones del cliente desde la página de su pedido (validan el token del link) ----------
+async function loadOwnOrder(fd) {
+  const slug = str(fd, 'slug');
+  const id = str(fd, 'id');
+  const t = str(fd, 't');
+  const { admin, bakery } = await loadContext(slug);
+  const { data: order } = await admin.from('orders').select('*').eq('id', id).eq('bakery_id', bakery.id).maybeSingle();
+  if (!order || !safeEqual(order.public_token, t)) redirect(`/c/${slug}`);
+  const here = `/c/${slug}/pedido/${id}?t=${encodeURIComponent(t)}`;
+  return { admin, bakery, order, here };
+}
+
+const withMsg = (here, k, v) => `${here}&${k}=${encodeURIComponent(v)}`;
+
+// Comprobante de transferencia de la seña
+export async function uploadReceipt(fd) {
+  const { admin, bakery, order, here } = await loadOwnOrder(fd);
+  let r = null;
+  let err = null;
+  try {
+    r = await submitReceipt(admin, bakery, order, fd.get('comprobante'));
+  } catch (e) {
+    err = e.message;
+  }
+  if (err) redirect(withMsg(here, 'error', err));
+  redirect(withMsg(here, 'ok', r.ok ? '¡Listo! Verificamos tu comprobante y tu pedido quedó confirmado.' : 'Recibimos tu comprobante. El negocio lo va a revisar y te confirma.'));
+}
+
+// «Voy» / «No puedo» desde el recordatorio
+export async function replyAttendance(fd) {
+  const { admin, bakery, order, here } = await loadOwnOrder(fd);
+  const reply = str(fd, 'reply') === 'no_puedo' ? 'no_puedo' : 'voy';
+  if (!['confirmado', 'pendiente_sena'].includes(order.status)) redirect(here);
+  await admin.from('orders').update({ customer_reply: reply, customer_reply_at: new Date().toISOString() }).eq('id', order.id);
+  if (reply === 'no_puedo' || order.customer_reply !== reply) {
+    await notify(admin, bakery, {
+      kind: 'nuevo',
+      title: reply === 'voy' ? `${order.customer_name} confirmó que va` : `${order.customer_name} avisó que no puede`,
+      body: `${order.quantity} × ${order.product_name} · ${dateLabel(order.date)}${order.slot ? ` · ${order.slot}` : ''}${reply === 'no_puedo' ? '. Escribile para reprogramar o liberá el lugar cancelándolo.' : ''}`,
+      url: '/app/pedidos',
+    });
+  }
+  redirect(withMsg(here, 'ok', reply === 'voy' ? '¡Gracias por confirmar! Te esperamos.' : 'Gracias por avisar. El negocio te va a escribir para reprogramar.'));
+}
+
+// Reseña después de entregado
+export async function submitReview(fd) {
+  const { admin, bakery, order, here } = await loadOwnOrder(fd);
+  if (order.status !== 'entregado') redirect(here);
+  const rating = Math.round(Number(str(fd, 'rating')));
+  if (!(rating >= 1 && rating <= 5)) redirect(withMsg(here, 'error', 'Elegí de 1 a 5 estrellas.'));
+  const comment = str(fd, 'comment').slice(0, 500) || null;
+  const { error } = await admin.from('reviews').insert({ bakery_id: bakery.id, order_id: order.id, rating, comment, name: String(order.customer_name || '').split(' ')[0].slice(0, 80) });
+  if (error && error.code !== '23505') redirect(withMsg(here, 'error', 'No se pudo guardar. Probá de nuevo.'));
+  if (!error) await notify(admin, bakery, { kind: 'sistema', title: `Nueva reseña: ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}`, body: comment ? `${order.customer_name}: «${comment.slice(0, 120)}»` : order.customer_name, url: '/app/clientes#resenas' });
+  redirect(withMsg(here, 'ok', '¡Gracias por tu opinión!'));
+}
+
+// Presupuesto (oficios): el cliente lo acepta desde el link
+export async function acceptQuote(fd) {
+  const { admin, bakery, order, here } = await loadOwnOrder(fd);
+  if (!order.quote_lines?.length || order.quote_accepted_at || !['pendiente_sena', 'confirmado'].includes(order.status)) redirect(here);
+  await admin.from('orders').update({ quote_accepted_at: new Date().toISOString(), ...(Number(order.deposit_amount) > 0 ? {} : { status: 'confirmado' }) }).eq('id', order.id);
+  await notify(admin, bakery, { kind: 'nuevo', title: `${order.customer_name} aceptó el presupuesto`, body: `${money(order.total)} · ${dateLabel(order.date)}${order.slot ? ` · ${order.slot}` : ''}`, url: '/app/pedidos' });
+  redirect(withMsg(here, 'ok', '¡Presupuesto aceptado! Te esperamos.'));
 }

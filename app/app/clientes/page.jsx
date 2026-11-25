@@ -1,6 +1,6 @@
 import { requireBakery } from '@/lib/session';
 import { rubroOf } from '@/lib/rubros';
-import { updateCustomer } from '../actions';
+import { updateCustomer, toggleReview, saveCoupon, toggleCoupon } from '../actions';
 import { normName } from '@/lib/format';
 import { Flash } from '../ui';
 import { todayAR, addDays, dateLabel, money } from '@/lib/format';
@@ -13,7 +13,7 @@ export default async function Clientes({ searchParams }) {
   const T = rubroOf(bakery);
   const today = todayAR();
   const catalog = `${appUrl()}/c/${bakery.slug}`;
-  const [{ data: customers }, { data: orders }] = await Promise.all([
+  const [{ data: customers }, { data: orders }, { data: reviews }, { data: coupons }] = await Promise.all([
     supabase.from('customers').select('*').eq('bakery_id', bakery.id),
     supabase
       .from('orders')
@@ -23,6 +23,8 @@ export default async function Clientes({ searchParams }) {
       .gte('date', addDays(today, -730))
       .order('date', { ascending: false })
       .limit(5000),
+    supabase.from('reviews').select('*').eq('bakery_id', bakery.id).order('created_at', { ascending: false }).limit(100),
+    supabase.from('coupons').select('*').eq('bakery_id', bakery.id).order('created_at', { ascending: false }),
   ]);
 
   const stats = new Map();
@@ -46,6 +48,13 @@ export default async function Clientes({ searchParams }) {
 
   const campaign = typeof sp.msg === 'string' && sp.msg.trim() ? sp.msg.trim().slice(0, 600) : '';
   const inactive = list.filter((c) => c.last && c.last < addDays(today, -60));
+  // Recompra: clientes que compraron más de una vez o gastaron bien, y no piden hace 30 días o más.
+  const winBack = list
+    .filter((c) => c.phone && c.last && c.last <= addDays(today, -30) && (c.count >= 2 || c.spent > 0))
+    .sort((a, b) => b.spent - a.spent)
+    .slice(0, 12);
+  const daysSince = (d) => Math.round((new Date(`${today}T12:00:00Z`) - new Date(`${d}T12:00:00Z`)) / 86400000);
+  const avg = reviews?.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : null;
 
   const search = typeof sp.q === 'string' ? sp.q.trim().slice(0, 60) : '';
   const needle = normName(search);
@@ -165,6 +174,80 @@ export default async function Clientes({ searchParams }) {
         )}
         <p className="muted" style={{ fontSize: 13, marginBottom: 0 }}>Tip: escribí {'{nombre}'} y se reemplaza por el nombre de cada cliente.</p>
       </details>
+
+      {winBack.length > 0 && (
+        <div className="card" id="volver">
+          <h2>Para volver a escribirles</h2>
+          <p className="muted">Clientes que te compraron y hace 30 días o más que no piden. Un mensaje a tiempo suele traer el próximo {T.order}.</p>
+          <ul className="items">
+            {winBack.map((c) => {
+              const first = String(c.name).split(' ')[0];
+              const text = `¡Hola ${first}! ¿Cómo estás? Te escribo de ${bakery.name}. Hace un tiempito que no nos ${T.key === 'belleza' ? 'visitás' : 'pedís'}${c.lastProduct ? ` (la última vez fue ${c.lastProduct})` : ''}. Si querés repetir, acá está todo: ${catalog} ¡Te esperamos!`;
+              const link = waMeLink(c.phone, text);
+              return (
+                <li key={c.id} className="item">
+                  <div className="item-head">
+                    <div><strong>{c.name}</strong><div className="item-sub">{c.count} {c.count === 1 ? T.order : T.orders.toLowerCase()} · {money(c.spent)} · último hace {daysSince(c.last)} días</div></div>
+                    {link && <a className="btn small" href={link} target="_blank" rel="noreferrer">Escribirle</a>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <div className="card" id="cupones">
+        <h2>Cupones de descuento</h2>
+        <p className="muted">Para fechas especiales o para recompensar a tus clientes. Tu cliente escribe el código al pedir por tu link.</p>
+        {(coupons || []).length > 0 && (
+          <table className="table" style={{ marginBottom: 12 }}>
+            <thead><tr><th>Código</th><th>Descuento</th><th>Vigencia</th><th>Usos</th><th></th></tr></thead>
+            <tbody>
+              {coupons.map((c) => (
+                <tr key={c.id}>
+                  <td className="mono">{c.code}</td>
+                  <td>{c.kind === 'percent' ? `${Number(c.value)} %` : money(c.value)}</td>
+                  <td>{c.starts_on ? dateLabel(c.starts_on) : 'Ya'} → {c.ends_on ? dateLabel(c.ends_on) : 'sin fin'}</td>
+                  <td>{c.uses}{c.max_uses ? ` de ${c.max_uses}` : ''}</td>
+                  <td>
+                    <form action={toggleCoupon}><input type="hidden" name="id" value={c.id} /><button className="btn secondary small">{c.active ? 'Pausar' : 'Activar'}</button></form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <form action={saveCoupon} className="grid grid-3" style={{ gap: 10 }}>
+          <div className="field"><label>Código</label><input name="code" required maxLength={20} placeholder="Ej: MAMA10" style={{ textTransform: 'uppercase' }} /></div>
+          <div className="field"><label>Tipo</label><select name="kind" defaultValue="percent"><option value="percent">Porcentaje (%)</option><option value="amount">Monto fijo ($)</option></select></div>
+          <div className="field"><label>Valor</label><input name="value" required inputMode="decimal" placeholder="Ej: 10" /></div>
+          <div className="field"><label>Desde (opcional)</label><input name="starts_on" type="date" /></div>
+          <div className="field"><label>Hasta (opcional)</label><input name="ends_on" type="date" /></div>
+          <div className="field"><label>Máximo de usos (opcional)</label><input name="max_uses" type="number" min="1" placeholder="Sin límite" /></div>
+          <div><button className="btn">Crear cupón</button></div>
+        </form>
+      </div>
+
+      <div className="card" id="resenas">
+        <h2>Reseñas {avg ? <small className="muted">★ {avg.toFixed(1).replace('.', ',')} · {reviews.length}</small> : null}</h2>
+        <p className="muted">Cuando marcás un {T.order} como {T.link.mode === 'visita' ? 'terminado' : 'entregado'}, tu cliente puede dejarte su opinión desde su link. Con 3 o más se muestran en tu catálogo.</p>
+        {!(reviews || []).length ? <p className="muted" style={{ margin: 0 }}>Todavía no hay reseñas.</p> : (
+          <ul className="items">
+            {reviews.map((r) => (
+              <li key={r.id} className="item">
+                <div className="item-head">
+                  <div>
+                    <div>{'★'.repeat(r.rating)}<span className="muted">{'★'.repeat(5 - r.rating)}</span> <strong>{r.name || 'Cliente'}</strong> <span className="muted">· {dateLabel(String(r.created_at).slice(0, 10))}</span></div>
+                    {r.comment && <div className="item-sub">«{r.comment}»</div>}
+                  </div>
+                  <form action={toggleReview}><input type="hidden" name="id" value={r.id} /><button className="btn secondary small">{r.visible ? 'Ocultar' : 'Mostrar'}</button></form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </>
   );
 }

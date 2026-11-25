@@ -24,6 +24,7 @@ import { markBalancePaid } from '@/lib/balance';
 import { newCalendarToken } from '@/lib/ics';
 import { rubroOf, RUBROS } from '@/lib/rubros';
 import { createCustomerSubscription, changeSubscriptionStatus, generateRecurringOrders } from '@/lib/recurring';
+import { applyReferral } from '@/lib/referrals';
 
 // Solo se vuelve a rutas internas: un «back» que venga del formulario no puede mandar a otro sitio.
 const internal = (path) => (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\') ? path : '/app');
@@ -61,6 +62,13 @@ export async function createBakery(fd) {
     try {
       const { data: r } = await createAdmin().rpc('redeem_pilot_invite', { p_code: pilotCode, p_bakery: created.id });
       if (r?.ok) pilotMsg = ` Sos negocio piloto: tenés ${r.trial_days} días de prueba con todo incluido.`;
+    } catch {}
+  }
+  // Recomendación: el negocio nuevo suma 14 días de prueba y el que lo recomendó, 30.
+  const refCode = String(user.user_metadata?.ref_code || '').trim().toUpperCase();
+  if (refCode && created?.id && !pilotMsg) {
+    try {
+      pilotMsg = await applyReferral(createAdmin(), created.id, refCode);
     } catch {}
   }
   back('/app', { ok: `¡Listo! Seguí los primeros pasos de abajo para empezar a tomar pedidos.${pilotMsg}` });
@@ -127,6 +135,9 @@ export async function saveSettings(fd) {
     max_days_ahead: Math.min(120, Math.max(1, Math.round(parseNum(str(fd, 'max_days_ahead')) ?? 21))),
     slots: slots.length ? slots : bakery.slots,
     business_type: fd.get('business_type') ? rubroOf(str(fd, 'business_type')).key : rubroOf(bakery).key,
+    ...(fd.has('transfer_alias') ? { transfer_alias: str(fd, 'transfer_alias').replace(/\s+/g, '').slice(0, 60) || null, transfer_holder: str(fd, 'transfer_holder').slice(0, 80) || null } : {}),
+    ...(fd.has('delivery_fee') ? { delivery_fee: (() => { const n = parseNum(str(fd, 'delivery_fee')); return n !== null && n > 0 ? Math.round(n) : null; })(), free_delivery_from: (() => { const n = parseNum(str(fd, 'free_delivery_from')); return n !== null && n > 0 ? Math.round(n) : null; })() } : {}),
+    ...(fd.has('monotributo_cat') ? { monotributo_cat: /^[A-K]$/.test(str(fd, 'monotributo_cat')) ? str(fd, 'monotributo_cat') : null } : {}),
     slot_capacity: fd.has('slot_capacity') ? (Math.round(parseNum(str(fd, 'slot_capacity')) || 0) >= 1 ? Math.min(100, Math.round(parseNum(str(fd, 'slot_capacity')))) : null) : bakery.slot_capacity ?? null,
   };
   if (patch.max_days_ahead < patch.min_days_ahead) back('/app/configuracion', { error: `«Hasta cuántos días antes» (${patch.max_days_ahead}) no puede ser menor que la anticipación mínima (${patch.min_days_ahead}): tu catálogo no mostraría ningún día.` });
@@ -700,7 +711,8 @@ export async function updateOrder(fd) {
   if (materialCost !== undefined && materialCost !== null && (!Number.isFinite(materialCost) || materialCost < 0 || materialCost > 1e9)) back(backTo, { error: 'Los materiales no son un número válido.' });
   if (finalTotal !== null && finalTotal !== Number(o.total) && o.payment_url && !o.paid_at) back(backTo, { error: 'Este trabajo ya tiene un link de pago de seña con el importe anterior. Para cambiar el precio, cancelalo y cargalo de nuevo.' });
   const unitPrice = finalTotal !== null ? finalTotal / Math.max(1, quantity) : o.unit_price !== null && o.unit_price !== undefined ? Number(o.unit_price) : Number(o.total) / Math.max(1, o.quantity);
-  const total = Math.round(unitPrice * quantity * 100) / 100;
+  // el descuento del cupón y el costo de envío del pedido original se mantienen
+  const total = Math.round((Math.max(0, unitPrice * quantity - Number(o.discount || 0)) + Number(o.delivery_fee || 0)) * 100) / 100;
   // La seña ya cobrada no cambia; si todavía no se cobró, se recalcula con el nuevo total.
   const deposit = o.paid_at ? Number(o.deposit_amount) : Math.round((total * Number(bakery.deposit_percent)) / 100);
   const phone = str(fd, 'customer_phone').slice(0, 40);
@@ -778,6 +790,39 @@ export async function deleteIngredient(fd) {
   back(path, { ok: `Borramos ${ing.name}.` });
 }
 
+// ---------- Cupones y reseñas ----------
+export async function saveCoupon(fd) {
+  const { supabase, bakery } = await requireBakery();
+  const path = '/app/clientes#cupones';
+  const code = str(fd, 'code').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  const kind = str(fd, 'kind') === 'amount' ? 'amount' : 'percent';
+  const value = parseNum(str(fd, 'value'));
+  if (code.length < 3) back(path, { error: 'El código tiene que tener al menos 3 letras o números.' });
+  if (!value || value <= 0 || (kind === 'percent' && value > 100)) back(path, { error: kind === 'percent' ? 'El porcentaje va de 1 a 100.' : 'Poné un monto válido.' });
+  const date = (k) => (/^\d{4}-\d{2}-\d{2}$/.test(str(fd, k)) ? str(fd, k) : null);
+  const max = Math.round(parseNum(str(fd, 'max_uses')) || 0);
+  const { error } = await supabase.from('coupons').insert({ bakery_id: bakery.id, code, kind, value, starts_on: date('starts_on'), ends_on: date('ends_on'), max_uses: max > 0 ? max : null });
+  if (error) back(path, { error: error.code === '23505' ? `Ya tenés un cupón ${code}.` : error.message });
+  revalidatePath('/app/clientes');
+  back(path, { ok: `Cupón ${code} creado. Compartilo con tus clientes.` });
+}
+
+export async function toggleCoupon(fd) {
+  const { supabase, bakery } = await requireBakery();
+  const { data: c } = await supabase.from('coupons').select('id,active').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (c) await supabase.from('coupons').update({ active: !c.active }).eq('id', c.id);
+  revalidatePath('/app/clientes');
+  back('/app/clientes#cupones');
+}
+
+export async function toggleReview(fd) {
+  const { supabase, bakery } = await requireBakery();
+  const { data: r } = await supabase.from('reviews').select('id,visible').eq('id', str(fd, 'id')).eq('bakery_id', bakery.id).maybeSingle();
+  if (r) await supabase.from('reviews').update({ visible: !r.visible }).eq('id', r.id);
+  revalidatePath('/app/clientes');
+  back('/app/clientes#resenas');
+}
+
 // ---------- Suscripciones de clientes ----------
 export async function changeCustomerSubscription(fd) {
   const { bakery } = await requireBakery();
@@ -828,17 +873,21 @@ export async function subscribe(fd) {
   const costs = fd.get('costs') === 'on';
   const wa = fd.get('whatsapp') === 'on';
   const rec = fd.get('recurring') === 'on';
-  const amount = PRICES.base + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0) + (rec ? PRICES.recurring : 0);
+  const annual = str(fd, 'period') === 'anual';
+  const monthly = PRICES.base + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0) + (rec ? PRICES.recurring : 0);
+  // Anual: se paga una vez por año el equivalente a 10 meses (2 meses gratis).
+  const amount = annual ? monthly * 10 : monthly;
   const modules = ['Base', costs && 'Costos y producción', wa && 'WhatsApp', rec && 'Pedidos recurrentes'].filter(Boolean).join(' + ');
   let url = null;
   let err = null;
   try {
     const pre = await createPreapproval(process.env.MP_PLATFORM_ACCESS_TOKEN, {
-      reason: `HakkiraApp – ${modules}`,
+      reason: `HakkiraApp – ${modules}${annual ? ' (anual)' : ''}`,
       amount,
       payerEmail: user.email,
-      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}`,
+      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}|${annual ? 'anual' : 'mensual'}`,
       backUrl: `${appUrl()}/app/plan`,
+      ...(annual ? { frequency: 12, frequencyType: 'months' } : {}),
     });
     await createAdmin().from('subscriptions').update({ mp_preapproval_id: pre.id, amount, updated_at: new Date().toISOString() }).eq('bakery_id', bakery.id);
     url = pre.init_point;

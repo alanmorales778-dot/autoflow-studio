@@ -9,7 +9,10 @@ import { markBalancePaid, balanceDue } from '@/lib/balance';
 import { money, dateLabel, whenLabel } from '@/lib/format';
 import { optionsSummary } from '@/lib/options';
 import { isHolding } from '@/lib/orders';
-import { payBalance } from '../../actions';
+import { payBalance, uploadReceipt, replyAttendance, submitReview, acceptQuote } from '../../actions';
+import { transferEnabled } from '@/lib/receipts';
+import { todayAR } from '@/lib/format';
+import CopyLink from '@/app/app/copy-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,17 +78,30 @@ export default async function PedidoEstado({ params, searchParams }) {
   const maps = mapsUrl(bakery.pickup_address);
   const wa = waLink(bakery.whatsapp_contact);
   const canPayBalance = ['confirmado', 'entregado'].includes(order.status) && due > 0 && !!bakery.mp_access_token_enc;
+  const showTransfer = pendingValid && !order.payment_url && transferEnabled(bakery) && Number(order.deposit_amount) > 0;
+  const canReply = ['confirmado', 'pendiente_sena'].includes(order.status) && order.date >= todayAR();
+  const showQuote = order.quote_lines?.length > 0 && ['pendiente_sena', 'confirmado'].includes(order.status);
+  let review = null;
+  if (order.status === 'entregado') ({ data: review } = await admin.from('reviews').select('rating').eq('order_id', order.id).maybeSingle());
+  const hidden = (
+    <>
+      <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="id" value={order.id} />
+      <input type="hidden" name="t" value={order.public_token} />
+    </>
+  );
   return (
     <main className="narrow">
       <Link href={`/c/${slug}`} className="logo">{bakery.name}</Link>
       <div className="card" style={{ marginTop: 20 }}>
         {sp.error && <div className="alert bad">{sp.error}</div>}
+        {sp.ok && <div className="alert ok">{sp.ok}</div>}
         {order.status === 'confirmado' || order.status === 'entregado' ? (
           <div className="alert ok"><strong>¡{T.orderCap} confirmado{T.order === 'reserva' ? 'a' : ''}!</strong> Gracias, {order.customer_name.split(' ')[0]}.{order.balance_paid_at && ' Está todo pago.'}</div>
         ) : order.status === 'pendiente_sena' ? (
           <div className="alert warn">
             <strong>Falta pagar la seña.</strong>
-            {order.expires_at ? <> Tenés tiempo hasta {whenLabel(order.expires_at)}; si no, el lugar se libera.{!order.payment_url && <> {bakery.name} te va a escribir por WhatsApp para coordinar el pago.</>}</> : <> {bakery.name} te va a contactar para coordinar el pago.</>}
+            {order.expires_at ? <> Tenés tiempo hasta {whenLabel(order.expires_at)}; si no, el lugar se libera.{!order.payment_url && (transferEnabled(bakery) ? <> Podés pagarla por transferencia acá abajo.</> : <> {bakery.name} te va a escribir por WhatsApp para coordinar el pago.</>)}</> : <> {bakery.name} te va a contactar para coordinar el pago.</>}
           </div>
         ) : (
           <div className="alert bad"><strong>{T.order === 'reserva' ? 'Esta' : 'Este'} {T.order} {order.status === 'vencido' ? 'venció porque no se pagó la seña a tiempo' : (T.order === 'reserva' ? 'fue cancelada' : 'fue cancelado')}.</strong></div>
@@ -101,6 +117,8 @@ export default async function PedidoEstado({ params, searchParams }) {
           {order.dedication && <><small>{T.note1.label}: «{order.dedication}»</small><br /></>}
           {order.allergies && <><small>{T.note2.label}: {order.allergies}</small><br /></>}
           {order.fulfillment === 'envio' ? `${T.envio}: ${order.address}` : `${T.retiro}${bakery.pickup_address ? ` · ${bakery.pickup_address}` : ' · te confirmamos la dirección por WhatsApp'}`}<br />
+          {Number(order.discount) > 0 && <>Descuento{order.coupon_code ? ` (${order.coupon_code})` : ''}: −{money(order.discount)}<br /></>}
+          {Number(order.delivery_fee) > 0 && <>Envío: {money(order.delivery_fee)}<br /></>}
           Total: {money(order.total)}<br />
           {order.status === 'pendiente_sena' && Number(order.deposit_amount) > 0 ? (
             <>Seña para reservar: <strong>{money(order.deposit_amount)}</strong> · Resto al {order.fulfillment === 'envio' ? 'recibir' : 'retirar'}: {money(Number(order.total) - Number(order.deposit_amount))}</>
@@ -110,6 +128,69 @@ export default async function PedidoEstado({ params, searchParams }) {
         </p>
         {order.reference_photo_url && <img src={order.reference_photo_url} alt="Foto adjunta" style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 12 }} />}
         {pendingValid && order.payment_url && <a className="btn block" href={order.payment_url}>Pagar seña con Mercado Pago</a>}
+        {showTransfer && (
+          <div className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
+            <h3 style={{ marginTop: 0 }}>Pagá la seña por transferencia</h3>
+            <p style={{ margin: '0 0 8px' }}>
+              Transferí <strong>{money(order.deposit_amount)}</strong> al alias <strong className="mono">{bakery.transfer_alias}</strong>
+              {bakery.transfer_holder ? <> (a nombre de {bakery.transfer_holder})</> : null}.
+            </p>
+            <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+              <CopyLink value={bakery.transfer_alias} label="Copiar alias" />
+              <CopyLink value={String(Math.round(Number(order.deposit_amount)))} label="Copiar monto" />
+            </div>
+            {order.receipt_path && !order.receipt_check?.ok ? (
+              <p className="muted" style={{ margin: 0 }}>Recibimos tu comprobante. {bakery.name} lo revisa y te confirma. ¿Te equivocaste de archivo? Subilo de nuevo:</p>
+            ) : (
+              <p className="muted" style={{ margin: '0 0 6px' }}>Después subí acá la captura o el PDF del comprobante: lo verificamos al instante.</p>
+            )}
+            <form action={uploadReceipt}>
+              {hidden}
+              <div className="field"><label>Comprobante</label><input type="file" name="comprobante" accept="image/jpeg,image/png,image/webp,application/pdf" required /></div>
+              <button className="btn block">Enviar comprobante</button>
+            </form>
+          </div>
+        )}
+        {showQuote && (
+          <div className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
+            <h3 style={{ marginTop: 0 }}>Presupuesto</h3>
+            <table className="table"><tbody>
+              {order.quote_lines.map((l, i) => <tr key={i}><td>{l.label}</td><td className="num" style={{ textAlign: 'right' }}>{money(l.amount)}</td></tr>)}
+              <tr><td><strong>Total</strong></td><td className="num" style={{ textAlign: 'right' }}><strong>{money(order.total)}</strong></td></tr>
+            </tbody></table>
+            {order.quote_accepted_at ? <div className="alert ok" style={{ marginTop: 8 }}>Aceptaste este presupuesto.</div> : (
+              <form action={acceptQuote} style={{ marginTop: 8 }}>{hidden}<button className="btn block">Acepto el presupuesto</button></form>
+            )}
+          </div>
+        )}
+        {canReply && (
+          order.customer_reply ? (
+            <p className="muted">{order.customer_reply === 'voy' ? '✓ Confirmaste que vas.' : 'Avisaste que no podés.'} ¿Cambió algo?</p>
+          ) : (
+            <p style={{ marginBottom: 6 }}><strong>¿Vas a poder {T.link.mode === 'visita' ? 'recibirnos' : T.link.mode === 'turno' ? 'venir' : 'estar'}?</strong></p>
+          )
+        )}
+        {canReply && (
+          <div className="row" style={{ gap: 8, marginBottom: 12 }}>
+            {order.customer_reply !== 'voy' && <form action={replyAttendance}>{hidden}<input type="hidden" name="reply" value="voy" /><button className="btn small">Sí, confirmo</button></form>}
+            {order.customer_reply !== 'no_puedo' && <form action={replyAttendance}>{hidden}<input type="hidden" name="reply" value="no_puedo" /><button className="btn secondary small">No puedo</button></form>}
+          </div>
+        )}
+        {order.status === 'entregado' && (review ? (
+          <p className="muted">Gracias por tu opinión: {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</p>
+        ) : (
+          <form action={submitReview} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
+            {hidden}
+            <h3 style={{ marginTop: 0 }}>¿Qué te pareció?</h3>
+            <div className="row" style={{ gap: 6, marginBottom: 8 }}>
+              {[5, 4, 3, 2, 1].map((n) => (
+                <label key={n} className="chip"><input type="radio" name="rating" value={n} required defaultChecked={n === 5} /> {'★'.repeat(n)}</label>
+              ))}
+            </div>
+            <div className="field"><label>Contanos algo (opcional)</label><textarea name="comment" rows={2} maxLength={500} /></div>
+            <button className="btn">Enviar</button>
+          </form>
+        ))}
         {canPayBalance && (
           <form action={payBalance}>
             <input type="hidden" name="slug" value={slug} />

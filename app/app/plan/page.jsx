@@ -1,3 +1,5 @@
+import CopyLink from '../copy-link';
+import { appUrl } from '@/lib/env';
 import { requireBakery } from '@/lib/session';
 import { subscribe } from '../actions';
 import { Flash } from '../ui';
@@ -48,9 +50,27 @@ export default async function Plan({ searchParams }) {
               <label className="inline-label"><input type="checkbox" name="recurring" /> Pedidos recurrentes: suscripciones semanales con débito automático — +{money(PRICES.recurring)}/mes</label>
               <label className="inline-label"><input type="checkbox" name="whatsapp" /> Bot de WhatsApp — +{money(PRICES.whatsapp)}/mes (+ costo de mensajes de Meta)</label>
             </div>
-            <p className="muted" style={{ marginTop: 12 }}>Se cobra todos los meses con Mercado Pago. Cancelás cuando quieras.</p>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label>¿Cómo querés pagar?</label>
+              <div className="stack">
+                <label className="inline-label"><input type="radio" name="period" value="mensual" defaultChecked /> Mensual: se cobra todos los meses, cancelás cuando quieras.</label>
+                <label className="inline-label"><input type="radio" name="period" value="anual" /> Anual: pagás 10 meses y usás 12 (<strong>2 meses gratis</strong>).</label>
+              </div>
+            </div>
+            <p className="muted">Se cobra con Mercado Pago.</p>
             <button className="btn">Suscribirme con Mercado Pago</button>
           </form>
+        </div>
+      )}
+
+      {bakery.referral_code && (
+        <div className="card">
+          <h2>Recomendá HakkiraApp y ganá meses gratis</h2>
+          <p className="muted">Por cada negocio que se suma con tu link: vos ganás <strong>30 días gratis</strong> (o un mes de descuento si ya pagás) y él empieza con <strong>14 días extra</strong> de prueba.</p>
+          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+            <code className="mono" style={{ wordBreak: 'break-all' }}>{`${appUrl()}/registro?ref=${bakery.referral_code}`}</code>
+            <CopyLink value={`${appUrl()}/registro?ref=${bakery.referral_code}`} label="Copiar mi link" />
+          </div>
         </div>
       )}
     </>

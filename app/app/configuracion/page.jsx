@@ -65,6 +65,8 @@ export default async function Configuracion({ searchParams }) {
               <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
                 <label className="inline-label" style={{ minHeight: 44 }}><input type="checkbox" name="delivery_enabled" defaultChecked={bakery.delivery_enabled} /> Ofrezco «{t.envio.toLowerCase()}»</label>
               </div>
+              <div className="field"><label>Costo de {t.envio.toLowerCase()} ($, opcional)</label><input name="delivery_fee" inputMode="decimal" defaultValue={bakery.delivery_fee ?? ''} placeholder="Gratis" /></div>
+              <div className="field"><label>Gratis desde ($, opcional)</label><input name="free_delivery_from" inputMode="decimal" defaultValue={bakery.free_delivery_from ?? ''} placeholder="Sin mínimo" /><div className="hint">Si el pedido supera este monto, no cobra el envío.</div></div>
               <div className="field"><label>Rubro</label><select name="business_type" defaultValue={t.key}>{RUBRO_KEYS.map((k) => <option key={k} value={k}>{RUBROS[k].label}</option>)}</select><div className="hint">Cambia los nombres de la app. No borra nada.</div></div>
             </div>
             <div className="field" style={{ marginTop: 4 }}>
@@ -89,12 +91,17 @@ export default async function Configuracion({ searchParams }) {
               <div className="field"><label>Minutos para pagarla (con Mercado Pago)</label><input name="hold_minutes" type="number" min="5" max="1440" defaultValue={bakery.hold_minutes} /></div>
               <div className="field"><label>Horas que se guarda el lugar sin Mercado Pago</label><input name="manual_hold_hours" type="number" min="0" max="168" defaultValue={bakery.manual_hold_hours ?? 24} /><div className="hint">Si no marcás la seña como cobrada, {t.order === 'reserva' || t.order === 'turno' ? 'se libera el lugar' : 'el cupo se libera'}. 0 = no vence.</div></div>
             </div>
+            <div className="grid grid-3">
+              <div className="field"><label>Alias para transferencias (opcional)</label><input name="transfer_alias" maxLength={60} defaultValue={bakery.transfer_alias || ''} placeholder="Ej: lola.pasteleria.mp" /><div className="hint">Tu cliente ve el alias, transfiere y sube el comprobante: lo verificamos solos y se confirma.</div></div>
+              <div className="field"><label>Titular de la cuenta</label><input name="transfer_holder" maxLength={80} defaultValue={bakery.transfer_holder || ''} placeholder="Como figura en el banco" /><div className="hint">Lo usamos para chequear que el comprobante sea a tu cuenta.</div></div>
+            </div>
           </fieldset>
           <fieldset className="set">
             <legend>Precios</legend>
             <div className="grid grid-3">
               <div className="field"><label>Margen que querés ganar (%)</label><input name="margin_percent" inputMode="decimal" defaultValue={Number(bakery.margin_percent)} /></div>
               <div className="field"><label>Gastos fijos: luz, gas, alquiler (%)</label><input name="overhead_percent" inputMode="decimal" defaultValue={Number(bakery.overhead_percent)} /><div className="hint">Se suman al costo de cada {t.item}.</div></div>
+              <div className="field"><label>Categoría de monotributo (opcional)</label><select name="monotributo_cat" defaultValue={bakery.monotributo_cat || ''}><option value="">No sé / no aplica</option>{'ABCDEFGHIJK'.split('').map((c) => <option key={c} value={c}>{c}</option>)}</select><div className="hint">Te avisamos en Costos y ganancias cuánto te falta para el tope.</div></div>
             </div>
           </fieldset>
           <button className="btn">Guardar cambios</button>
