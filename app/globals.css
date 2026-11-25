@@ -1397,3 +1397,6 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .btn-google:disabled { opacity: .7; cursor: progress; }
 .or-sep { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 16px 0 6px; }
 .or-sep::before, .or-sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.shop-id { margin-top: 0 !important; padding-top: 12px; align-items: flex-end; }
+.shop-logo { margin-top: -58px; }
+@media (max-width: 760px) { .shop-logo { margin-top: -50px; } .shop-name { flex-basis: calc(100% - 100px); } }
