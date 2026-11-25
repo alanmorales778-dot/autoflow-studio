@@ -2,7 +2,7 @@
 
 Agenda de pedidos con cupos, señas con Mercado Pago, productos/stock/costos sincronizados desde Google Drive y bot de WhatsApp para pastelerías y cocina casera.
 
-- Producción: https://hakkiraapp.vercel.app (proyecto Vercel `autoflow-cocina`; la URL vieja autoflow-cocina.vercel.app sigue funcionando)
+- Producción: https://hakkiraapp.com.ar (proyecto Vercel `autoflow-cocina`; hakkiraapp.vercel.app y autoflow-cocina.vercel.app redirigen acá)
 - Base de datos: Supabase `autoflow-cocina` (sa-east-1)
 - Tarea cada 10 min: `pg_cron` en Supabase llama a `/api/cron/tick` (vence señas, sincroniza planillas). Respaldo diario con Vercel Cron.
 
@@ -23,14 +23,14 @@ Después de cargar variables, hay que volver a desplegar (Deployments → Redepl
 ## Puesta en marcha
 
 1. **Supabase → Project Settings → API Keys**: copiar la `service_role` (o una secret key) y cargarla en Vercel como `SUPABASE_SERVICE_ROLE_KEY` (tipo Sensitive).
-2. **Supabase → Authentication → URL Configuration**: Site URL `https://hakkiraapp.vercel.app` y Redirect URL `https://hakkiraapp.vercel.app/**`.
+2. **Supabase → Authentication → URL Configuration**: Site URL `https://hakkiraapp.com.ar` y Redirect URL `https://hakkiraapp.com.ar/**`.
 3. **Supabase → Authentication → Emails → SMTP**: configurar un SMTP propio (Resend, Brevo, etc.). El correo incluido de Supabase tiene un límite muy bajo por hora.
 4. **Google Cloud Console**:
    - Crear proyecto y habilitar **Google Drive API** y **Google Sheets API**.
-   - Pantalla de consentimiento OAuth: tipo Externo, nombre «HakkiraApp», política de privacidad `https://hakkiraapp.vercel.app/legal`, scope `.../auth/drive.file` (no sensible) y publicar en Producción.
-   - Credenciales → ID de cliente OAuth → Aplicación web, URI de redireccionamiento `https://hakkiraapp.vercel.app/api/google/callback`.
+   - Pantalla de consentimiento OAuth: tipo Externo, nombre «HakkiraApp», política de privacidad `https://hakkiraapp.com.ar/legal`, scope `.../auth/drive.file` (no sensible) y publicar en Producción.
+   - Credenciales → ID de cliente OAuth → Aplicación web, URI de redireccionamiento `https://hakkiraapp.com.ar/api/google/callback`.
    - Cargar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` en Vercel.
-5. **Mercado Pago (cuenta de HakkiraApp, para cobrar suscripciones)**: crear aplicación en Developers, copiar Access Token de producción a `MP_PLATFORM_ACCESS_TOKEN`. En la app → Webhooks: URL `https://hakkiraapp.vercel.app/api/billing/webhook`, evento «Planes y suscripciones».
+5. **Mercado Pago (cuenta de HakkiraApp, para cobrar suscripciones)**: crear aplicación en Developers, copiar Access Token de producción a `MP_PLATFORM_ACCESS_TOKEN`. En la app → Webhooks: URL `https://hakkiraapp.com.ar/api/billing/webhook`, evento «Planes y suscripciones».
 6. Cada negocio conecta **su** Mercado Pago (señas) y **su** WhatsApp desde Configuración dentro de la app.
 
 ## Monitoreo
