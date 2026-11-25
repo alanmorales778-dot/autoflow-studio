@@ -100,7 +100,7 @@ export async function saveRecipe(fd) {
   let n = 0;
   try {
     n = await replaceRecipe(admin, p.id, items, { recipeYield: y || 1, notes: str(fd, 'recipe_notes') });
-    await recomputeCosts(admin, bakery, [p.id]);
+    await recomputeCosts(admin, bakery); // todas: este producto puede ser sub-receta de otros
     await pushStockToSheet(admin, bakery, [p.id]);
   } catch (e) {
     err = e.message;
@@ -228,7 +228,7 @@ export async function applyRecipesImport(fd) {
     }
     const addedIng = createIngredients ? await addMissingIngredients(admin, bakery, recipes.flatMap((r) => r.items || [])) : 0;
     if (touched.length) {
-      await recomputeCosts(admin, bakery, touched);
+      await recomputeCosts(admin, bakery);
       await pushStockToSheet(admin, bakery, touched);
     }
     await admin.from('import_previews').delete().eq('id', pv.id);
@@ -275,7 +275,7 @@ export async function saveRecipeDraft(fd) {
     }
     await replaceRecipe(admin, productId, items, { recipeYield: y || 1, notes: str(fd, 'recipe_notes') });
     if (fd.get('create_ingredients') === 'on') await addMissingIngredients(admin, bakery, items);
-    await recomputeCosts(admin, bakery, [productId]);
+    await recomputeCosts(admin, bakery);
     await pushStockToSheet(admin, bakery, [productId]);
     await admin.from('import_previews').delete().eq('id', pv.id);
   } catch (e) {

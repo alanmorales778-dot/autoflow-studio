@@ -1,9 +1,11 @@
+import { monotributoStatus, MONOTRIBUTO_VIGENCIA } from '@/lib/monotributo';
+import { recipeFactor } from '@/lib/options';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { rubroOf } from '@/lib/rubros';
 import { Locked } from '../ui';
 import NumerosTabs from '../numeros-tabs';
-import { todayAR, money, pct } from '@/lib/format';
+import { todayAR, money, pct, addDays } from '@/lib/format';
 import { liveCosts } from '@/lib/sheets';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -53,7 +55,7 @@ export default async function Rentabilidad({ searchParams }) {
   // Traemos 6 meses de una vez: el mes elegido, el anterior para comparar y 4 más para el gráfico.
   const first = shiftMonth(ym, -5);
   const [{ data: allOrders }, live] = await Promise.all([
-    supabase.from('orders').select('date,product_id,product_name,quantity,total,status,options_total,material_cost').eq('bakery_id', bakery.id).gte('date', `${first}-01`).lte('date', to).in('status', ['confirmado', 'entregado']).limit(5000),
+    supabase.from('orders').select('date,product_id,product_name,quantity,total,status,options,options_total,material_cost,delivery_fee').eq('bakery_id', bakery.id).gte('date', `${first}-01`).lte('date', to).in('status', ['confirmado', 'entregado']).limit(5000),
     liveCosts(supabase, bakery),
   ]);
   // Costo con los precios de hoy: el mismo número que muestran Productos y Costos e inflación.
@@ -64,7 +66,7 @@ export default async function Rentabilidad({ searchParams }) {
   const costOf = (o) => {
     if (o.material_cost !== null && o.material_cost !== undefined) return Number(o.material_cost);
     const c = o.product_id ? costById.get(o.product_id) : null;
-    return c === null || c === undefined ? null : Number(c) * o.quantity;
+    return c === null || c === undefined ? null : Number(c) * o.quantity * recipeFactor(o.options);
   };
   const rows = new Map();
   for (const o of orders) {
@@ -72,7 +74,7 @@ export default async function Rentabilidad({ searchParams }) {
     if (!rows.has(k)) rows.set(k, { id: o.product_id, name: o.product_name, units: 0, revenue: 0, cost: 0, costKnown: true });
     const r = rows.get(k);
     r.units += o.quantity;
-    r.revenue += Number(o.total);
+    r.revenue += Number(o.total) - Number(o.delivery_fee || 0); // el envío no es venta del producto
     const c = costOf(o);
     if (c === null) r.costKnown = false;
     else r.cost += c;
@@ -124,6 +126,15 @@ export default async function Rentabilidad({ searchParams }) {
   const maxRev = Math.max(1, ...series.map((x) => x.rev));
   const hasHistory = series.slice(0, 5).some((x) => x.rev > 0);
 
+  // Control del monotributo: lo vendido por la app en los últimos 12 meses contra el tope de la categoría.
+  let mono = null;
+  if (bakery.monotributo_cat) {
+    const since = addDays(todayAR(), -365);
+    const { data: last12 } = await supabase.from('orders').select('total').eq('bakery_id', bakery.id).in('status', ['confirmado', 'entregado']).gte('date', since).limit(20000);
+    const sales12m = (last12 || []).reduce((n, o) => n + Number(o.total || 0), 0);
+    mono = { ...monotributoStatus(bakery.monotributo_cat, sales12m), sales12m };
+  }
+
   return (
     <>
       <h1>Costos y ganancias</h1>
@@ -136,6 +147,16 @@ export default async function Rentabilidad({ searchParams }) {
           <Link className="btn secondary small" href={`/app/rentabilidad?mes=${shiftMonth(ym, 1)}`} aria-label="Mes siguiente">→</Link>
         </div>
       </div>
+      {mono && (
+        <div className={`card ${mono.over ? 'alert bad' : mono.pct >= 80 ? 'alert warn' : ''}`} style={{ marginBottom: 12 }}>
+          <strong>Monotributo categoría {mono.cat}:</strong> en los últimos 12 meses vendiste {money(mono.sales12m)}, el {String(mono.pct).replace('.', ',')} % del tope ({money(mono.cap)}).
+          {mono.excluded ? ' Superaste el tope de la categoría K: hablá con tu contador, corresponde pasar al régimen general.'
+            : mono.over ? ` Te pasaste: te corresponde la categoría ${mono.fits}. Recategorizate en ARCA (febrero o agosto) o consultá a tu contador.`
+            : mono.pct >= 80 ? ` Te quedan ${money(mono.left)} antes de pasar a la ${mono.next || 'siguiente'}.`
+            : ` Te quedan ${money(mono.left)}.`}
+          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Cuenta solo lo vendido por HakkiraApp. Topes vigentes desde {MONOTRIBUTO_VIGENCIA}; confirmalos en ARCA. Se cambia la categoría en Ajustes.</div>
+        </div>
+      )}
       <p className="muted" style={{ fontSize: 13 }}>Confirmados y entregados del mes. El costo usa los precios de hoy de tus {T.insumos.toLowerCase()} (con indirectos); los adicionales de personalización se cuentan como ingreso.</p>
       <div className="grid grid-3">
         <div className="card kpi">

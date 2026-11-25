@@ -496,7 +496,8 @@ export async function saveIngredient(fd) {
     if (!normUnit(unit)) back(path, { error: 'Elegí la unidad (g, kg, ml, l o u).' });
     const { data: same } = await admin.from('ingredients').select('id').eq('bakery_id', bakery.id).ilike('name', likeExact(name)).neq('id', id || '00000000-0000-0000-0000-000000000000').limit(1).maybeSingle();
     if (same && same.id !== id) back(path, { error: `Ya tenés uno llamado «${name}».` });
-    patch = { ...patch, name, qty, unit, purchase_unit: str(fd, 'purchase_unit').slice(0, 80) || null, supplier: str(fd, 'supplier').slice(0, 80) || null };
+    const waste = parseNum(str(fd, 'waste_percent'));
+    patch = { ...patch, name, qty, unit, purchase_unit: str(fd, 'purchase_unit').slice(0, 80) || null, supplier: str(fd, 'supplier').slice(0, 80) || null, ...(fd.has('waste_percent') ? { waste_percent: waste && waste > 0 ? Math.min(89, waste) : 0 } : {}) };
   }
   // Insumos agregados desde una receta llegan sin presentación: el precio solo no alcanza.
   if (prev && !fd.has('name') && !(Number(prev.qty) > 0 && normUnit(prev.unit))) {
@@ -704,8 +705,17 @@ export async function updateOrder(fd) {
     back(backTo, { error: 'Este pedido ya tiene un link de pago de seña con el importe anterior. Para cambiar la cantidad, cancelalo y cargalo de nuevo.' });
   }
 
+  // Oficios: presupuesto en líneas («Concepto: monto»); si viene, el precio final es la suma.
+  let quoteLines;
+  if (fd.has('quote_text')) {
+    quoteLines = str(fd, 'quote_text').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 20).map((l) => {
+      const m = l.match(/^(.*?)[:\-–]\s*\$?\s*([\d.,]+)\s*$/);
+      return m ? { label: m[1].trim().slice(0, 80) || 'Concepto', amount: parseNum(m[2]) } : null;
+    });
+    if (quoteLines.some((x) => !x || !Number.isFinite(x.amount) || x.amount < 0)) back(backTo, { error: 'Revisá el presupuesto: cada línea tiene que ser «Concepto: monto» (ej. Mano de obra: 50000).' });
+  }
   // Oficios: el precio final se pone después de presupuestar, y se guarda lo gastado en materiales.
-  const finalTotal = fd.has('final_total') && str(fd, 'final_total') !== '' ? parseNum(str(fd, 'final_total')) : null;
+  const finalTotal = quoteLines?.length ? quoteLines.reduce((n, l) => n + l.amount, 0) : fd.has('final_total') && str(fd, 'final_total') !== '' ? parseNum(str(fd, 'final_total')) : null;
   if (finalTotal !== null && (!Number.isFinite(finalTotal) || finalTotal < 0 || finalTotal > 1e9)) back(backTo, { error: 'El precio final no es un número válido.' });
   const materialCost = fd.has('material_cost') ? (str(fd, 'material_cost') === '' ? null : parseNum(str(fd, 'material_cost'))) : undefined;
   if (materialCost !== undefined && materialCost !== null && (!Number.isFinite(materialCost) || materialCost < 0 || materialCost > 1e9)) back(backTo, { error: 'Los materiales no son un número válido.' });
@@ -731,6 +741,7 @@ export async function updateOrder(fd) {
     allergies: str(fd, 'allergies').slice(0, 300) || null,
     ...(finalTotal !== null ? { unit_price: Math.round(unitPrice * 100) / 100 } : {}),
     ...(materialCost !== undefined ? { material_cost: materialCost === null ? null : Math.round(materialCost * 100) / 100 } : {}),
+    ...(quoteLines !== undefined ? { quote_lines: quoteLines.length ? quoteLines : null, ...(JSON.stringify(quoteLines) !== JSON.stringify(o.quote_lines || []) ? { quote_accepted_at: null } : {}) } : {}),
   };
   // El link de Mercado Pago del saldo tenía el importe viejo: se arma de nuevo cuando haga falta.
   if (total !== Number(o.total)) patch.balance_payment_url = null;

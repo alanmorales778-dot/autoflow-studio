@@ -58,7 +58,7 @@ export default function RecipeEditor({ action, hidden = {}, items = [], recipeYi
           </tbody>
         </table>
       </div>
-      <p className="muted" style={{ fontSize: 13 }}>Para quitar un {T.insumo.toLowerCase()}, borrá su nombre. ¿Necesitás más filas? Guardá y van a aparecer otras vacías.</p>
+      <p className="muted" style={{ fontSize: 13 }}>Para quitar un {T.insumo.toLowerCase()}, borrá su nombre. ¿Necesitás más filas? Guardá y van a aparecer otras vacías. Podés usar otra receta como ingrediente (por ejemplo «Relleno de dulce de leche»): escribí el nombre del producto y la cantidad en las unidades de su rinde.</p>
 
       {items.length > 0 && (
         <div className="row" style={{ gap: 20, margin: '6px 0 14px' }}>

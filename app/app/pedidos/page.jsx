@@ -4,7 +4,7 @@ import { requireBakery } from '@/lib/session';
 import { changeOrderStatus, createManualOrder, markBalance, updateOrder, undoOrder } from '../actions';
 import { canUndo } from '@/lib/lifecycle';
 import { createAdmin } from '@/lib/supabase';
-import { balanceDue, reminderLink } from '@/lib/balance';
+import { balanceDue, reminderLink, orderStatusUrl } from '@/lib/balance';
 import { waMeLink } from '@/lib/customers';
 import { optionsSummary } from '@/lib/options';
 import { normName } from '@/lib/format';
@@ -52,6 +52,7 @@ function EditOrder({ o, bakery, T, open, back }) {
             <>
               <input type="hidden" name="quantity" value={o.quantity} />
               <div className="field"><label>Precio final del trabajo</label><input name="final_total" inputMode="decimal" defaultValue={Number(o.total) || ''} placeholder="Ej: 85000" /><div className="hint">Lo que le cobrás en total, después de presupuestar.</div></div>
+              <div className="field" style={{ gridColumn: '1 / -1' }}><label>Presupuesto detallado (opcional)</label><textarea name="quote_text" rows={3} defaultValue={(o.quote_lines || []).map((l) => `${l.label}: ${l.amount}`).join('\n')} placeholder={'Mano de obra: 50000\nMateriales: 23000'} /><div className="hint">Una línea por concepto. Si lo completás, el precio final es la suma y tu cliente lo ve y lo acepta desde su link.</div></div>
               <div className="field"><label>Materiales que gastaste</label><input name="material_cost" inputMode="decimal" defaultValue={o.material_cost ?? ''} placeholder="Ej: 23000" /><div className="hint">Para saber cuánto te quedó de este trabajo.</div></div>
             </>
           ) : (
@@ -89,7 +90,8 @@ function EditOrder({ o, bakery, T, open, back }) {
 function quoteLink(bakery, o) {
   if (!o.customer_phone || !(Number(o.total) > 0)) return null;
   const name = String(o.customer_name || '').split(' ')[0];
-  const text = `¡Hola ${name}! Te paso el presupuesto de ${bakery.name}: ${o.product_name}${o.dedication ? ` (${o.dedication})` : ''}. Total: $${Math.round(Number(o.total)).toLocaleString('es-AR')}. ¿Te parece bien? Si me confirmás, coordinamos el día.`;
+  const lines = (o.quote_lines || []).map((l) => `• ${l.label}: $${Math.round(Number(l.amount)).toLocaleString('es-AR')}`).join('\n');
+  const text = `¡Hola ${name}! Te paso el presupuesto de ${bakery.name}: ${o.product_name}${o.dedication ? ` (${o.dedication})` : ''}.${lines ? `\n${lines}\n` : ' '}Total: $${Math.round(Number(o.total)).toLocaleString('es-AR')}.${o.quote_lines?.length ? ` Lo podés ver y aceptar acá: ${orderStatusUrl(bakery, o)}` : ' ¿Te parece bien? Si me confirmás, coordinamos el día.'}`;
   return waMeLink(o.customer_phone, text);
 }
 

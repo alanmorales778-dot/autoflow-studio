@@ -135,9 +135,9 @@ export default async function Receta({ params, searchParams }) {
       <div className="card">
         <h2>Duración, opciones y suscripción</h2>
         <p className="muted">
-          Opciones que tu cliente elige al pedir, una por línea. Formato: <code>Grupo: opción | opción +precio extra</code>. Con <code>*</code> después del nombre es obligatoria.
+          Opciones que tu cliente elige al pedir, una por línea. Formato: <code>Grupo: opción | opción +precio extra</code>. Con <code>*</code> después del nombre es obligatoria. Con <code>x1.5</code> al final, esa opción lleva 1,5 veces la receta: así el costo y la lista de compras salen bien.
         </p>
-        <pre style={{ background: '#f6f1ec', padding: 10, borderRadius: 8, fontSize: 13, whiteSpace: 'pre-wrap' }}>{`Tamaño*: 15 cm (10 porciones) | 20 cm (20 porciones) +6000 | 25 cm (30 porciones) +12000
+        <pre style={{ background: '#f6f1ec', padding: 10, borderRadius: 8, fontSize: 13, whiteSpace: 'pre-wrap' }}>{`Tamaño*: 15 cm (10 porciones) | 20 cm (20 porciones) +6000 x1.5 | 25 cm (30 porciones) +12000 x2
 Relleno*: Dulce de leche | Mousse de chocolate +2000 | Frutos rojos +3500
 Cobertura: Ganache | Merengue italiano +1500 | Fondant +5000`}</pre>
         <form action={saveProductSettings}>

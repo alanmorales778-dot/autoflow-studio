@@ -112,6 +112,7 @@ function IngredientFields({ T, i = {} }) {
       <div className="field"><label>Nombre</label><input name="name" required defaultValue={i.name || ''} placeholder="Ej: Harina 0000" /></div>
       <div className="field"><label>Presentación (opcional)</label><input name="purchase_unit" defaultValue={i.purchase_unit || ''} placeholder="Ej: Paquete 1 kg" /></div>
       <div className="field"><label>Proveedor (opcional)</label><input name="supplier" defaultValue={i.supplier || ''} /></div>
+      <div className="field"><label>Merma (%)</label><input name="waste_percent" inputMode="decimal" defaultValue={Number(i.waste_percent) || ''} placeholder="0" /><div className="hint">Lo que se pierde al usarlo (cáscaras, recortes, lo que queda en el bowl). Encarece el costo y suma a la compra.</div></div>
       <div className="field"><label>Trae (cantidad)</label><input name="qty" required inputMode="decimal" defaultValue={i.qty ?? ''} placeholder="Ej: 1000" /></div>
       <div className="field"><label>Unidad</label><select name="unit" defaultValue={i.unit || 'g'}>{RECIPE_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select></div>
       <div className="field"><label>Precio de la presentación</label><input name="price" required inputMode="decimal" defaultValue={i.price ?? ''} placeholder="Ej: 1400" /></div>
