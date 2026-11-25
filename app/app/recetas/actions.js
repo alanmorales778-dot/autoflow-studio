@@ -120,6 +120,15 @@ async function storeDraft(admin, bakery, kind, rows, fileName) {
   return data.id;
 }
 
+// Cada lectura con IA cuesta: tope diario por negocio para que nadie la use sin límite.
+const AI_DAILY_LIMIT = 30;
+async function useAI(admin, bakery, kind) {
+  const since = new Date(Date.now() - 86400000).toISOString();
+  const { count } = await admin.from('ai_usage').select('id', { count: 'exact', head: true }).eq('bakery_id', bakery.id).gte('at', since);
+  if ((count || 0) >= AI_DAILY_LIMIT) throw new Error(`Llegaste al máximo de ${AI_DAILY_LIMIT} lecturas con IA por día. Probá mañana o cargá la receta a mano o con la plantilla de Excel.`);
+  await admin.from('ai_usage').insert({ bakery_id: bakery.id, kind });
+}
+
 async function insumoNames(admin, bakery) {
   const { data } = await admin.from('ingredients').select('name').eq('bakery_id', bakery.id).limit(400);
   return (data || []).map((i) => i.name);
@@ -145,6 +154,7 @@ export async function importRecipes(fd) {
         const recipes = rowsToRecipes(got.rows);
         dest = `${HOME}?vista=${await storeDraft(admin, bakery, 'recetas', recipes, 'Google Drive')}#importar`;
       } else {
+        await useAI(admin, bakery, 'receta_drive');
         const draft = await readRecipeWithAI(got, { insumos: await insumoNames(admin, bakery) });
         dest = `${HOME}?borrador=${await storeDraft(admin, bakery, 'receta_foto', { ...draft, source: 'Google Drive' }, 'Google Drive')}#borrador`;
       }
@@ -175,6 +185,7 @@ export async function readRecipePhoto(fd) {
     if (file.size > 5 * 1024 * 1024) throw new Error('La foto pesa mucho. Probá con otra o sacale una captura de pantalla.');
     const type = String(file.type || '').toLowerCase();
     if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) throw new Error('Esa foto está en un formato que no podemos leer. Probá con JPG o PNG (o una captura de pantalla).');
+    await useAI(admin, bakery, 'receta_foto');
     const data = Buffer.from(await file.arrayBuffer()).toString('base64');
     const hint = await hintFor(admin, bakery, productId);
     const draft = await readRecipeWithAI({ media: { type, data } }, { insumos: await insumoNames(admin, bakery), hint });

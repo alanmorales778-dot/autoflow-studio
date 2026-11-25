@@ -48,8 +48,9 @@ export async function placeOrder(fd) {
 
   let order = null;
   let err = null;
+  let photoUrl = null;
   try {
-    const photoUrl = await uploadReference(admin, bakery, fd.get('foto'));
+    photoUrl = await uploadReference(admin, bakery, fd.get('foto'));
     order = await createOrder(admin, bakery, product, {
       quantity: qty,
       date: str(fd, 'date'),
@@ -71,6 +72,9 @@ export async function placeOrder(fd) {
     if (!order.payment_url) await notifyOwner(admin, bakery, order, 'nuevo');
   } catch (e) {
     err = e.message;
+    // si el pedido no se guardó, la foto de referencia que se subió queda sin uso: se borra
+    const path = !order && photoUrl ? String(photoUrl).split('/storage/v1/object/public/referencias/')[1] : null;
+    if (path) await admin.storage.from('referencias').remove([decodeURIComponent(path)]).catch(() => {});
   }
   if (err) redirect(`/c/${slug}?p=${productId}&q=${encodeURIComponent(qty)}&error=${encodeURIComponent(err)}`);
   if (order.payment_url) redirect(order.payment_url);

@@ -65,7 +65,7 @@ export default async function PedidoEstado({ params, searchParams }) {
       const [refId, kind] = String(pay.external_reference || '').split(':');
       if (pay.status === 'approved' && refId === order.id) {
         if (kind === 'saldo') order = (await markBalancePaid(admin, order.id)) || order;
-        else if (order.status !== 'confirmado') order = (await confirmPaidOrder(admin, order.id, pay.id)) || order;
+        else if (order.status !== 'confirmado') order = (await confirmPaidOrder(admin, order.id, pay.id, pay.transaction_amount)) || order;
       }
     } catch {}
   }

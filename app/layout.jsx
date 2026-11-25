@@ -1,5 +1,6 @@
 import './globals.css';
 import WebVitals from './web-vitals';
+import FieldLabels from './field-labels';
 
 // Las fuentes se cargan desde el navegador (no en el build): el build de Vercel
 // no siempre puede descargar Google Fonts y eso hacía fallar el deploy.
@@ -26,6 +27,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <WebVitals />
+        <FieldLabels />
         {children}
       </body>
     </html>

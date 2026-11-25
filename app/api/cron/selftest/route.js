@@ -3,6 +3,7 @@ import { createAdmin } from '@/lib/supabase';
 import { safeEqual } from '@/lib/crypto';
 import { appUrl } from '@/lib/env';
 import { reportError, heartbeat } from '@/lib/alerts';
+import { createOrder, availableDates } from '@/lib/orders';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,25 @@ async function run(request) {
     const min = (Date.now() - new Date(data.at).getTime()) / 60000;
     return min < 30 ? true : `último tick hace ${Math.round(min)} min`;
   });
+  // Pedido de punta a punta en una cuenta de prueba: fechas disponibles → crear pedido → borrarlo.
+  await check('pedido de punta a punta (cuenta de prueba)', async () => {
+    const { data: tb } = await admin.from('bakeries').select('*').eq('is_test', true).order('created_at').limit(5);
+    for (const bakery of tb || []) {
+      const { data: product } = await admin.from('products').select('*').eq('bakery_id', bakery.id).eq('visible', true).not('sheet_row', 'is', null).limit(1).maybeSingle();
+      if (!product) continue;
+      const dates = await availableDates(admin, bakery, product, 1);
+      if (!dates.length) return `sin fechas disponibles en ${bakery.slug}`;
+      const d = dates[0];
+      const order = await createOrder(admin, { ...bakery, mp_access_token_enc: null }, product, {
+        quantity: 1, date: d.date, slot: d.slots?.find((x) => x.left > 0)?.slot || bakery.slots?.[0] || null,
+        customer_name: 'Autoprueba', customer_phone: '', channel: 'manual', notes: 'autoprueba',
+      });
+      await admin.from('orders').delete().eq('id', order.id);
+      return true;
+    }
+    return true; // sin cuentas de prueba con productos: nada que probar
+  });
+
   const { data: bakeries } = await admin.from('bakeries').select('slug').order('created_at', { ascending: false }).limit(30);
   for (const b of bakeries || []) await check(`catálogo /c/${b.slug}`, page(`/c/${b.slug}`, '</html>'));
 

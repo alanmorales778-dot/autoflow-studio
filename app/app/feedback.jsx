@@ -26,9 +26,9 @@ export default function Feedback() {
 
   return (
     <>
-      <button type="button" className="fb-fab" onClick={() => { setThanks(false); setOpen((o) => !o); }} aria-expanded={open}>
+      <button type="button" className="fb-fab" aria-label="Comentar" onClick={() => { setThanks(false); setOpen((o) => !o); }} aria-expanded={open}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-        Comentar
+        <span className="fb-label">Comentar</span>
       </button>
       {open && (
         <div className="fb-panel" role="dialog" aria-label="Enviar un comentario">

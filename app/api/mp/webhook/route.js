@@ -27,7 +27,7 @@ export async function POST(request) {
       const { data: order } = await admin.from('orders').select('id,bakery_id').eq('id', orderId).maybeSingle();
       if (order && order.bakery_id === bakery.id) {
         if (kind === 'saldo') await markBalancePaid(admin, order.id);
-        else await confirmPaidOrder(admin, order.id, pay.id);
+        else await confirmPaidOrder(admin, order.id, pay.id, pay.transaction_amount);
       }
     }
   } catch (e) {

@@ -1257,7 +1257,7 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .fb-stars { display: flex; gap: 2px; margin-bottom: 10px; }
 .fb-stars button { background: none; border: 0; font-size: 22px; cursor: pointer; color: #d4d4d8; padding: 0 2px; }
 .fb-stars button.on { color: #f59e0b; }
-@media (max-width: 860px) { .fb-fab { bottom: 84px; right: 12px; padding: 9px 14px; } .fb-panel { bottom: 134px; right: 12px; } }
+@media (max-width: 860px) { .fb-fab { bottom: 84px; right: 12px; padding: 0; width: 44px; height: 44px; justify-content: center; opacity: .92; } .fb-fab .fb-label { display: none; } .fb-panel { bottom: 134px; right: 12px; } }
 @media print { .fb-fab, .fb-panel { display: none; } }
 
 /* Entrada al panel de administración (separada del login de clientes) */

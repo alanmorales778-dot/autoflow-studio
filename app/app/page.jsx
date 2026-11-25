@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { loadRecipeItems } from '@/lib/recipes';
 import { getContext } from '@/lib/session';
-import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding } from './actions';
+import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding, undoOrder } from './actions';
+import { canUndo } from '@/lib/lifecycle';
 import { onboardingSteps } from '@/lib/onboarding';
 import { Flash, StatusBadge } from './ui';
 import CopyLink from './copy-link';
@@ -274,12 +275,21 @@ export default async function Agenda({ searchParams }) {
                             </div>
                           )}
                           {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
+                          {o.customer_reply === 'voy' && <span className="badge ok">Confirmó ✓</span>}
+                          {o.customer_reply === 'no_puedo' && <span className="badge bad">Avisó que no puede</span>}
                           <div className="tl-foot">
                             <span className={`tl-money num ${due > 0 && o.status !== 'pendiente_sena' ? '' : 'paid'}`}>
                               {o.status === 'pendiente_sena' ? 'Esperando seña' : due > 0 ? `Saldo ${money(due)}` : 'Pagado'}
                             </span>
                             <div className="tl-btns">
                               {remind && <a className="btn small" href={remind} target="_blank" rel="noreferrer">Recordar</a>}
+                              {canUndo(o) && (
+                                <form action={undoOrder}>
+                                  <input type="hidden" name="id" value={o.id} />
+                                  <input type="hidden" name="back" value={isToday ? '/app' : `/app?dia=${selDate}`} />
+                                  <button className="btn secondary small">Deshacer</button>
+                                </form>
+                              )}
                               {o.status === 'confirmado' && selDate <= today && (
                                 <form action={changeOrderStatus}>
                                   <input type="hidden" name="id" value={o.id} />

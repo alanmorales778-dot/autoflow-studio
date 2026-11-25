@@ -117,7 +117,7 @@ export async function saveAdminNotes(fd) {
   const ctx = await guard('support', fd);
   const id = str(fd, 'bakery_id');
   const notes = str(fd, 'admin_notes').slice(0, 2000) || null;
-  const { error } = await ctx.admin.from('bakeries').update({ admin_notes: notes }).eq('id', id);
+  const { error } = await ctx.admin.from('bakery_admin_notes').upsert({ bakery_id: id, notes, updated_at: new Date().toISOString() }, { onConflict: 'bakery_id' });
   if (error) back(from(fd), { error: error.message });
   await audit(ctx, 'notas', id);
   back(from(fd), { ok: 'Notas guardadas.' });

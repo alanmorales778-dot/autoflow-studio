@@ -10,7 +10,7 @@ import { encrypt } from '@/lib/crypto';
 import { slugify, parseNum, todayAR, pct } from '@/lib/format';
 import { syncBakery, recomputeCosts, pushStockToSheet, writeCells, EXAMPLE_INSUMOS, EXAMPLE_PRODUCTOS, EXAMPLE_RECIPES } from '@/lib/sheets';
 import { applyInsumos, applyProductos } from '@/lib/catalog';
-import { setOrderStatus } from '@/lib/lifecycle';
+import { setOrderStatus, undoOrderStatus } from '@/lib/lifecycle';
 import { createOrder, capacityMap } from '@/lib/orders';
 import { upsertCustomer, normPhone } from '@/lib/customers';
 import { testToken, createPreapproval } from '@/lib/mp';
@@ -321,7 +321,19 @@ export async function changeOrderStatus(fd) {
     err = e.message;
   }
   revalidatePath('/app', 'layout');
-  back(str(fd, 'back') || '/app/pedidos', err ? { error: err } : { ok: 'Pedido actualizado.' });
+  back(str(fd, 'back') || '/app/pedidos', err ? { error: err } : { ok: status === 'entregado' || status === 'cancelado' ? 'Pedido actualizado. ¿Fue sin querer? Tenés 10 minutos para tocar «Deshacer».' : 'Pedido actualizado.' });
+}
+
+export async function undoOrder(fd) {
+  const { bakery } = await requireBakery();
+  let err = null;
+  try {
+    await undoOrderStatus(createAdmin(), bakery, str(fd, 'id'));
+  } catch (e) {
+    err = e.message;
+  }
+  revalidatePath('/app', 'layout');
+  back(str(fd, 'back') || '/app/pedidos', err ? { error: err } : { ok: 'Listo, lo volvimos a como estaba.' });
 }
 
 export async function createManualOrder(fd) {

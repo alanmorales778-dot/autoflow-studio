@@ -5,7 +5,7 @@ import { syncBakery } from '@/lib/sheets';
 import { safeEqual } from '@/lib/crypto';
 import { generateRecurringOrders, refreshPendingSubscriptions } from '@/lib/recurring';
 import { reportError, heartbeat } from '@/lib/alerts';
-import { sendMorningDigests } from '@/lib/digest';
+import { sendMorningDigests, sendTrialNotices } from '@/lib/digest';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -41,6 +41,13 @@ async function run(request) {
   } catch (e) {
     failures.push('resumen');
     await reportError('cron:resumen', e);
+  }
+
+  try {
+    await sendTrialNotices(admin);
+  } catch (e) {
+    failures.push('fin-prueba');
+    await reportError('cron:fin-prueba', e);
   }
 
   const staleBefore = new Date(Date.now() - 9 * 60000).toISOString();

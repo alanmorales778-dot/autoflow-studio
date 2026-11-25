@@ -30,7 +30,9 @@ export default async function Ficha({ params, searchParams }) {
   let audits = [];
   let pilot = null;
   if (r.bakery_id) {
-    ({ data: bakery } = await admin.from('bakeries').select('id,name,slug,business_type,whatsapp_contact,pickup_address,created_at,suspended_reason,admin_notes,is_test,google_email,mp_access_token_enc,wa_phone_number_id,logo_url').eq('id', r.bakery_id).single());
+    const { data: noteRow } = await admin.from('bakery_admin_notes').select('notes').eq('bakery_id', r.bakery_id).maybeSingle();
+    ({ data: bakery } = await admin.from('bakeries').select('id,name,slug,business_type,whatsapp_contact,pickup_address,created_at,suspended_reason,is_test,google_email,mp_access_token_enc,wa_phone_number_id,logo_url').eq('id', r.bakery_id).single());
+    if (bakery) bakery.admin_notes = noteRow?.notes || '';
     ({ data: orders } = await admin.from('orders').select('id,product_name,customer_name,total,status,date,created_at,channel').eq('bakery_id', r.bakery_id).order('created_at', { ascending: false }).limit(8));
     ({ data: feedback } = await admin.from('pilot_feedback').select('id,kind,rating,message,status,created_at').eq('bakery_id', r.bakery_id).order('created_at', { ascending: false }).limit(10));
     ({ data: errors } = await admin.from('app_errors').select('id,at,source,message').eq('bakery_id', r.bakery_id).order('at', { ascending: false }).limit(10));

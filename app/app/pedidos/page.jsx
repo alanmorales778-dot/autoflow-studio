@@ -1,7 +1,9 @@
 import { rubroOf } from '@/lib/rubros';
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
-import { changeOrderStatus, createManualOrder, markBalance, updateOrder } from '../actions';
+import { changeOrderStatus, createManualOrder, markBalance, updateOrder, undoOrder } from '../actions';
+import { canUndo } from '@/lib/lifecycle';
+import { createAdmin } from '@/lib/supabase';
 import { balanceDue, reminderLink } from '@/lib/balance';
 import { waMeLink } from '@/lib/customers';
 import { optionsSummary } from '@/lib/options';
@@ -111,10 +113,23 @@ export default async function Pedidos({ searchParams }) {
   let q = supabase.from('orders').select('*').eq('bakery_id', bakery.id);
   if (filter === 'activos') q = q.in('status', ['pendiente_sena', 'confirmado']).gte('date', addDays(todayAR(), -7)).order('date').order('slot');
   else q = q.in('status', filter.split(',')).order('date', { ascending: false });
-  const [{ data: rawOrders }, { data: products }] = await Promise.all([
+  const recentCut = new Date(Date.now() - 10 * 60000).toISOString();
+  const [{ data: rawOrders0 }, { data: products }, { data: justChanged }] = await Promise.all([
     q.limit(300),
     supabase.from('products').select('id,name,price').eq('bakery_id', bakery.id).not('sheet_row', 'is', null).order('sheet_row'),
+    // Recién entregados o cancelados: siguen a la vista unos minutos para poder tocar «Deshacer».
+    filter === 'activos'
+      ? supabase.from('orders').select('*').eq('bakery_id', bakery.id).in('status', ['entregado', 'cancelado']).gte('status_changed_at', recentCut).limit(20)
+      : Promise.resolve({ data: [] }),
   ]);
+  const rawOrders = [...(rawOrders0 || []), ...(justChanged || []).filter((o) => !(rawOrders0 || []).some((x) => x.id === o.id))];
+  // Comprobantes de transferencia: el depósito es privado, se ven con un link firmado que vence en 1 hora.
+  const receipts = new Map();
+  const withReceipt = rawOrders.filter((o) => o.receipt_path);
+  if (withReceipt.length) {
+    const { data: signed } = await createAdmin().storage.from('comprobantes').createSignedUrls(withReceipt.map((o) => o.receipt_path), 3600);
+    (signed || []).forEach((x, i) => { if (x?.signedUrl) receipts.set(withReceipt[i].id, x.signedUrl); });
+  }
   const needle = normName(search);
   const digits = search.replace(/\D/g, '');
   const orders = (rawOrders || []).filter((o) => !needle
@@ -212,6 +227,22 @@ export default async function Pedidos({ searchParams }) {
                     {o.status === 'pendiente_sena' && o.expires_at && <span>Vence {dateTimeLabel(o.expires_at)}</span>}
                   </div>
                   {extra.length > 0 && <div className="item-sub">{extra.join(' · ')}</div>}
+                  {(o.customer_reply || o.discount > 0 || o.delivery_fee > 0 || o.receipt_path || o.quote_accepted_at) && (
+                    <div className="item-meta">
+                      {o.customer_reply === 'voy' && <span className="badge ok">Confirmó que {T.link.mode === 'turno' ? 'viene' : 'va'} ✓</span>}
+                      {o.customer_reply === 'no_puedo' && <span className="badge bad">Avisó que no puede</span>}
+                      {o.discount > 0 && <span>Descuento {money(o.discount)}{o.coupon_code ? ` (${o.coupon_code})` : ''}</span>}
+                      {o.delivery_fee > 0 && <span>Envío {money(o.delivery_fee)}</span>}
+                      {o.quote_accepted_at && <span className="badge ok">Presupuesto aceptado</span>}
+                      {o.receipt_path && (
+                        <span className={`badge ${o.receipt_check?.ok ? 'ok' : 'warn'}`}>
+                          Comprobante {o.receipt_check?.ok ? 'verificado ✓' : 'para revisar'}
+                          {receipts.get(o.id) && <> · <a href={receipts.get(o.id)} target="_blank" rel="noreferrer">ver</a></>}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {o.receipt_path && !o.receipt_check?.ok && o.receipt_check?.reason && <div className="item-sub">⚠ {o.receipt_check.reason}</div>}
                   {(o.allergies || o.reference_photo_url) && (
                     <div className="item-meta">
                       {o.allergies && <span className="badge bad">⚠ {o.allergies}</span>}
@@ -233,6 +264,13 @@ export default async function Pedidos({ searchParams }) {
                     )}
                     {o.status === 'confirmado' && readyLink(bakery, T, o) && <a className="btn secondary small" href={readyLink(bakery, T, o)} target="_blank" rel="noreferrer">Avisar que está listo</a>}
                     {(o.status === 'entregado' || (o.status === 'confirmado' && !readyLink(bakery, T, o))) && link && <a className="btn secondary small" href={link} target="_blank" rel="noreferrer">{due > 0 ? 'Cobrar por WhatsApp' : 'WhatsApp'}</a>}
+                    {canUndo(o) && (
+                      <form action={undoOrder}>
+                        <input type="hidden" name="id" value={o.id} />
+                        <input type="hidden" name="back" value={self} />
+                        <button className="btn secondary small">Deshacer</button>
+                      </form>
+                    )}
                     {editable && <EditOrder o={o} bakery={bakery} T={T} open={sp.editar === o.id} back={self} />}
                   </div>
                 </li>
