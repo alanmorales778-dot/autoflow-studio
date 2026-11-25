@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { AuthShell, AuthTabs, PasswordInput, validEmail } from '../auth-shell';
+import { AuthShell, AuthTabs, PasswordInput, validEmail, GoogleButton } from '../auth-shell';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -59,6 +59,7 @@ export default function Login() {
       <h1 className="disp">Hola de nuevo</h1>
       <p className="sub">Entrá para ver los pedidos de hoy.</p>
       <AuthTabs active="login" />
+      <GoogleButton />
       <form key={shake} className={shake ? 'shake' : ''} onSubmit={onSubmit} noValidate>
         <div className="field">
           <label htmlFor="email">Email</label>

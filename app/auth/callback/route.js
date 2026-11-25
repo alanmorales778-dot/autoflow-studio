@@ -16,5 +16,23 @@ export async function GET(request) {
   else error = new Error('Link inválido');
 
   if (error) return NextResponse.redirect(new URL('/login?error=link', url.origin));
-  return NextResponse.redirect(new URL(next, url.origin));
+
+  // Registro con Google: el rubro, la invitación piloto y el referido vienen en una cookie corta.
+  const res = NextResponse.redirect(new URL(next, url.origin));
+  const raw = request.cookies.get('hk_signup')?.value;
+  if (raw) {
+    res.cookies.set('hk_signup', '', { path: '/', maxAge: 0 });
+    try {
+      const extra = JSON.parse(decodeURIComponent(raw));
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = user?.user_metadata || {};
+      const clean = (v, n) => String(v || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, n);
+      const patch = {};
+      if (!meta.business_type && /^[a-z]{2,20}$/.test(extra.business_type || '')) patch.business_type = extra.business_type;
+      if (!meta.pilot_code && clean(extra.pilot_code, 24).length >= 4) patch.pilot_code = clean(extra.pilot_code, 24);
+      if (!meta.ref_code && clean(extra.ref_code, 12).length >= 4) patch.ref_code = clean(extra.ref_code, 12);
+      if (user && Object.keys(patch).length) await supabase.auth.updateUser({ data: patch });
+    } catch { /* cookie rota: se ignora */ }
+  }
+  return res;
 }

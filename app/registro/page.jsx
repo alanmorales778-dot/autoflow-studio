@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 import { publicRubros } from '@/lib/rubros';
-import { AuthShell, AuthTabs, PasswordInput, StrengthMeter, validEmail } from '../auth-shell';
+import { AuthShell, AuthTabs, PasswordInput, StrengthMeter, validEmail, GoogleButton } from '../auth-shell';
 
 const RUBROS = publicRubros();
 
@@ -82,6 +82,7 @@ export default function Registro() {
           {ref && !pilot && <div className="alert info" style={{ marginBottom: 12 }}>Te recomendó otro negocio: tenés <strong>14 días extra</strong> de prueba (28 en total).</div>}
           {pilot && <div className="alert info" style={{ marginBottom: 12 }}>Invitación piloto <strong className="mono">{pilot}</strong>: los días extra se activan al crear tu negocio.</div>}
           <AuthTabs active="registro" />
+          <GoogleButton label="Crear cuenta con Google" extra={{ business_type: rubro, ...(pilot ? { pilot_code: pilot } : {}), ...(ref ? { ref_code: ref } : {}) }} />
           <form key={shake} className={shake ? 'shake' : ''} onSubmit={onSubmit} noValidate>
             <fieldset className="field rubro-pick">
               <legend>¿Qué vendés?</legend>
