@@ -288,7 +288,7 @@ export default async function Catalogo({ params, searchParams }) {
                 })}
               </div>
             )}
-            {reviews?.length > 0 && (
+            {reviews?.length >= 3 && (
               <section id="resenas" style={{ marginTop: 28 }}>
                 <h2 className="disp" style={{ fontSize: 22 }}>Lo que dicen {avgRating ? <small className="muted" style={{ fontSize: 15 }}>★ {avgRating.toFixed(1).replace('.', ',')} · {reviews.length}</small> : null}</h2>
                 <div className="grid grid-3">

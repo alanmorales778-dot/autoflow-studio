@@ -140,7 +140,7 @@ export async function saveSettings(fd) {
     ...(fd.has('monotributo_cat') ? { monotributo_cat: /^[A-K]$/.test(str(fd, 'monotributo_cat')) ? str(fd, 'monotributo_cat') : null } : {}),
     slot_capacity: fd.has('slot_capacity') ? (Math.round(parseNum(str(fd, 'slot_capacity')) || 0) >= 1 ? Math.min(100, Math.round(parseNum(str(fd, 'slot_capacity')))) : null) : bakery.slot_capacity ?? null,
   };
-  if (patch.max_days_ahead < patch.min_days_ahead) back('/app/configuracion', { error: `«Hasta cuántos días antes» (${patch.max_days_ahead}) no puede ser menor que la anticipación mínima (${patch.min_days_ahead}): tu catálogo no mostraría ningún día.` });
+  if (patch.max_days_ahead < patch.min_days_ahead) back('/app/configuracion', { error: `«Hasta cuántos días adelante» (${patch.max_days_ahead}) no puede ser menor que la anticipación mínima (${patch.min_days_ahead}): tu catálogo no mostraría ningún día.` });
   if (patch.slug.length < 3) back('/app/configuracion', { error: 'El link tiene que tener al menos 3 letras.' });
   const { error } = await supabase.from('bakeries').update(patch).eq('id', bakery.id);
   if (error) back('/app/configuracion', { error: error.code === '23505' ? 'Ese link ya está en uso.' : error.message });
