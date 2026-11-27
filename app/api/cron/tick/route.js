@@ -6,6 +6,7 @@ import { safeEqual } from '@/lib/crypto';
 import { generateRecurringOrders, refreshPendingSubscriptions } from '@/lib/recurring';
 import { reportError, heartbeat } from '@/lib/alerts';
 import { sendMorningDigests, sendTrialNotices } from '@/lib/digest';
+import { publishDue, refreshSocialTokens } from '@/lib/social-publish';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -50,6 +51,16 @@ async function run(request) {
     await reportError('cron:fin-prueba', e);
   }
 
+  // Marketing IA: publicar en Instagram lo aprobado cuya hora llegó y renovar permisos por vencer.
+  let social = { published: 0, failed: 0 };
+  try {
+    social = await publishDue(admin);
+    await refreshSocialTokens(admin);
+  } catch (e) {
+    failures.push('redes');
+    await reportError('cron:redes', e);
+  }
+
   const staleBefore = new Date(Date.now() - 9 * 60000).toISOString();
   const { data: bakeries } = await admin
     .from('bakeries')
@@ -71,8 +82,8 @@ async function run(request) {
       await reportError('cron:sync-drive', e, { bakeryId: b.id });
     }
   }
-  await heartbeat('cron', { expired, recurring, digests, synced: results.length, failures });
-  return NextResponse.json({ ok: failures.length === 0, expired, recurring, digests, synced: results.length, failures, results });
+  await heartbeat('cron', { expired, recurring, digests, social, synced: results.length, failures });
+  return NextResponse.json({ ok: failures.length === 0, expired, recurring, digests, social, synced: results.length, failures, results });
 }
 
 export const GET = run;

@@ -6,9 +6,11 @@ import CopyLink from '../../../copy-link';
 import ConfirmButton from '../../../confirm-button';
 import Submit from '../../submit';
 import MarketingLocked from '../../locked';
-import { approvePiece, rejectPiece, requestChanges, editPiece, markPublished, deletePiece } from '../../actions';
+import { approvePiece, rejectPiece, requestChanges, editPiece, markPublished, deletePiece, cancelAutoPublish } from '../../actions';
+import { createAdmin } from '@/lib/supabase';
+import { hasInstagram, getIgAccount } from '@/lib/instagram';
 import { KINDS, STATUS } from '@/lib/marketing';
-import { dateLabel, todayAR } from '@/lib/format';
+import { dateLabel, dateTimeLabel, todayAR } from '@/lib/format';
 
 export const maxDuration = 60;
 
@@ -38,6 +40,8 @@ export default async function Pieza({ params, searchParams }) {
   const fbText = [c.texto_facebook || c.texto, tags].filter(Boolean).join('\n\n');
   const script = scriptText(c);
   const pending = it.status === 'para_aprobar';
+  const ig = hasInstagram() ? await getIgAccount(createAdmin(), bakery.id) : null;
+  const canAuto = !!(ig && ig.status === 'ok' && it.kind === 'post' && it.product_id);
   const badge = it.status === 'aprobada' || it.status === 'publicada' ? 'ok' : it.status === 'rechazada' ? 'bad' : 'warn';
 
   return (
@@ -85,6 +89,12 @@ export default async function Pieza({ params, searchParams }) {
                   <label htmlFor="date">Fecha de publicación</label>
                   <input id="date" type="date" name="date" defaultValue={it.scheduled_for || todayAR()} min={todayAR()} />
                 </div>
+                {canAuto && (
+                  <div className="field">
+                    <label className="inline-label"><input type="checkbox" name="auto" defaultChecked /> Publicar solo en Instagram{ig.username ? ` (@${ig.username})` : ''} a las</label>
+                    <input type="time" name="time" defaultValue="19:00" style={{ maxWidth: 140, marginTop: 6 }} aria-label="Hora de publicación" />
+                  </div>
+                )}
                 <Submit className="btn block" pending="Aprobando…">Aprobar</Submit>
               </form>
               <form action={requestChanges} style={{ marginTop: 14 }}>
@@ -107,7 +117,24 @@ export default async function Pieza({ params, searchParams }) {
             </div>
           )}
 
-          {it.status === 'aprobada' && (
+          {it.publish_error && <div className="alert warn">Último intento de publicar en Instagram: {it.publish_error}</div>}
+          {it.status === 'aprobada' && it.auto_publish && (
+            <div className="card">
+              <h2>Se publica sola</h2>
+              <p>En Instagram el {dateTimeLabel(it.publish_at)}. Te avisamos cuando esté publicada.</p>
+              <form action={cancelAutoPublish}>
+                <input type="hidden" name="id" value={it.id} />
+                <Submit className="btn secondary block" pending="Cancelando…">Cancelar la publicación automática</Submit>
+              </form>
+            </div>
+          )}
+          {it.status === 'publicada' && it.external_url && (
+            <div className="card">
+              <h2>Publicada en Instagram</h2>
+              <a className="btn secondary" href={it.external_url} target="_blank" rel="noreferrer">Ver la publicación ↗</a>
+            </div>
+          )}
+          {it.status === 'aprobada' && !it.auto_publish && (
             <div className="card">
               <h2>Lista para publicar</h2>
               <ol style={{ paddingLeft: 18 }}>

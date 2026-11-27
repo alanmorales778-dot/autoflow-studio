@@ -9,6 +9,7 @@ import { notify } from '@/lib/notifications';
 import { reportError } from '@/lib/alerts';
 import { addDays, todayAR } from '@/lib/format';
 import { buildContext, generatePiece, planWeek, generateKit, usage, reviewPiece, KINDS, GOALS } from '@/lib/marketing';
+import { getIgAccount, isPublicJpeg, hasInstagram } from '@/lib/instagram';
 
 const HOME = '/app/marketing';
 const internal = (path) => (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\') ? path : HOME);
@@ -150,10 +151,43 @@ export async function approvePiece(fd) {
   const { supabase, bakery } = await guard();
   const item = await ownItem(supabase, bakery.id, str(fd, 'id'));
   if (!item) back(HOME, { error: 'No encontramos esa publicación.' });
+  const to = `/app/marketing/pieza/${item.id}`;
   const date = isDate(str(fd, 'date')) ? str(fd, 'date') : item.scheduled_for;
-  await supabase.from('marketing_items').update({ status: 'aprobada', approved_at: new Date().toISOString(), scheduled_for: date, updated_at: new Date().toISOString() }).eq('id', item.id);
+  const patch = { status: 'aprobada', approved_at: new Date().toISOString(), scheduled_for: date, auto_publish: false, publish_at: null, publish_error: null, publish_attempts: 0, updated_at: new Date().toISOString() };
+  // Publicación automática en Instagram: solo posteos con foto JPEG del producto y la cuenta conectada.
+  if (fd.get('auto') === 'on') {
+    const time = /^\d{2}:\d{2}$/.test(str(fd, 'time')) ? str(fd, 'time') : '19:00';
+    const at = new Date(`${date || todayAR()}T${time}:00-03:00`);
+    if (Number.isNaN(at.getTime()) || at.getTime() < Date.now() + 5 * 60000) back(to, { error: 'Elegí un día y hora a partir de dentro de 5 minutos.' });
+    if (!hasInstagram() || item.kind !== 'post' || !item.product_id) back(to, { error: 'La publicación automática es solo para posteos con un producto.' });
+    const account = await getIgAccount(createAdmin(), bakery.id);
+    if (!account || account.status !== 'ok') back(to, { error: 'Primero conectá Instagram en Marketing IA → Redes.' });
+    const { data: product } = await supabase.from('products').select('photo_url').eq('id', item.product_id).maybeSingle();
+    if (!(await isPublicJpeg(product?.photo_url))) back(to, { error: 'Para publicar solo, el producto necesita una foto JPG. Subila de nuevo desde la ficha del producto.' });
+    patch.auto_publish = true;
+    patch.publish_at = at.toISOString();
+  }
+  await supabase.from('marketing_items').update(patch).eq('id', item.id);
   revalidatePath(HOME);
-  back(`/app/marketing/pieza/${item.id}`, { ok: 'Aprobada. Copiá el texto y descargá la imagen para publicarla.' });
+  back(to, { ok: patch.auto_publish ? 'Aprobada. Se publica sola en Instagram el día y hora que elegiste.' : 'Aprobada. Copiá el texto y descargá la imagen para publicarla.' });
+}
+
+export async function cancelAutoPublish(fd) {
+  const { supabase, bakery } = await guard();
+  const item = await ownItem(supabase, bakery.id, str(fd, 'id'));
+  if (!item) back(HOME, { error: 'No encontramos esa publicación.' });
+  await supabase.from('marketing_items').update({ auto_publish: false, publish_at: null, updated_at: new Date().toISOString() }).eq('id', item.id).eq('status', 'aprobada');
+  revalidatePath(HOME);
+  back(`/app/marketing/pieza/${item.id}`, { ok: 'Publicación automática cancelada. Podés publicarla a mano.' });
+}
+
+export async function disconnectInstagram() {
+  const { bakery } = await guard();
+  const admin = createAdmin();
+  await admin.from('social_accounts').delete().eq('bakery_id', bakery.id).eq('network', 'instagram');
+  await admin.from('marketing_items').update({ auto_publish: false, publish_at: null }).eq('bakery_id', bakery.id).eq('status', 'aprobada').eq('auto_publish', true);
+  revalidatePath(HOME);
+  back('/app/marketing/redes', { ok: 'Instagram desconectado. Borramos el permiso para publicar.' });
 }
 
 export async function rejectPiece(fd) {

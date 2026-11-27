@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireBakery } from '@/lib/session';
 import { hasAI } from '@/lib/ai';
+import { hasInstagram } from '@/lib/instagram';
 import { Flash } from '../ui';
 import Submit from './submit';
 import { createWeekPlan } from './actions';
@@ -28,7 +29,7 @@ export default async function Marketing({ searchParams }) {
 
   const ver = FILTERS.includes(sp.ver) ? sp.ver : 'para_aprobar';
   const [{ data: items }, { data: counts }, { data: brand }, { count: productCount }, u] = await Promise.all([
-    supabase.from('marketing_items').select('id,kind,title,status,scheduled_for,created_at,content,product_id,source').eq('bakery_id', bakery.id).eq('status', ver)
+    supabase.from('marketing_items').select('id,kind,title,status,scheduled_for,created_at,content,product_id,source,auto_publish,publish_at,external_url').eq('bakery_id', bakery.id).eq('status', ver)
       .order(ver === 'para_aprobar' || ver === 'aprobada' ? 'scheduled_for' : 'updated_at', { ascending: ver === 'para_aprobar' || ver === 'aprobada', nullsFirst: false }).limit(60),
     supabase.from('marketing_items').select('status').eq('bakery_id', bakery.id).in('status', ['para_aprobar', 'aprobada']).limit(500),
     supabase.from('marketing_brand').select('bakery_id').eq('bakery_id', bakery.id).maybeSingle(),
@@ -38,6 +39,7 @@ export default async function Marketing({ searchParams }) {
   const n = (s) => (counts || []).filter((c) => c.status === s).length;
   const next = upcomingDates(undefined, 30);
   const ai = hasAI();
+  const igReady = hasInstagram();
 
   return (
     <>
@@ -48,6 +50,7 @@ export default async function Marketing({ searchParams }) {
         </div>
         <div className="row" style={{ gap: 8 }}>
           <Link className="btn secondary" href="/app/marketing/marca">Perfil de marca</Link>
+          <Link className="btn secondary" href="/app/marketing/redes">Redes</Link>
           <Link className="btn secondary" href="/app/marketing/vender">Vendé este producto</Link>
           <Link className="btn" href="/app/marketing/crear">+ Crear publicación</Link>
         </div>
@@ -106,6 +109,8 @@ export default async function Marketing({ searchParams }) {
                     {it.scheduled_for && <span>Para el {dateLabel(it.scheduled_for)}</span>}
                     {it.source === 'plan' && <span>Plan de la semana</span>}
                     {it.source === 'kit' && <span>Campaña de producto</span>}
+                    {it.status === 'aprobada' && it.auto_publish && <span className="badge ok">Se publica sola en Instagram</span>}
+                    {it.external_url && <a href={it.external_url} target="_blank" rel="noreferrer">Ver en Instagram ↗</a>}
                     {alerts > 0 && <span className="badge warn">{alerts === 1 ? '1 cosa para revisar' : `${alerts} cosas para revisar`}</span>}
                     <Link href={`/app/marketing/pieza/${it.id}`}>{ver === 'para_aprobar' ? 'Revisar y aprobar →' : 'Ver →'}</Link>
                   </div>
@@ -119,7 +124,9 @@ export default async function Marketing({ searchParams }) {
       <div className="card">
         <h2>Cómo publicar</h2>
         <p className="muted" style={{ marginBottom: 0 }}>
-          Por ahora la publicación es manual: aprobás la publicación, copiás el texto, descargás la imagen y la subís desde tu celular a Instagram, Facebook o TikTok. Próximamente vas a poder conectar tus redes para que se publique sola, siempre después de tu aprobación.
+          {igReady
+            ? <>Conectá Instagram en <Link href="/app/marketing/redes">Redes</Link> y los posteos de foto que apruebes se publican solos el día y hora que elijas. Reels, historias y carruseles se suben a mano: copiás el texto, descargás la imagen y seguís el guion.</>
+            : 'Por ahora la publicación es manual: aprobás la publicación, copiás el texto, descargás la imagen y la subís desde tu celular a Instagram, Facebook o TikTok. Próximamente vas a poder conectar tus redes para que se publique sola, siempre después de tu aprobación.'}
         </p>
       </div>
     </>

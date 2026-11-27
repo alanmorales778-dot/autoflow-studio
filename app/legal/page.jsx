@@ -26,6 +26,7 @@ export default function Legal() {
             <li><a href="#salud">Alergias y restricciones alimentarias</a></li>
             <li><a href="#proveedores">Proveedores que usamos</a></li>
             <li><a href="#google">Acceso a Google Drive</a></li>
+            <li><a href="#redes">Instagram, Facebook e inteligencia artificial</a></li>
             <li><a href="#seguridad">Seguridad y conservación</a></li>
             <li><a href="#derechos">Tus derechos</a></li>
             <li><a href="#responsabilidad">Responsabilidad</a></li>
@@ -58,21 +59,25 @@ export default function Legal() {
         <p>Las alergias y restricciones que un cliente indica son datos de salud, que la ley considera sensibles. Se piden de forma opcional, se usan únicamente para preparar ese pedido de forma segura y solo los ve el negocio que recibe el pedido. El cliente puede pedir al negocio que los borre en cualquier momento.</p>
 
         <h2 id="proveedores">7. Proveedores que usamos</h2>
-        <p>Para funcionar usamos: Supabase (base de datos, servidores en San Pablo, Brasil), Vercel (alojamiento), Mercado Pago (cobros), Meta (WhatsApp, solo si activás el bot), Google (tus planillas, solo si conectás Drive, y el envío de emails). Algunos de estos servicios guardan datos fuera de Argentina, en países con niveles de protección adecuados o bajo contratos que exigen protegerlos.</p>
+        <p>Para funcionar usamos: Supabase (base de datos, servidores en San Pablo, Brasil), Vercel (alojamiento), Mercado Pago (cobros), Meta (WhatsApp, solo si activás el bot; Instagram y Facebook, solo si los conectás en Marketing IA), Google (tus planillas, solo si conectás Drive, el envío de emails y la inteligencia artificial Gemini, que redacta el contenido de Marketing IA y lee fotos de recetas). Algunos de estos servicios guardan datos fuera de Argentina, en países con niveles de protección adecuados o bajo contratos que exigen protegerlos.</p>
 
         <h2 id="google">8. Acceso a Google Drive</h2>
         <p>Si conectás Google Drive, HakkiraApp pide acceso únicamente a los archivos que la propia app crea en tu Drive (permiso «drive.file»). No puede ver ni modificar el resto de tus archivos. Usamos ese acceso solo para leer tus insumos, productos y stock, y para escribir las columnas calculadas por HakkiraApp. Podés revocarlo cuando quieras desde tu cuenta de Google o desde Ajustes. El uso de la información recibida de las APIs de Google cumple la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado.</p>
 
-        <h2 id="seguridad">9. Seguridad y conservación</h2>
-        <p>La información viaja cifrada. Las credenciales de Mercado Pago y WhatsApp que cargues se guardan cifradas y solo se usan para cobrar y enviar mensajes en nombre de tu negocio. Cada negocio solo puede ver sus propios datos. Conservamos tus datos mientras tengas la cuenta; si la das de baja, los borramos dentro de los 30 días, salvo lo que la ley nos obligue a guardar (por ejemplo, comprobantes de pago).</p>
+        <h2 id="redes">9. Instagram, Facebook e inteligencia artificial</h2>
+        <p>Si usás Marketing IA, la inteligencia artificial redacta propuestas de publicaciones con los datos de tu negocio (productos, precios, condiciones y tu perfil de marca). No le mandamos datos de tus clientes. Nada se publica sin que lo apruebes.</p>
+        <p>Si conectás Instagram o Facebook, guardamos el identificador y el nombre de tu cuenta y un permiso cifrado para publicar en tu nombre. Lo usamos solo para publicar lo que aprobaste y, más adelante, para mostrarte cómo le fue a cada publicación. Podés desconectar la cuenta cuando quieras desde Marketing IA → Redes o desde la configuración de Instagram o Facebook. Cómo borrar estos datos: <Link href="/legal/borrado">Borrado de datos</Link>.</p>
 
-        <h2 id="derechos">10. Tus derechos</h2>
+        <h2 id="seguridad">10. Seguridad y conservación</h2>
+        <p>La información viaja cifrada. Las credenciales de Mercado Pago, WhatsApp, Instagram y Facebook se guardan cifradas y solo se usan para cobrar y enviar mensajes en nombre de tu negocio. Cada negocio solo puede ver sus propios datos. Conservamos tus datos mientras tengas la cuenta; si la das de baja, los borramos dentro de los 30 días, salvo lo que la ley nos obligue a guardar (por ejemplo, comprobantes de pago).</p>
+
+        <h2 id="derechos">11. Tus derechos</h2>
         <p>Podés pedir acceso, corrección, actualización o eliminación de tus datos en cualquier momento, sin costo, escribiendo a <a href={`mailto:${CONTACT}`}>{CONTACT}</a>. Respondemos dentro de los 10 días hábiles. Si no quedás conforme, podés reclamar ante la Agencia de Acceso a la Información Pública (AAIP), autoridad de control de la Ley 25.326 de Protección de Datos Personales.</p>
 
-        <h2 id="responsabilidad">11. Responsabilidad</h2>
+        <h2 id="responsabilidad">12. Responsabilidad</h2>
         <p>HakkiraApp calcula costos, márgenes y precios sugeridos con los datos que cargás: las decisiones de precio, la elaboración de los productos y la relación con tus clientes son responsabilidad de tu negocio. Trabajamos para que el servicio esté siempre disponible, pero puede haber interrupciones por mantenimiento o fallas de proveedores. En ningún caso nuestra responsabilidad supera lo que pagaste por el servicio en los últimos 3 meses.</p>
 
-        <h2 id="cambios">12. Cambios y contacto</h2>
+        <h2 id="cambios">13. Cambios y contacto</h2>
         <p>Si cambiamos estos términos de forma importante, te avisamos por email o dentro de la app antes de que rijan. Estos términos se rigen por las leyes de la República Argentina. Contacto: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
       </main>
       <footer className="footer"><div className="container">© {new Date().getFullYear()} HakkiraApp</div></footer>
