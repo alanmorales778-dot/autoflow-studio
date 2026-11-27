@@ -48,6 +48,7 @@ const CSS = `
 .hk-k .num{width:30px;height:30px;border-radius:10px;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .hk-k .t1{display:block;font-size:15px;font-weight:700;color:#18181B}
 .hk-k .t2{display:block;font-size:12px;color:#52525B}
+@media (max-width:520px){.hk-k .t2{display:none}.hk-k .pill{padding:8px 14px 8px 8px}}
 @media (prefers-reduced-motion: reduce){
 .hk-k .v,.hk-k .f,.hk-k .b,.hk-k .ball,.hk-k .rip,.hk-k .cell,.hk-k .cash,.hk-k .lab,.hk-k .sheen{animation:none}
 .hk-k .f{transform:translateZ(120px)}.hk-k .b{transform:translateZ(-120px)}.hk-k .ball,.hk-k .rip{opacity:0}.hk-k .lab{transform:translateZ(2px)}
