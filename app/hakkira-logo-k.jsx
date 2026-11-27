@@ -44,7 +44,7 @@ const CSS = `
 .hk-k .sheen{position:absolute;top:-40%;left:0;width:45%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:hkSheen 8s ease-in-out infinite}
 .hk-k .pane{position:absolute;inset:0;transform-style:preserve-3d}
 .hk-k .face{position:absolute;inset:0;border-radius:44px;overflow:hidden}
-.hk-k .pill{position:absolute;left:204px;top:58px;white-space:nowrap;display:flex;align-items:center;gap:10px;padding:10px 16px 10px 10px;border-radius:16px;background:rgba(255,255,255,.92);box-shadow:0 10px 26px rgba(0,0,0,.12),inset 0 0 0 1px rgba(255,255,255,.9);font-family:Inter,system-ui,sans-serif}
+.hk-k .pill{position:absolute;left:198px;top:58px;white-space:nowrap;display:flex;align-items:center;gap:10px;padding:10px 16px 10px 10px;border-radius:16px;background:rgba(255,255,255,.92);box-shadow:0 10px 26px rgba(0,0,0,.12),inset 0 0 0 1px rgba(255,255,255,.9);font-family:Inter,system-ui,sans-serif}
 .hk-k .num{width:30px;height:30px;border-radius:10px;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .hk-k .t1{display:block;font-size:15px;font-weight:700;color:#18181B}
 .hk-k .t2{display:block;font-size:12px;color:#52525B}
@@ -65,9 +65,9 @@ function Bag({ size = 84 }) {
   );
 }
 
-function Pill({ n, title, sub, accent }) {
+function Pill({ n, title, sub, accent, top }) {
   return (
-    <div className="pill lab">
+    <div className="pill lab" style={{ top }}>
       <span className="num" style={{ background: accent }}>{n}</span>
       <span><span className="t1">{title}</span><span className="t2">{sub}</span></span>
     </div>
@@ -124,7 +124,7 @@ export default function HakkiraLogoK({ accent = '#DC2626', showLabels = true, wi
                 <span className="sheen" style={{ animationDelay: '4.2s' }} />
               </div>
               {rip('#FFFFFF', '-4s')}
-              {showLabels && <Pill n="3" title="Tu ganancia" sub="Sabés cuánto te quedó" accent={accent} />}
+              {showLabels && <Pill n="3" title="Tu ganancia" sub="Sabés cuánto te quedó" accent={accent} top={124} />}
             </div>
             {/* 2 · Agenda y cobro */}
             <div className="pane">
@@ -139,7 +139,7 @@ export default function HakkiraLogoK({ accent = '#DC2626', showLabels = true, wi
                 <span className="sheen" style={{ animationDelay: '2.5s' }} />
               </div>
               {rip(accent, '-5.44s')}
-              {showLabels && <Pill n="2" title="Agenda y cobro" sub="Se ubica en un horario y se cobra la seña" accent={accent} />}
+              {showLabels && <Pill n="2" title="Agenda y cobro" sub="Se ubica en un horario y se cobra la seña" accent={accent} top={58} />}
             </div>
             {/* 1 · Pedido por link */}
             <div className="pane f">
@@ -150,7 +150,7 @@ export default function HakkiraLogoK({ accent = '#DC2626', showLabels = true, wi
                 <span className="sheen" style={{ animationDelay: '.6s' }} />
               </div>
               {rip(accent, '-6.8s')}
-              {showLabels && <Pill n="1" title="Pedido por link" sub="Tu cliente pide solo, a cualquier hora" accent={accent} />}
+              {showLabels && <Pill n="1" title="Pedido por link" sub="Tu cliente pide solo, a cualquier hora" accent={accent} top={-8} />}
             </div>
             {/* El pedido */}
             <div className="ball" style={{ position: 'absolute', left: 93, top: 81, width: 28, height: 28, borderRadius: '50%', background: red.ball, boxShadow: `0 0 22px ${red.glowStrong}` }} />

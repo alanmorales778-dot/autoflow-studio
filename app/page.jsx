@@ -142,7 +142,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="hero2-logo">
-              <HakkiraLogoK width={620} height={480} />
+              <HakkiraLogoK width={480} height={400} />
             </div>
           </div>
           <div className="container">
