@@ -65,8 +65,8 @@ export default async function Asistente({ searchParams }) {
       {!hasAI() && <div className="alert warn">La IA todavía no está configurada en el servidor: el asistente no puede responder.</div>}
       {!settings.enabled ? (
         <div className="alert warn row" style={{ justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <span>El asistente está <strong>apagado</strong>: tu catálogo muestra solo el botón de WhatsApp.</span>
-          <form action={toggleEnabled}><input type="hidden" name="enabled" value="1" /><button className="btn small">Prenderlo</button></form>
+          <span>{settings.fresh ? <>Tu asistente todavía <strong>no está prendido</strong> en tu catálogo. <Link href="/app/asistente/entrenar#probar">Probalo primero</Link> y prendelo cuando te guste cómo responde.</> : <>El asistente está <strong>apagado</strong>: tu catálogo muestra solo el botón de WhatsApp.</>}</span>
+          <form action={toggleEnabled}><input type="hidden" name="enabled" value="1" /><button className="btn small">Prenderlo en mi catálogo</button></form>
         </div>
       ) : (!knowCount && !sp.ok) ? (
         <div className="alert info"><strong>Primer paso:</strong> ya conoce tus productos, precios y condiciones. Enseñale lo que te preguntan siempre (envíos, sin TACC, formas de pago…). <Link href="/app/asistente/entrenar#sabe">Enseñarle →</Link></div>
