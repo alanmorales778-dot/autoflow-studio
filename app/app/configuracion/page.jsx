@@ -7,7 +7,7 @@ import { Flash, Locked } from '../ui';
 import { WEEKDAYS, dateLabel, todayAR, dateTimeLabel } from '@/lib/format';
 import { sheetUrl } from '@/lib/google';
 import { appUrl, has } from '@/lib/env';
-import { calendarUrl } from '@/lib/ics';
+import { calendarUrl, webcalUrl, GOOGLE_CAL_PATH } from '@/lib/ics';
 import CopyField from './copy-field';
 import HashOpener from '../hash-opener';
 import PhotoPicker from '../photo-picker';
@@ -215,28 +215,36 @@ export default async function Configuracion({ searchParams }) {
       <h2 id="mas" style={{ margin: '28px 0 10px', fontSize: 17, color: 'var(--muted)' }}>Más opciones</h2>
       {/* Calendario */}
       <details className="card fold" id="calendario">
-        <summary><h2>Ver tus {t.orders.toLowerCase()} en el calendario</h2></summary>
-        <p className="muted">Sumalos a Google Calendar o al calendario del celular. Se actualiza solo (Google tarda unas horas en refrescar). Los cambios se hacen siempre acá en HakkiraApp.</p>
+        <summary><h2>Ver tus {t.orders.toLowerCase()} en Google Calendar</h2></summary>
+        <p className="muted">Tocá el botón, aceptá en Google y listo: tus {t.orders.toLowerCase()} aparecen en Google Calendar, también en el celular. Se actualiza solo (Google tarda unas horas en traer los cambios). Los cambios se hacen siempre acá en HakkiraApp.</p>
+        <div className="row" style={{ margin: '4px 0 12px' }}>
+          <a className="btn" href={GOOGLE_CAL_PATH} target="_blank" rel="noreferrer">📅 Agregar a Google Calendar</a>
+          {bakery.calendar_token && <a className="btn secondary" href={webcalUrl(bakery.calendar_token)}>iPhone / Mac</a>}
+        </div>
         {bakery.calendar_token ? (
           <>
-            <CopyField value={calendarUrl(bakery.calendar_token)} />
+            <p className="muted" style={{ fontSize: 13 }}>⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, {t.note1.label.toLowerCase()}, {t.note2.label.toLowerCase()} y el saldo a cobrar.</p>
             <details style={{ margin: '12px 0' }}>
-              <summary>Cómo agregarlo</summary>
+              <summary>Otros calendarios o si el botón no anda</summary>
+              <CopyField value={calendarUrl(bakery.calendar_token)} />
               <ol>
-                <li><strong>Google Calendar</strong> (desde la compu): en <a href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl" target="_blank" rel="noreferrer">Otros calendarios → Desde URL</a>, pegá el enlace y tocá «Agregar calendario». Después aparece también en el celular.</li>
+                <li><strong>Google Calendar</strong> (desde la compu): en <a href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl" target="_blank" rel="noreferrer">Otros calendarios → Desde URL</a>, pegá el enlace y tocá «Agregar calendario».</li>
                 <li><strong>iPhone</strong>: Ajustes → Calendario → Cuentas → Agregar cuenta → Otra → Agregar calendario suscrito, y pegá el enlace.</li>
                 <li><strong>Outlook</strong>: Agregar calendario → Suscribirse desde la web.</li>
               </ol>
-              <p className="muted">⏳ = esperando seña · ✔ = entregado. Cada evento trae opciones, {t.note1.label.toLowerCase()}, {t.note2.label.toLowerCase()} y el saldo a cobrar.</p>
             </details>
-            <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus {t.orders.toLowerCase()}. Si lo compartiste por error, regeneralo.</p>
+            <p className="muted" style={{ fontSize: 13 }}>Cualquiera que tenga este enlace puede ver tus {t.orders.toLowerCase()}. Si lo compartiste por error, regeneralo (después lo tenés que volver a agregar).</p>
             <div className="row">
               <form action={rotateCalendarToken}><button className="btn secondary small">Regenerar enlace</button></form>
               <form action={disableCalendar}><button className="btn danger small">Desactivar</button></form>
             </div>
           </>
         ) : (
-          <form action={rotateCalendarToken}><button className="btn">Crear enlace de calendario</button></form>
+          <form action={rotateCalendarToken} className="row muted" style={{ fontSize: 13, gap: 6 }}>
+            <span>¿Usás iPhone u Outlook?</span>
+            <button className="btn ghost small">Crear el enlace</button>
+            <span>y te mostramos cómo agregarlo.</span>
+          </form>
         )}
       </details>
 

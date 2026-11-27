@@ -9,6 +9,7 @@ import CopyLink from './copy-link';
 import { todayAR, addDays, dateLabel, weekdayOf, money, slugify } from '@/lib/format';
 import { isHolding } from '@/lib/orders';
 import { appUrl } from '@/lib/env';
+import { GOOGLE_CAL_PATH } from '@/lib/ics';
 import { balanceDue, reminderLink } from '@/lib/balance';
 import { optionsSummary } from '@/lib/options';
 import { productionOrders, shoppingList } from '@/lib/production';
@@ -127,6 +128,8 @@ export default async function Agenda({ searchParams }) {
   if (shopping) todo.push({ tone: 'info', text: <>Para los próximos 3 días vas a usar {shopping.rows.slice(0, 3).map((r) => r.name.toLowerCase()).join(', ')}{shopping.rows.length > 3 ? ` y ${shopping.rows.length - 3} más` : ''}{shopping.total ? ` (unos ${money(shopping.total)})` : ''}.</>, href: `/app/produccion?desde=${today}&hasta=${addDays(today, 2)}&ver=compras`, cta: 'Lista de compras' });
   if (!showOnboarding && !bakery.sheet_productos_id && !(products || []).length) todo.push({ tone: 'warn', text: <>Todavía no cargaste tus {T.items.toLowerCase()}.</>, href: '/app/productos', cta: 'Cargar' });
   if (!showOnboarding && !bakery.mp_access_token_enc) todo.push({ tone: 'info', text: <>Conectá Mercado Pago para cobrar las señas solas.</>, href: '/app/configuracion#mercadopago', cta: 'Conectar' });
+
+  if (!showOnboarding && !bakery.calendar_token) todo.push({ tone: 'info', text: <>Mirá tus {T.orders.toLowerCase()} en Google Calendar, también en el celular.</>, href: GOOGLE_CAL_PATH, cta: 'Agregar', newTab: true });
 
   if (tomorrowOrders.length > 0) todo.push({ tone: 'info', text: <>Mañana {tomorrowOrders.length === 1 ? 'tenés 1' : `tenés ${tomorrowOrders.length}`} {tomorrowOrders.length === 1 ? T.order : T.orders.toLowerCase()}. Mandá el recordatorio con el saldo.</>, href: `/app?dia=${addDays(today, 1)}#dia`, cta: 'Recordar' });
 
@@ -320,7 +323,9 @@ export default async function Agenda({ searchParams }) {
                   <li key={i} className={`todo-${it.tone}`}>
                     <span className="todo-dot" aria-hidden="true" />
                     <span className="todo-text">{it.text}</span>
-                    <Link className="btn secondary small" href={it.href}>{it.cta}</Link>
+                    {it.newTab
+                      ? <a className="btn secondary small" href={it.href} target="_blank" rel="noreferrer">{it.cta}</a>
+                      : <Link className="btn secondary small" href={it.href}>{it.cta}</Link>}
                   </li>
                 ))}
               </ul>
