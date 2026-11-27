@@ -117,9 +117,9 @@ export default async function Marketing({ searchParams }) {
       </div>
 
       <div className="card">
-        <h2>Redes conectadas</h2>
+        <h2>Cómo publicar</h2>
         <p className="muted" style={{ marginBottom: 0 }}>
-          La publicación automática en Instagram y Facebook se activa cuando Meta apruebe la app (está en trámite). Mientras tanto: aprobás la publicación, copiás el texto, descargás la imagen y la subís desde tu celular. TikTok llega después.
+          Por ahora la publicación es manual: aprobás la publicación, copiás el texto, descargás la imagen y la subís desde tu celular a Instagram, Facebook o TikTok. Próximamente vas a poder conectar tus redes para que se publique sola, siempre después de tu aprobación.
         </p>
       </div>
     </>
