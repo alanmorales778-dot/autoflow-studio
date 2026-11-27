@@ -1413,3 +1413,8 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .order-ings li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--line); }
 .order-ings li:first-child { border-top: 0; }
 .order-ings .amt { display: flex; gap: 10px; white-space: nowrap; }
+
+/* Logo K en el hero y escena del día debajo */
+.hero2-logo { min-width: 0; }
+.hero2-dia { text-align: center; }
+.hero2-dia .stage-wrap { max-width: 860px; margin: 28px auto 0; text-align: left; }

@@ -4,6 +4,7 @@ import { RUBROS, publicRubros } from '@/lib/rubros';
 import Logo from './logo';
 import PlanBuilder from './plan-builder';
 import HeroStage from './hero-stage';
+import HakkiraLogoK from './hakkira-logo-k';
 import DemoVideo from './demo-video';
 import Ahorro from './ahorro';
 
@@ -140,7 +141,9 @@ export default function Home() {
                 <li><Ico d="m5 12 5 5 9-10" color="#15803D" size={16} />Sin tarjeta</li>
               </ul>
             </div>
-            <HeroStage />
+            <div className="hero2-logo">
+              <HakkiraLogoK width={620} height={480} />
+            </div>
           </div>
           <div className="container">
             <ul className="hero2-rubros" aria-label="Rubros">
@@ -149,6 +152,12 @@ export default function Home() {
               ))}
             </ul>
           </div>
+        </section>
+
+        <section className="section container hero2-dia" aria-label="Así se ordena tu día">
+          <span className="eyebrow">Del chat al día ordenado</span>
+          <h2 className="big">Los mensajes sueltos se vuelven tu día en orden.</h2>
+          <HeroStage />
         </section>
 
         <section id="video" className="section container demo">

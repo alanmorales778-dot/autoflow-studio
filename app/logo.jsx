@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { HakkiraWordmark } from './hakkira-logo-k';
 
 export function LogoMark({ color = '#FB923C' }) {
   return (
@@ -10,11 +11,10 @@ export function LogoMark({ color = '#FB923C' }) {
   );
 }
 
-export default function Logo({ href = '/', mark = '#FB923C' }) {
+export default function Logo({ href = '/' }) {
   return (
     <Link href={href} className="logo" aria-label="HakkiraApp, inicio">
-      <LogoMark color={mark} />
-      Hakkira<span style={{ marginLeft: -10 }}>App</span>
+      <HakkiraWordmark size={26} />
     </Link>
   );
 }
