@@ -33,7 +33,7 @@ export default async function Plan({ searchParams }) {
         {access.trial && <p>Estás en la <strong>prueba gratis</strong> con todos los módulos hasta el {dateTimeLabel(access.trialEnds)}.</p>}
         {access.active && (
           <p>
-            Suscripción <span className="badge ok">activa</span>: Base{sub.has_costs ? ' + Costos y producción' : ''}{sub.has_recurring ? ' + Pedidos recurrentes' : ''}{sub.has_whatsapp ? ' + Bot de WhatsApp' : ''} · {money(sub.amount)} por mes.
+            Suscripción <span className="badge ok">activa</span>: {[sub.has_base !== false && 'Base', sub.has_base !== false && sub.has_costs && 'Costos y producción', sub.has_base !== false && sub.has_recurring && 'Pedidos recurrentes', sub.has_base !== false && sub.has_whatsapp && 'Bot de WhatsApp', sub.has_marketing && 'Marketing IA'].filter(Boolean).join(' + ')} · {money(sub.amount)} por mes.
             Para cambiar o cancelar, gestionala desde tu cuenta de Mercado Pago (Suscripciones).
           </p>
         )}
@@ -45,10 +45,16 @@ export default async function Plan({ searchParams }) {
           <h2>Elegí tus módulos</h2>
           <form action={subscribe}>
             <div className="stack">
+              <label className="inline-label"><input type="radio" name="pack" value="completo" defaultChecked={!access.marketingOnly} /> <strong>HakkiraApp para tu negocio</strong>: la Base y los módulos que elijas abajo.</label>
+              <label className="inline-label"><input type="radio" name="pack" value="marketing" defaultChecked={access.marketingOnly} /> <strong>Solo Marketing IA</strong> — {money(PRICES.marketing)}/mes. El agente que crea tus publicaciones, guiones y kits de venta, sin agenda ni pedidos.</label>
+            </div>
+            <h3 style={{ marginTop: 16 }}>Módulos (si elegiste HakkiraApp para tu negocio)</h3>
+            <div className="stack">
               <label className="inline-label"><input type="checkbox" checked readOnly disabled /> Base: agenda, cupos, señas, saldo, clientes, catálogo con personalización y stock — {money(PRICES.base)}/mes</label>
               <label className="inline-label"><input type="checkbox" name="costs" defaultChecked /> Costos y producción: recetas, precio mínimo, hoja de producción, lista de compras y rentabilidad — +{money(PRICES.costs)}/mes</label>
               <label className="inline-label"><input type="checkbox" name="recurring" /> Pedidos recurrentes: suscripciones semanales con débito automático — +{money(PRICES.recurring)}/mes</label>
               <label className="inline-label"><input type="checkbox" name="whatsapp" /> Bot de WhatsApp — +{money(PRICES.whatsapp)}/mes (+ costo de mensajes de Meta)</label>
+              <label className="inline-label"><input type="checkbox" name="marketing" /> Marketing IA: publicaciones, guiones de reels, kits de venta por producto y aprobación antes de publicar — +{money(PRICES.marketing)}/mes</label>
             </div>
             <div className="field" style={{ marginTop: 12 }}>
               <label>¿Cómo querés pagar?</label>

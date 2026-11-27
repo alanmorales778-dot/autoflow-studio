@@ -19,11 +19,25 @@ const I = {
   actividad: 'M22 12h-4l-3 9L9 3l-3 9H2',
   ajustes: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.8H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.8-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.8H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   plan: 'M20 12V8H6a2 2 0 0 1 0-4h12v4M4 6v12a2 2 0 0 0 2 2h14v-4M18 12a2 2 0 0 0 0 4h4v-4z',
+  marketing: 'M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
+  vender: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01',
 };
 
 // Menú corto: lo de todos los días arriba; lo que se toca de vez en cuando, abajo.
 // [ruta, texto, ícono, otras rutas que también lo marcan como activo]
-const groups = (t) => [
+const MARKETING = ['Marketing', [
+  ['/app/marketing', 'Marketing IA', 'marketing', ['/app/marketing/crear', '/app/marketing/pieza', '/app/marketing/marca', '/app/marketing/redes']],
+  ['/app/marketing/vender', 'Vendé un producto', 'vender', ['/app/marketing/kit']],
+]];
+
+const groups = (t) => (t.marketingOnly ? [
+  MARKETING,
+  ['Tu negocio', [['/app/productos', t.items, 'productos']]],
+  ['Cuenta', [
+    ['/app/configuracion', 'Ajustes', 'ajustes'],
+    ['/app/plan', 'Plan', 'plan'],
+  ]],
+] : [
   ['Día a día', [
     ['/app', 'Agenda', 'agenda'],
     ['/app/pedidos', t.orders, 'pedidos'],
@@ -38,13 +52,21 @@ const groups = (t) => [
     ['/app/recetas', t.recetas || 'Recetas', 'recetas'],
     ['/app/rentabilidad', 'Costos y ganancias', 'rentabilidad', ['/app/costos']],
   ]],
+  MARKETING,
   ['Cuenta', [
     ['/app/configuracion', 'Ajustes', 'ajustes', ['/app/actividad']],
     ['/app/plan', 'Plan', 'plan'],
   ]],
-];
+]);
 
 const KEYS = { a: '/app', p: '/app/pedidos', n: '/app/pedidos?nuevo=1#nuevo', c: '/cocina', b: '/app/cobros', r: '/app/costos' };
+
+// /app y /app/marketing solo se marcan en su propia página o en las rutas que declaran (no en /app/marketing/vender).
+function isOn(path, href, also = []) {
+  if (href === '/app') return path === '/app';
+  if (href === '/app/marketing') return path === href || also.some((h) => path.startsWith(h));
+  return [href, ...also].some((h) => path.startsWith(h));
+}
 
 export default function Sidebar({ terms }) {
   const path = usePathname();
@@ -70,7 +92,7 @@ export default function Sidebar({ terms }) {
         <div key={title} style={{ display: 'contents' }}>
           <div className="side-group">{title}</div>
           {links.map(([href, label, icon, also = []]) => {
-            const on = href === '/app' ? path === '/app' : [href, ...also].some((h) => path.startsWith(h));
+            const on = isOn(path, href, also);
             return (
               <Link key={href} href={href} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={I[icon]} /></svg>
@@ -94,20 +116,27 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
     return () => { document.body.style.overflow = ''; };
   }, [more]);
 
-  const main = [
+  const mo = !!terms.marketingOnly;
+  const main = mo ? [
+    ['/app/marketing', 'Marketing', 'marketing', (p) => isOn(p, '/app/marketing', ['/app/marketing/crear', '/app/marketing/pieza', '/app/marketing/marca', '/app/marketing/redes'])],
+    ['/app/marketing/vender', 'Vender', 'vender', (p) => p.startsWith('/app/marketing/vender') || p.startsWith('/app/marketing/kit')],
+    null,
+    ['/app/productos', terms.items, 'productos', (p) => p.startsWith('/app/productos')],
+  ] : [
     ['/app', 'Agenda', 'agenda', (p) => p === '/app'],
     ['/app/pedidos', terms.orders, 'pedidos', (p) => p.startsWith('/app/pedidos')],
     null,
     ['/app/produccion?ver=compras', 'Compras', 'compras', (p) => p.startsWith('/app/produccion')],
   ];
-  const rest = groups(terms).flatMap(([, links]) => links).filter(([href]) => !['/app', '/app/pedidos', '/app/produccion'].includes(href));
-  const moreOn = rest.some(([href, , , also = []]) => [href, ...also].some((h) => path.startsWith(h))) || path.startsWith('/app/buscar');
+  const skip = mo ? ['/app/marketing', '/app/marketing/vender', '/app/productos'] : ['/app', '/app/pedidos', '/app/produccion'];
+  const rest = groups(terms).flatMap(([, links]) => links).filter(([href]) => !skip.includes(href));
+  const moreOn = rest.some(([href, , , also = []]) => isOn(path, href, also)) || path.startsWith('/app/buscar');
 
   return (
     <>
       <nav className="bottom-nav no-print" aria-label="Secciones principales">
         {main.map((it) => (it === null ? (
-          <Link key="nuevo" href="/app/pedidos?nuevo=1#nuevo" className="bn-add" aria-label={`Cargar ${terms.order} nuevo`}>
+          <Link key="nuevo" href={mo ? '/app/marketing/crear' : '/app/pedidos?nuevo=1#nuevo'} className="bn-add" aria-label={mo ? 'Crear publicación' : `Cargar ${terms.order} nuevo`}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           </Link>
         ) : (
@@ -130,8 +159,8 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
               Buscar {terms.orders.toLowerCase()}, clientes o {terms.items.toLowerCase()}…
             </Link>
             <div className="more-grid">
-              {[['/app/produccion', terms.prodTitle, 'produccion'], ...rest].map(([href, label, icon, also = []]) => {
-                const on = [href, ...also].some((h) => path.startsWith(h)) && !(href === '/app/produccion' && false);
+              {[...(mo ? [] : [['/app/produccion', terms.prodTitle, 'produccion']]), ...rest].map(([href, label, icon, also = []]) => {
+                const on = isOn(path, href, also);
                 return (
                   <Link key={href} href={href} className={`more-tile ${on ? 'on' : ''}`}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={I[icon]} /></svg>
@@ -141,8 +170,8 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
               })}
             </div>
             <div className="more-links">
-              <a href={catalogUrl} target="_blank" rel="noreferrer">Ver mi catálogo ↗</a>
-              <Link href="/cocina">{terms.workMode}</Link>
+              {!mo && <a href={catalogUrl} target="_blank" rel="noreferrer">Ver mi catálogo ↗</a>}
+              {!mo && <Link href="/cocina">{terms.workMode}</Link>}
               <form action={signOutAction}><button type="submit">Salir</button></form>
             </div>
           </div>

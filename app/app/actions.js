@@ -881,14 +881,18 @@ export async function createManualSubscription(fd) {
 export async function subscribe(fd) {
   const { user, bakery } = await requireBakery();
   if (!process.env.MP_PLATFORM_ACCESS_TOKEN) back('/app/plan', { error: 'Los pagos de suscripción todavía no están habilitados. Escribinos para activarla.' });
-  const costs = fd.get('costs') === 'on';
-  const wa = fd.get('whatsapp') === 'on';
-  const rec = fd.get('recurring') === 'on';
+  // «Solo Marketing IA»: sin la Base (y por lo tanto sin los módulos que dependen de ella).
+  const onlyMkt = str(fd, 'pack') === 'marketing';
+  const base = !onlyMkt;
+  const mkt = onlyMkt || fd.get('marketing') === 'on';
+  const costs = base && fd.get('costs') === 'on';
+  const wa = base && fd.get('whatsapp') === 'on';
+  const rec = base && fd.get('recurring') === 'on';
   const annual = str(fd, 'period') === 'anual';
-  const monthly = PRICES.base + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0) + (rec ? PRICES.recurring : 0);
+  const monthly = (base ? PRICES.base : 0) + (costs ? PRICES.costs : 0) + (wa ? PRICES.whatsapp : 0) + (rec ? PRICES.recurring : 0) + (mkt ? PRICES.marketing : 0);
   // Anual: se paga una vez por año el equivalente a 10 meses (2 meses gratis).
   const amount = annual ? monthly * 10 : monthly;
-  const modules = ['Base', costs && 'Costos y producción', wa && 'WhatsApp', rec && 'Pedidos recurrentes'].filter(Boolean).join(' + ');
+  const modules = [base && 'Base', costs && 'Costos y producción', wa && 'WhatsApp', rec && 'Pedidos recurrentes', mkt && 'Marketing IA'].filter(Boolean).join(' + ');
   let url = null;
   let err = null;
   try {
@@ -896,7 +900,7 @@ export async function subscribe(fd) {
       reason: `HakkiraApp – ${modules}${annual ? ' (anual)' : ''}`,
       amount,
       payerEmail: user.email,
-      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}|${annual ? 'anual' : 'mensual'}`,
+      externalReference: `${bakery.id}|${costs ? 1 : 0}|${wa ? 1 : 0}|${rec ? 1 : 0}|${annual ? 'anual' : 'mensual'}|${mkt ? 1 : 0}|${base ? 1 : 0}`,
       backUrl: `${appUrl()}/app/plan`,
       ...(annual ? { frequency: 12, frequencyType: 'months' } : {}),
     });

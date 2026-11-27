@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { loadRecipeItems } from '@/lib/recipes';
 import { getContext } from '@/lib/session';
 import { createBakery, changeOrderStatus, loadExampleData, dismissOnboarding, undoOrder } from './actions';
@@ -57,6 +58,9 @@ export default async function Agenda({ searchParams }) {
       </div>
     );
   }
+
+  // Contrató solo Marketing IA: su inicio es el agente.
+  if (access.marketingOnly) redirect('/app/marketing');
 
   const T = rubroOf(bakery);
   const today = todayAR();
