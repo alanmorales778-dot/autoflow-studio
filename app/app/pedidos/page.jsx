@@ -8,6 +8,8 @@ import { balanceDue, reminderLink, orderStatusUrl } from '@/lib/balance';
 import { waMeLink } from '@/lib/customers';
 import { optionsSummary } from '@/lib/options';
 import { normName } from '@/lib/format';
+import { loadRecipeItems } from '@/lib/recipes';
+import { ingredientDemand, orderIngredients } from '@/lib/production';
 import { Flash, StatusBadge } from '../ui';
 import ConfirmButton from '../confirm-button';
 import { money, dateLabel, dateTimeLabel, todayAR, addDays } from '@/lib/format';
@@ -29,6 +31,28 @@ function Action({ id, status, label, cls = 'secondary', confirm, back }) {
       {back && <input type="hidden" name="back" value={back} />}
       {confirm ? <ConfirmButton className={`btn small ${cls}`} message={confirm}>{label}</ConfirmButton> : <button className={`btn small ${cls}`}>{label}</button>}
     </form>
+  );
+}
+
+// Qué insumos lleva este pedido (según la receta, la cantidad, las opciones y la merma).
+function OrderIngredients({ list, T }) {
+  if (!list || !list.length) return null;
+  const total = list.reduce((t, x) => t + (x.cost || 0), 0);
+  return (
+    <details className="fold">
+      <summary className="btn secondary small">{T.insumos} ({list.length})</summary>
+      <div className="fold-body">
+        <ul className="order-ings">
+          {list.map((x) => (
+            <li key={x.key}>
+              <span>{x.name}{!x.known && <span className="muted"> (no está en tu lista)</span>}</span>
+              <span className="amt"><strong>{x.needed}</strong>{x.cost != null && <span className="muted">{money(x.cost)}</span>}</span>
+            </li>
+          ))}
+        </ul>
+        {total > 0 && <p className="muted" style={{ fontSize: 13, margin: '8px 0 0' }}>Costo de {T.insumos.toLowerCase()}: <strong>{money(total)}</strong>. <Link href="/app/insumos#para-pedidos">Ver todo lo de la semana</Link></p>}
+      </div>
+    </details>
   );
 }
 
@@ -108,7 +132,7 @@ function readyLink(bakery, T, o) {
 
 export default async function Pedidos({ searchParams }) {
   const sp = await searchParams;
-  const { supabase, bakery } = await requireBakery();
+  const { supabase, bakery, access } = await requireBakery();
   const T = rubroOf(bakery);
   const filter = FILTERS.some(([k]) => k === sp.f) ? sp.f : 'activos';
   const search = typeof sp.q === 'string' ? sp.q.trim().slice(0, 60) : '';
@@ -131,6 +155,19 @@ export default async function Pedidos({ searchParams }) {
   if (withReceipt.length) {
     const { data: signed } = await createAdmin().storage.from('comprobantes').createSignedUrls(withReceipt.map((o) => o.receipt_path), 3600);
     (signed || []).forEach((x, i) => { if (x?.signedUrl) receipts.set(withReceipt[i].id, x.signedUrl); });
+  }
+  // Insumos de cada pedido activo (solo si hay receta cargada).
+  let demand = null;
+  const active = rawOrders.filter((o) => ['pendiente_sena', 'confirmado'].includes(o.status));
+  if (access.costs && active.length) {
+    const productIds = [...new Set(active.map((o) => o.product_id).filter(Boolean))];
+    if (productIds.length) {
+      const [items, { data: ingredients }] = await Promise.all([
+        loadRecipeItems(supabase, productIds),
+        supabase.from('ingredients').select('*').eq('bakery_id', bakery.id),
+      ]);
+      if (items?.length) demand = ingredientDemand(active, items, ingredients || []);
+    }
   }
   const needle = normName(search);
   const digits = search.replace(/\D/g, '');
@@ -273,6 +310,7 @@ export default async function Pedidos({ searchParams }) {
                         <button className="btn secondary small">Deshacer</button>
                       </form>
                     )}
+                    {editable && demand && <OrderIngredients list={orderIngredients(demand, o.id)} T={T} />}
                     {editable && <EditOrder o={o} bakery={bakery} T={T} open={sp.editar === o.id} back={self} />}
                   </div>
                 </li>

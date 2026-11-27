@@ -1400,3 +1400,16 @@ input.switch:focus-visible { box-shadow: var(--ring); }
 .shop-id { margin-top: 0 !important; padding-top: 12px; align-items: flex-end; }
 .shop-logo { margin-top: -58px; }
 @media (max-width: 760px) { .shop-logo { margin-top: -50px; } .shop-name { flex-basis: calc(100% - 100px); } }
+
+/* Insumos: lo que piden los pedidos que vienen */
+.need-box { margin-top: 8px; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--brand-soft); border: 1px solid var(--brand-line); font-size: 14px; }
+.need-box details.fold { margin-top: 2px; }
+.need-link { font-size: 13px; color: var(--brand); cursor: pointer; }
+.need-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13px; }
+.need-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--line); }
+.need-list li:first-child { border-top: 0; }
+.need-list a { color: var(--ink); }
+.order-ings { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.order-ings li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--line); }
+.order-ings li:first-child { border-top: 0; }
+.order-ings .amt { display: flex; gap: 10px; white-space: nowrap; }
