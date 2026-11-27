@@ -6,13 +6,14 @@ import Link from 'next/link';
 const fmt = (n) => '$ ' + n.toLocaleString('es-AR');
 
 export default function PlanBuilder({ prices }) {
-  const [on, setOn] = useState({ costs: true, recurring: false, whatsapp: false, marketing: false });
+  const [on, setOn] = useState({ costs: true, recurring: false, whatsapp: false, marketing: false, asistente: false });
   const [bump, setBump] = useState(0);
   const mods = [
     { key: 'costs', name: 'Costos y producción', price: prices.costs, desc: 'Costo real de cada producto o servicio según lo que lleva, precio mínimo según tu margen, alerta de venta a pérdida, simulador de inflación, hoja de producción, pantalla de trabajo del día y lista de compras.' },
     { key: 'recurring', name: 'Pedidos recurrentes', price: prices.recurring, desc: 'Viandas, cajas, turnos fijos o abonos por suscripción semanal o quincenal, con débito automático. Los pedidos se arman solos 7 días antes.' },
     { key: 'whatsapp', name: 'Bot de WhatsApp', price: prices.whatsapp, desc: 'Toma pedidos por WhatsApp a toda hora, ofrece solo fechas con cupo y manda el link de la seña. Los mensajes de Meta se pagan aparte.' },
     { key: 'marketing', name: 'Marketing IA', price: prices.marketing, desc: 'Un agente que arma tu plan de publicaciones, guiones de reels y kits para vender cada producto, con tus precios y productos reales. Vos aprobás todo antes de publicar.' },
+    { key: 'asistente', name: 'Asistente IA', price: prices.asistente, desc: 'Un chat en tu catálogo que atiende a tus clientes las 24 h: responde precios, fechas con lugar, envíos y condiciones con tus datos reales. Lo que no sabe te lo pregunta y lo aprende.' },
   ];
   const chosen = mods.filter((m) => on[m.key]);
   const total = prices.base + chosen.reduce((s, m) => s + m.price, 0);
@@ -65,8 +66,8 @@ export default function PlanBuilder({ prices }) {
           </div>
         ))}
         <div className="card" style={{ background: 'var(--sunken)' }}>
-          <h3 style={{ margin: 0 }}>¿Solo querés el agente de marketing?</h3>
-          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--ink-2)' }}>Contratá <strong>Marketing IA solo</strong>, sin la base, por {fmt(prices.marketing)} por mes. Ideal si ya tenés cómo tomar pedidos y necesitás vender más en redes.</p>
+          <h3 style={{ margin: 0 }}>¿Solo querés los agentes de IA?</h3>
+          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--ink-2)' }}>Contratá <strong>Marketing IA</strong> o el <strong>Asistente IA</strong> solos, sin la base, por {fmt(prices.marketing)} por mes cada uno. Ideal si ya tenés cómo tomar pedidos y necesitás vender más o atender a toda hora.</p>
         </div>
       </div>
     </div>

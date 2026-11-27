@@ -21,17 +21,22 @@ const I = {
   plan: 'M20 12V8H6a2 2 0 0 1 0-4h12v4M4 6v12a2 2 0 0 0 2 2h14v-4M18 12a2 2 0 0 0 0 4h4v-4z',
   marketing: 'M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
   vender: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01',
+  asistente: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5',
 };
 
 // Menú corto: lo de todos los días arriba; lo que se toca de vez en cuando, abajo.
 // [ruta, texto, ícono, otras rutas que también lo marcan como activo]
-const MARKETING = ['Marketing', [
+const MKT_LINKS = [
   ['/app/marketing', 'Marketing IA', 'marketing', ['/app/marketing/crear', '/app/marketing/pieza', '/app/marketing/marca', '/app/marketing/redes']],
   ['/app/marketing/vender', 'Vendé un producto', 'vender', ['/app/marketing/kit']],
-]];
+];
+const ASST_LINK = ['/app/asistente', 'Asistente IA', 'asistente'];
+// Con la Base se ven los dos agentes (si no están contratados, muestran cómo activarlos).
+// Solo agentes (sin la Base): solo los que contrató.
+const AGENTS = (t) => ['Agentes IA', t.agentsOnly ? [...(t.marketing ? MKT_LINKS : []), ...(t.assistant ? [ASST_LINK] : [])] : [...MKT_LINKS, ASST_LINK]];
 
-const groups = (t) => (t.marketingOnly ? [
-  MARKETING,
+const groups = (t) => (t.agentsOnly ? [
+  AGENTS(t),
   ['Tu negocio', [['/app/productos', t.items, 'productos']]],
   ['Cuenta', [
     ['/app/configuracion', 'Ajustes', 'ajustes'],
@@ -52,7 +57,7 @@ const groups = (t) => (t.marketingOnly ? [
     ['/app/recetas', t.recetas || 'Recetas', 'recetas'],
     ['/app/rentabilidad', 'Costos y ganancias', 'rentabilidad', ['/app/costos']],
   ]],
-  MARKETING,
+  AGENTS(t),
   ['Cuenta', [
     ['/app/configuracion', 'Ajustes', 'ajustes', ['/app/actividad']],
     ['/app/plan', 'Plan', 'plan'],
@@ -116,10 +121,15 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
     return () => { document.body.style.overflow = ''; };
   }, [more]);
 
-  const mo = !!terms.marketingOnly;
-  const main = mo ? [
+  const mo = !!terms.agentsOnly;
+  const mktTabs = [
     ['/app/marketing', 'Marketing', 'marketing', (p) => isOn(p, '/app/marketing', ['/app/marketing/crear', '/app/marketing/pieza', '/app/marketing/marca', '/app/marketing/redes'])],
     ['/app/marketing/vender', 'Vender', 'vender', (p) => p.startsWith('/app/marketing/vender') || p.startsWith('/app/marketing/kit')],
+  ];
+  const asstTab = ['/app/asistente', 'Asistente', 'asistente', (p) => p.startsWith('/app/asistente')];
+  const agentTabs = terms.marketing ? (terms.assistant ? [mktTabs[0], asstTab] : mktTabs) : [asstTab, ['/app/configuracion', 'Ajustes', 'ajustes', (p) => p.startsWith('/app/configuracion')]];
+  const main = mo ? [
+    ...agentTabs,
     null,
     ['/app/productos', terms.items, 'productos', (p) => p.startsWith('/app/productos')],
   ] : [
@@ -128,7 +138,7 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
     null,
     ['/app/produccion?ver=compras', 'Compras', 'compras', (p) => p.startsWith('/app/produccion')],
   ];
-  const skip = mo ? ['/app/marketing', '/app/marketing/vender', '/app/productos'] : ['/app', '/app/pedidos', '/app/produccion'];
+  const skip = mo ? [...agentTabs.map((x) => x[0]), '/app/productos'] : ['/app', '/app/pedidos', '/app/produccion'];
   const rest = groups(terms).flatMap(([, links]) => links).filter(([href]) => !skip.includes(href));
   const moreOn = rest.some(([href, , , also = []]) => isOn(path, href, also)) || path.startsWith('/app/buscar');
 
@@ -136,7 +146,7 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
     <>
       <nav className="bottom-nav no-print" aria-label="Secciones principales">
         {main.map((it) => (it === null ? (
-          <Link key="nuevo" href={mo ? '/app/marketing/crear' : '/app/pedidos?nuevo=1#nuevo'} className="bn-add" aria-label={mo ? 'Crear publicación' : `Cargar ${terms.order} nuevo`}>
+          <Link key="nuevo" href={mo ? (terms.marketing ? '/app/marketing/crear' : '/app/asistente/entrenar') : '/app/pedidos?nuevo=1#nuevo'} className="bn-add" aria-label={mo ? (terms.marketing ? 'Crear publicación' : 'Entrenar al asistente') : `Cargar ${terms.order} nuevo`}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           </Link>
         ) : (
@@ -170,7 +180,7 @@ export function BottomNav({ terms, catalogUrl, signOutAction }) {
               })}
             </div>
             <div className="more-links">
-              {!mo && <a href={catalogUrl} target="_blank" rel="noreferrer">Ver mi catálogo ↗</a>}
+              {(!mo || terms.assistant) && <a href={catalogUrl} target="_blank" rel="noreferrer">Ver mi catálogo ↗</a>}
               {!mo && <Link href="/cocina">{terms.workMode}</Link>}
               <form action={signOutAction}><button type="submit">Salir</button></form>
             </div>

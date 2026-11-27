@@ -59,8 +59,8 @@ export default async function Agenda({ searchParams }) {
     );
   }
 
-  // Contrató solo Marketing IA: su inicio es el agente.
-  if (access.marketingOnly) redirect('/app/marketing');
+  // Contrató solo agentes de IA (sin la Base): su inicio es el agente.
+  if (access.agentsOnly) redirect(access.marketing ? '/app/marketing' : '/app/asistente');
 
   const T = rubroOf(bakery);
   const today = todayAR();

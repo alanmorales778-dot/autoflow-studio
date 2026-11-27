@@ -45,7 +45,7 @@ export default async function AppLayout({ children }) {
     isPilot = !!pp && pp.status !== 'abandonado';
   } catch {}
   const showFeedback = isPilot || bakery.is_test;
-  const terms = { items: T.items, insumos: T.insumos, workMode: T.workMode, orders: T.orders, order: T.order, prodTitle: T.prodTitle, recurring: access.recurring, marketingOnly: access.marketingOnly, recetas: T.key === 'cocina' ? 'Recetas' : 'Fichas de costo' };
+  const terms = { items: T.items, insumos: T.insumos, workMode: T.workMode, orders: T.orders, order: T.order, prodTitle: T.prodTitle, recurring: access.recurring, agentsOnly: access.agentsOnly, marketing: access.marketing, assistant: access.assistant, recetas: T.key === 'cocina' ? 'Recetas' : 'Fichas de costo' };
 
   return (
     <>
@@ -55,17 +55,17 @@ export default async function AppLayout({ children }) {
           <span className="sep" aria-hidden="true" />
           <span className="biz">{bakery.name}</span>
           {access.trial && <Link href="/app/plan" className="badge warn trial-badge"><span className="hide-mobile">Prueba gratis · </span>{daysLeft === 1 ? 'queda 1 día' : `quedan ${daysLeft} días`}</Link>}
-          {!access.base && !access.marketingOnly && <Link href="/app/plan" className="badge bad">Plan inactivo</Link>}
+          {!access.base && !access.agentsOnly && <Link href="/app/plan" className="badge bad">Plan inactivo</Link>}
           <div className="end">
             <form action="/app/buscar" className="top-search hide-mobile" role="search">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" /></svg>
               <input name="q" placeholder="Buscar…" aria-label={`Buscar ${T.orders.toLowerCase()}, clientes o ${T.items.toLowerCase()}`} />
             </form>
-            {!access.marketingOnly && <a className="btn secondary small hide-mobile" href={`/c/${bakery.slug}`} target="_blank" rel="noreferrer">
+            {(!access.agentsOnly || access.assistant) && <a className="btn secondary small hide-mobile" href={`/c/${bakery.slug}`} target="_blank" rel="noreferrer">
               Mi catálogo
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7" /><path d="M8 7h9v9" /></svg>
             </a>}
-            {!access.marketingOnly && <Link className="btn dark small hide-mobile" href="/cocina">
+            {!access.agentsOnly && <Link className="btn dark small hide-mobile" href="/cocina">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 13.9A4 4 0 0 1 7.5 6a5 5 0 0 1 9 0A4 4 0 0 1 18 13.9V21H6z" /><path d="M6 17h12" /></svg>
               {T.workMode}
             </Link>}
@@ -81,7 +81,7 @@ export default async function AppLayout({ children }) {
           {access.status === 'suspended' && (
             <div className="alert bad">Tu cuenta está suspendida: tu link no toma pedidos. Escribinos para reactivarla.</div>
           )}
-          {!access.base && !access.marketingOnly && access.status !== 'suspended' && (
+          {!access.base && !access.agentsOnly && access.status !== 'suspended' && (
             <div className="alert bad">Tu prueba terminó o la suscripción no está activa: tu catálogo y el bot no toman pedidos nuevos. <Link href="/app/plan">Activar plan</Link></div>
           )}
           {children}

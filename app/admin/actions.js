@@ -72,6 +72,7 @@ export async function setPlan(fd) {
     has_whatsapp: fd.get('has_whatsapp') === 'on',
     has_recurring: fd.get('has_recurring') === 'on',
     has_marketing: fd.get('has_marketing') === 'on',
+    has_assistant: fd.get('has_assistant') === 'on',
     has_base: fd.get('has_base') === 'on',
     amount: Number.isFinite(amount) ? amount : null,
     updated_at: new Date().toISOString(),

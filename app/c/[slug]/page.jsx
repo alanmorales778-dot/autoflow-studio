@@ -11,6 +11,8 @@ import { QtyPicker, FulfillmentFields, FormMemory, PhotoField } from './order-he
 import MediaGallery from './media-gallery';
 import Tryon from './tryon';
 import ShareButton from './share-button';
+import AssistantChat from './assistant-chat';
+import { loadSettings, defaultGreeting, starterSuggestions } from '@/lib/assistant';
 
 // Portada + galería, sin repetir la portada si también está en la galería.
 function mediaOf(p) {
@@ -117,6 +119,9 @@ export default async function Catalogo({ params, searchParams }) {
     admin.from('reviews').select('rating,comment,name,created_at').eq('bakery_id', bakery.id).eq('visible', true).order('created_at', { ascending: false }).limit(50),
   ]);
   const avgRating = reviews?.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : null;
+  // Asistente IA: chat en el catálogo si el negocio tiene el módulo y no lo apagó.
+  const asst = access.assistant ? await loadSettings(admin, bakery.id) : null;
+  const chatOn = !!asst?.enabled;
   const list = products || [];
   // Vidriera: portada con la primera foto, próximo día con lugar y productos por categoría.
   const coverUrl = list.map((p) => mediaOf(p).find((m) => m.kind === 'image')?.url).find(Boolean) || null;
@@ -164,7 +169,7 @@ export default async function Catalogo({ params, searchParams }) {
         </div>
       </header>
       <main className="container page">
-        {!open && <div className="alert warn">Por el momento este negocio no está tomando pedidos online.{wa ? ' Escribile por WhatsApp.' : ''}</div>}
+        {!open && <div className="alert warn">{access.assistantOnly && chatOn ? `Consultá lo que necesites con el asistente${wa ? ' y hacé tu pedido por WhatsApp' : ''}.` : <>Por el momento este negocio no está tomando pedidos online.{wa ? ' Escribile por WhatsApp.' : ''}</>}</div>}
 
         {selected && open ? (
           <div className="pdetail">
@@ -371,7 +376,19 @@ export default async function Catalogo({ params, searchParams }) {
           </>
         )}
       </main>
-      {!selected && wa && <a className="wa-float" href={wa} target="_blank" rel="noreferrer" aria-label="Escribir por WhatsApp"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg></a>}
+      {chatOn && (
+        <AssistantChat
+          slug={slug}
+          botName={asst.name || 'Asistente'}
+          bizName={bakery.name}
+          logoUrl={bakery.logo_url}
+          greeting={asst.greeting || defaultGreeting(bakery, asst.name || 'Asistente')}
+          starters={starterSuggestions(bakery)}
+          wa={wa}
+          lift={!!selected}
+        />
+      )}
+      {!chatOn && !selected && wa && <a className="wa-float" href={wa} target="_blank" rel="noreferrer" aria-label="Escribir por WhatsApp"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg></a>}
       <footer className="footer shop-foot"><div className="container">Pedidos online con <Link href="/">HakkiraApp</Link></div></footer>
     </>
   );

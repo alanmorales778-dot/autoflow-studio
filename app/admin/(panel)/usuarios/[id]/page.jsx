@@ -92,7 +92,7 @@ export default async function Ficha({ params, searchParams }) {
                 {r.sub_status === 'trial' && r.trial_ends_at && <> · prueba hasta {dateTimeLabel(r.trial_ends_at)} ({dl > 0 ? `${dl} días` : 'vencida'})</>}
                 {r.amount ? <> · {money(r.amount)}/mes</> : null}
               </p>
-              <p className="muted" style={{ fontSize: 13 }}>Módulos: {[r.has_base !== false && 'Base', r.has_costs && 'Costos', r.has_recurring && 'Recurrentes', r.has_whatsapp && 'Bot WhatsApp', r.has_marketing && 'Marketing IA'].filter(Boolean).join(' · ') || 'ninguno'}</p>
+              <p className="muted" style={{ fontSize: 13 }}>Módulos: {[r.has_base !== false && 'Base', r.has_costs && 'Costos', r.has_recurring && 'Recurrentes', r.has_whatsapp && 'Bot WhatsApp', r.has_marketing && 'Marketing IA', r.has_assistant && 'Asistente IA'].filter(Boolean).join(' · ') || 'ninguno'}</p>
               {can('support') && (
                 <form action={extendTrial} className="adm-inline" style={{ marginBottom: 12 }}>
                   <input type="hidden" name="bakery_id" value={r.bakery_id} />
@@ -120,6 +120,7 @@ export default async function Ficha({ params, searchParams }) {
                       <label className="inline-label"><input type="checkbox" name="has_recurring" defaultChecked={r.has_recurring} /> Recurrentes</label>
                       <label className="inline-label"><input type="checkbox" name="has_whatsapp" defaultChecked={r.has_whatsapp} /> Bot WhatsApp</label>
                       <label className="inline-label"><input type="checkbox" name="has_marketing" defaultChecked={r.has_marketing} /> Marketing IA</label>
+                      <label className="inline-label"><input type="checkbox" name="has_assistant" defaultChecked={r.has_assistant} /> Asistente IA</label>
                     </div>
                     <p className="muted" style={{ fontSize: 12 }}>Si tiene una suscripción de Mercado Pago, el próximo aviso de MP puede volver a cambiar el estado.</p>
                     <button className="btn small">Guardar plan</button>
